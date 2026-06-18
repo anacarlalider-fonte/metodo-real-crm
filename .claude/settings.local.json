@@ -33,7 +33,21 @@
       "Bash(echo \"brew: $\\(command -v brew || echo NO\\)\")",
       "Bash(ls /usr/local/bin/node /opt/homebrew/bin/node)",
       "Bash(git init *)",
-      "Bash(printf '.vercel\\\\n.DS_Store\\\\n')"
+      "Bash(printf '.vercel\\\\n.DS_Store\\\\n')",
+      "mcp__Claude_in_Chrome__list_connected_browsers",
+      "mcp__Claude_in_Chrome__select_browser",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "mcp__Claude_in_Chrome__navigate",
+      "mcp__Claude_in_Chrome__computer",
+      "mcp__Claude_in_Chrome__browser_batch",
+      "mcp__Claude_in_Chrome__file_upload",
+      "Bash(env)",
+      "Bash(find \"/Users/anacarlaalmeida/Library/Application Support/Claude\" -maxdepth 4 -type d \\\\\\( -iname \"*upload*\" -o -iname \"*output*\" -o -iname \"*attach*\" -o -iname \"*session*\" \\\\\\) 2>/dev/null | head -30; echo \"=== local-agent-mode-sessions ===\"; ls -la \"/Users/anacarlaalmeida/Library/Application Support/Claude/local-agent-mode-sessions/\" 2>/dev/null | head)",
+      "mcp__Claude_in_Chrome__javascript_tool",
+      "Bash(gzip -c index.html)",
+      "Bash(git branch *)",
+      "Bash(git add *)",
+      "Bash(git -c user.email=crm@local -c user.name=\"Ana Carla\" commit -qm \"CRM Método Real — cloud \\(Supabase\\), onboarding e relatório\" --allow-empty)"
     ]
   }
 }
