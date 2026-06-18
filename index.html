@@ -358,9 +358,17 @@
   <aside id="sidebar" class="sidebar">
     <div class="logo"><span class="mark">R</span><div>Método Real<small>CRM · Grupo Real</small></div></div>
     <nav class="modnav">
-      <button class="modlink active" data-view="board" data-title="Funil de clientes">
+      <button class="modlink active" data-view="sales" data-title="Funil de vendas">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Vendas <span class="badge" id="badgeSales">0</span>
+      </button>
+      <button class="modlink" data-view="metas" data-title="Metas · rumo aos R$100k">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>
+        Metas
+      </button>
+      <button class="modlink" data-view="board" data-title="Entrega · Método Real">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="4" height="16" rx="1"/></svg>
-        Funil <span class="badge" id="badgeBoard">0</span>
+        Entrega <span class="badge" id="badgeBoard">0</span>
       </button>
       <button class="modlink" data-view="list" data-title="Clientes">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -401,8 +409,18 @@
     <button class="btn primary" id="btnNew">+ Novo cliente</button>
    </header>
 
-   <!-- ===== BOARD VIEW ===== -->
-   <div id="view-board" class="wrap">
+   <!-- ===== VENDAS (FUNIL COMERCIAL) VIEW ===== -->
+   <div id="view-sales" class="wrap">
+     <div id="salesBoard" class="board"></div>
+   </div>
+
+   <!-- ===== METAS VIEW ===== -->
+   <div id="view-metas" class="wrap hidden">
+     <div id="metas"></div>
+   </div>
+
+   <!-- ===== ENTREGA (ROADMAP) VIEW ===== -->
+   <div id="view-board" class="wrap hidden">
      <div id="board" class="board"></div>
    </div>
 
@@ -472,7 +490,8 @@
         <div class="field"><label>Decisor principal</label><input id="f_decisor" placeholder="Nome do dono / decisor" /></div>
         <div class="field"><label>Faturamento médio</label><input id="f_faturamento" placeholder="Ex.: R$ 300 mil/mês" /></div>
 
-        <div class="field"><label>Etapa do funil</label><select id="f_etapa"></select></div>
+        <div class="field"><label>Fase</label><select id="f_fase"><option value="venda">Venda (funil comercial)</option><option value="entrega">Entrega (Método)</option></select></div>
+        <div class="field"><label>Etapa</label><select id="f_etapa"></select></div>
         <div class="field"><label>Status</label><select id="f_status"></select></div>
         <div class="field"><label>Plano</label><select id="f_plano"></select></div>
         <div class="field"><label>Sessões realizadas</label><input id="f_sessoes" type="number" min="0" placeholder="0" /></div>
@@ -486,6 +505,9 @@
         <div class="field full"><label>Principal dor</label><input id="f_dor" placeholder="O maior problema a resolver" /></div>
         <div class="field full"><label>3 prioridades acordadas</label><textarea id="f_prioridades" placeholder="1. …&#10;2. …&#10;3. …"></textarea></div>
       </div>
+
+      <div class="sec-title">🎯 Qualificação (ICP)</div>
+      <div id="qualBox"></div>
 
       <div class="sec-title">🚀 Onboarding (pós-fechamento)</div>
       <div id="onboardingBox"></div>
@@ -548,9 +570,18 @@ const SUPABASE_ANON_KEY = "sb_publishable_UJzH7oyh2aaJgZuSkrfHmg_haRGVHdr";
 /* ========================================================================= */
 
 /* ---------- Domínio: Método Real ---------- */
-const STAGES = [
-  { id:"lead",        nome:"Lead",        sw:"var(--lead)",   sum:"Empresa identificada" },
-  { id:"proposta",    nome:"Em proposta", sw:"var(--blue)",   sum:"Negociando / proposta enviada" },
+/* Funil COMERCIAL (pré-venda · POP 01) — campo etapaVenda, fase="venda" */
+const SALES_STAGES = [
+  { id:"lead",        nome:"Lead",         sw:"var(--lead)",   sum:"Novo contato" },
+  { id:"qualificado", nome:"Qualificado",  sw:"var(--blue)",   sum:"Passou no ICP" },
+  { id:"call",        nome:"Call / 1x1",   sw:"var(--diag)",   sum:"Diagnóstico agendado" },
+  { id:"proposta",    nome:"Proposta",     sw:"var(--orange)", sum:"Proposta enviada" },
+  { id:"followup",    nome:"Follow-up",    sw:"var(--escala)", sum:"Cadência D+1·3·5·7·14" },
+  { id:"ganho",       nome:"Fechado 🎉",   sw:"var(--green)",  sum:"Vira cliente (Entrega)" },
+  { id:"perdido",     nome:"Perdido",      sw:"var(--danger)", sum:"Não avançou" },
+];
+/* Funil de ENTREGA (Roadmap do Método) — campo etapa, fase="entrega" */
+const DELIVERY_STAGES = [
   { id:"diagnostico", nome:"Diagnóstico", sw:"var(--diag)",   sum:"Análise do cenário" },
   { id:"cultura",     nome:"Cultura",     sw:"var(--green)",  sum:"Base que sustenta" },
   { id:"gestao",      nome:"Gestão",      sw:"var(--gray)",   sum:"Sai do improviso" },
@@ -559,7 +590,24 @@ const STAGES = [
   { id:"escala",      nome:"Escala",      sw:"var(--escala)", sum:"Acompanhamento contínuo" },
   { id:"encerrado",   nome:"Encerrado",   sw:"var(--enc)",    sum:"Consultoria concluída" },
 ];
-const STATUS = ["Em proposta","Ativo","Pausado","Encerrado"];
+const STAGES = DELIVERY_STAGES;                       // compat: board de entrega + select de etapa
+const ALL_STAGES = [...SALES_STAGES, ...DELIVERY_STAGES];
+const STATUS = ["Lead","Em proposta","Ativo","Pausado","Encerrado","Perdido"];
+
+/* Meta de negócio (Notion → Indicadores): R$100k/mês de MRR */
+const META_MRR = 100000;
+/* Funil reverso — metas mensais e taxas de conversão (Notion) */
+const FUNNEL_TARGETS = { qualificados:20, calls:6, propostas:3, fechamentos:2 };
+const FUNNEL_CONV = { leadCall:0.30, callProposta:0.60, propostaFech:0.40 };
+const TICKET_MEDIO = 15000;
+/* Qualificação ICP (POP 01 — avança pro 1x1 se ≥4 dos 5) */
+const ICP_CRITERIA = [
+  "Time com 5+ pessoas",
+  "Faturamento R$ 30k+/mês (sweet spot R$ 200k–2M)",
+  "Dor real e prioritária (não queixa solta)",
+  "É o decisor (sócio principal / dono)",
+  "Disposição de investir 4 dígitos/mês",
+];
 const PLANS = {
   "":      { nome:"— sem plano —", valor:0,     cor:"var(--enc)" },
   plano1:  { nome:"Plano 1 — Estruturação",          valor:8000,  cor:"var(--blue)" },
@@ -647,6 +695,7 @@ const Store = {
       if(error) throw error;
       this.cache = (data||[]).map(rowToObj);
     }
+    this.cache = this.cache.map(normalizeCompany);
     return this.cache;
   },
   async save(obj){
@@ -689,10 +738,11 @@ function objToRow(o,userId){
   return {
     id:o.id, user_id:userId, nome:o.nome, setor:o.setor, cidade:o.cidade, decisor:o.decisor,
     faturamento:o.faturamento, etapa:o.etapa, status:o.status, plano:o.plano,
+    fase:o.fase||"entrega", etapa_venda:o.etapaVenda||null, data_proposta:o.dataProposta||null,
     sessoes_realizadas:Number(o.sessoes||0), data_inicio:o.inicio||null, data_fim:o.fim||null,
     proxima_sessao:o.proxima||null, whatsapp:o.whatsapp, drive:o.drive, dor:o.dor,
     prioridades:o.prioridades, notas:o.notas, atas:o.atas||[], deliverables:o.deliverables||{},
-    onboarding:o.onboarding||{},
+    onboarding:o.onboarding||{}, qualificacao:o.qualificacao||{},
     created_at:o.createdAt||new Date().toISOString(), updated_at:o.updatedAt||new Date().toISOString()
   };
 }
@@ -700,9 +750,10 @@ function rowToObj(r){
   return {
     id:r.id, nome:r.nome, setor:r.setor, cidade:r.cidade, decisor:r.decisor, faturamento:r.faturamento,
     etapa:r.etapa, status:r.status, plano:r.plano, sessoes:r.sessoes_realizadas, inicio:r.data_inicio,
+    fase:r.fase||"entrega", etapaVenda:r.etapa_venda||"lead", dataProposta:r.data_proposta||"",
     fim:r.data_fim, proxima:r.proxima_sessao, whatsapp:r.whatsapp, drive:r.drive, dor:r.dor,
     prioridades:r.prioridades, notas:r.notas, atas:r.atas||[], deliverables:r.deliverables||{},
-    onboarding:r.onboarding||{},
+    onboarding:r.onboarding||{}, qualificacao:r.qualificacao||{},
     createdAt:r.created_at, updatedAt:r.updated_at
   };
 }
@@ -735,8 +786,8 @@ function matchFilter(c){
 }
 function renderBoard(){
   const board=$("#board"); board.innerHTML="";
-  const data=Store.cache.filter(matchFilter);
-  STAGES.forEach(st=>{
+  const data=Store.cache.filter(c=>c.fase==="entrega" && matchFilter(c));
+  DELIVERY_STAGES.forEach(st=>{
     const items=data.filter(c=>c.etapa===st.id);
     const col=document.createElement("div");
     col.className="col";
@@ -760,10 +811,8 @@ function renderBoard(){
       const c=Store.cache.find(x=>x.id===id);
       if(c && c.etapa!==st.id){
         c.etapa=st.id;
-        // auto-status sync
-        if(st.id==="proposta") c.status="Em proposta";
-        else if(st.id==="encerrado") c.status="Encerrado";
-        else if(["diagnostico","cultura","gestao","lideranca","comercial","escala"].includes(st.id) && c.status==="Em proposta") c.status="Ativo";
+        if(st.id==="encerrado") c.status="Encerrado";
+        else if(!["Ativo","Pausado"].includes(c.status)) c.status="Ativo";
         await Store.save(c); renderActive();
         toast(`${c.nome} → ${st.nome}`,"ok");
       }
@@ -807,6 +856,155 @@ function cardEl(c){
 }
 
 /* =========================================================================
+   RENDER — Vendas (funil comercial · POP 01)
+   ========================================================================= */
+function plval(c){ return (PLANS[c.plano||""]||PLANS[""]).valor; }
+function icpScore(c){
+  const crit=(c.qualificacao&&c.qualificacao.crit)||[];
+  const done=crit.filter(Boolean).length;
+  return { done, total:ICP_CRITERIA.length, fit: done>=4 };
+}
+function nextFollowupTouch(since){
+  for(const d of [1,3,5,7,14]){ if(since<d) return `próx. toque D+${d}`; }
+  return "encerrar cadência";
+}
+function renderSales(){
+  const board=$("#salesBoard"); board.innerHTML="";
+  const data=Store.cache.filter(c=>c.fase==="venda" && matchFilter(c));
+  SALES_STAGES.forEach(st=>{
+    const items=data.filter(c=>c.etapaVenda===st.id);
+    const col=document.createElement("div"); col.className="col";
+    col.innerHTML=`
+      <div class="col-head">
+        <span class="swatch" style="background:${st.sw}"></span>
+        <span class="ttl">${st.nome}</span>
+        <span class="cnt">${items.length}</span>
+        <span class="sum">${st.sum}</span>
+      </div>
+      <div class="col-body" data-stage="${st.id}"></div>`;
+    const body=col.querySelector(".col-body");
+    items.forEach(c=>body.appendChild(salesCardEl(c)));
+    if(!items.length) body.innerHTML=`<div class="empty">${st.id==="ganho"?"Solte aqui = fechou 🎉":st.id==="perdido"?"—":"Arraste um lead aqui"}</div>`;
+    body.addEventListener("dragover",e=>{e.preventDefault();body.classList.add("drag-over");});
+    body.addEventListener("dragleave",()=>body.classList.remove("drag-over"));
+    body.addEventListener("drop",async e=>{
+      e.preventDefault();body.classList.remove("drag-over");
+      const id=e.dataTransfer.getData("text/plain");
+      const c=Store.cache.find(x=>x.id===id);
+      if(!c || c.etapaVenda===st.id) return;
+      if(st.id==="ganho"){
+        c.fase="entrega"; c.etapa="diagnostico"; c.status="Ativo"; c.etapaVenda="ganho";
+        if(!c.inicio) c.inicio=todayISO();
+        await Store.save(c); renderActive();
+        toast(`🎉 ${c.nome} fechou! Movido para Entrega → Diagnóstico`,"ok"); return;
+      }
+      c.etapaVenda=st.id;
+      if(st.id==="proposta"||st.id==="followup"){ if(!c.dataProposta) c.dataProposta=todayISO(); c.status="Em proposta"; }
+      else if(st.id==="perdido"){ c.status="Perdido"; }
+      else c.status="Lead";
+      await Store.save(c); renderActive();
+      toast(`${c.nome} → ${st.nome}`,"ok");
+    });
+    board.appendChild(col);
+  });
+}
+function salesCardEl(c){
+  const el=document.createElement("div"); el.className="tcard"; el.draggable=true; el.dataset.id=c.id;
+  const st=SALES_STAGES.find(s=>s.id===c.etapaVenda)||SALES_STAGES[0];
+  el.style.borderLeftColor=st.sw;
+  const icp=icpScore(c);
+  const plan=PLANS[c.plano||(c.qualificacao&&c.qualificacao.planoSugerido)||""]||PLANS[""];
+  let fu="";
+  if((c.etapaVenda==="proposta"||c.etapaVenda==="followup") && c.dataProposta){
+    const since=-(daysUntil(c.dataProposta)||0);
+    let cls="next"; if(since>=7) cls="next late"; else if(since>=1) cls="next soon";
+    fu=`<div class="${cls}">📨 Proposta há ${since}d · ${nextFollowupTouch(since)}</div>`;
+  } else if(c.etapaVenda==="call"){
+    fu=`<div class="next">📞 Call / 1x1 de diagnóstico</div>`;
+  }
+  el.innerHTML=`
+    <div class="nome">${esc(c.nome)||"(sem nome)"}</div>
+    <div class="meta">
+      ${c.setor?`<span>🏭 ${esc(c.setor)}</span>`:""}
+      ${c.decisor?`<span>👤 ${esc(c.decisor)}</span>`:""}
+    </div>
+    <div class="tags">
+      ${plan.valor?`<span class="plan" style="background:${plan.cor}22;color:${plan.cor}">${plan.nome.split(" — ")[0]} · ${brl(plan.valor)}</span>`:""}
+      <span class="plan" style="background:${icp.fit?'var(--green)':'var(--enc)'}22;color:${icp.fit?'var(--green)':'var(--muted)'}">ICP ${icp.done}/${icp.total}${icp.fit?' ✓':''}</span>
+    </div>
+    ${fu}`;
+  el.addEventListener("dragstart",e=>{e.dataTransfer.setData("text/plain",c.id);el.classList.add("dragging");});
+  el.addEventListener("dragend",()=>el.classList.remove("dragging"));
+  el.addEventListener("click",()=>openModal(c));
+  return el;
+}
+
+/* =========================================================================
+   RENDER — Metas (MRR rumo aos R$100k + funil reverso)
+   ========================================================================= */
+function renderMetas(){
+  const data=Store.cache;
+  const ativos=data.filter(c=>c.status==="Ativo");
+  const mrr=ativos.reduce((s,c)=>s+plval(c),0);
+  const pct=Math.min(100,Math.round(mrr/META_MRR*100));
+  const gap=Math.max(0,META_MRR-mrr);
+  const faltam=Math.ceil(gap/TICKET_MEDIO);
+  const venda=data.filter(c=>c.fase==="venda" && c.etapaVenda!=="perdido");
+  const cnt=ids=>venda.filter(c=>ids.includes(c.etapaVenda)).length;
+  const nQual=cnt(["qualificado","call","proposta","followup"]);
+  const nCall=cnt(["call","proposta","followup"]);
+  const nProp=cnt(["proposta","followup"]);
+  const mes=todayISO().slice(0,7);
+  const nFech=data.filter(c=>c.status==="Ativo" && (c.inicio||"").slice(0,7)===mes).length;
+  const row=(lbl,val,meta,cor)=>{
+    const p=Math.min(100,Math.round(val/Math.max(1,meta)*100));
+    return `<div class="bar-row"><span class="name">${lbl}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${p}%;background:${cor}"></div></div>
+      <span class="num" style="width:auto">${val}/${meta}</span></div>`;
+  };
+  $("#metas").innerHTML=`
+    <div class="card" style="margin-bottom:14px">
+      <h3>🎯 Receita recorrente (MRR) rumo aos ${brl(META_MRR)}/mês</h3>
+      <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+        <span style="font-size:32px;font-weight:800;letter-spacing:-.5px">${brl(mrr)}</span>
+        <span style="color:var(--muted)">de ${brl(META_MRR)} · ${pct}%</span>
+      </div>
+      <div class="bar-track" style="height:14px"><div class="bar-fill" style="width:${pct}%;background:linear-gradient(90deg,var(--brand),#f0a85b)"></div></div>
+      <div style="margin-top:12px;color:var(--muted);font-size:13.5px">
+        Faltam <b style="color:var(--txt)">${brl(gap)}</b> → cerca de <b style="color:var(--txt)">${faltam} cliente(s) no Plano 2</b> (ticket ${brl(TICKET_MEDIO)}). Alvo: setembro/2026.
+      </div>
+    </div>
+    <div class="kpis" style="margin-bottom:14px">
+      ${kpi("Clientes ativos", ativos.length, "Contratos pagantes", "var(--green)")}
+      ${kpi("Fechados no mês", nFech, "Novos contratos (mês atual)", "var(--brand)")}
+      ${kpi("Em negociação", venda.length, "No funil de vendas", "var(--blue)")}
+      ${kpi("Ticket médio alvo", brl(TICKET_MEDIO), "Plano 2 (âncora)", "var(--diag)")}
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <h3>📉 Funil do mês vs meta</h3>
+        ${row("Qualificados", nQual, FUNNEL_TARGETS.qualificados, "var(--blue)")}
+        ${row("Calls / 1x1", nCall, FUNNEL_TARGETS.calls, "var(--diag)")}
+        ${row("Propostas", nProp, FUNNEL_TARGETS.propostas, "var(--orange)")}
+        ${row("Fechamentos", nFech, FUNNEL_TARGETS.fechamentos, "var(--green)")}
+        <div style="margin-top:12px;font-size:12px;color:var(--muted2);line-height:1.6">
+          Conversões alvo: lead→call ${Math.round(FUNNEL_CONV.leadCall*100)}% · call→proposta ${Math.round(FUNNEL_CONV.callProposta*100)}% · proposta→fechamento ${Math.round(FUNNEL_CONV.propostaFech*100)}%
+        </div>
+      </div>
+      <div class="card">
+        <h3>🧮 O que o funil precisa gerar</h3>
+        <div style="font-size:13.5px;color:var(--muted);line-height:2">
+          Para <b style="color:var(--txt)">${faltam||1}</b> fechamento(s) no Plano 2:<br>
+          • <b style="color:var(--txt)">${Math.ceil((faltam||1)/FUNNEL_CONV.propostaFech)}</b> propostas enviadas<br>
+          • <b style="color:var(--txt)">${Math.ceil((faltam||1)/FUNNEL_CONV.propostaFech/FUNNEL_CONV.callProposta)}</b> calls de diagnóstico<br>
+          • <b style="color:var(--txt)">${Math.ceil((faltam||1)/FUNNEL_CONV.propostaFech/FUNNEL_CONV.callProposta/FUNNEL_CONV.leadCall)}</b> leads qualificados
+        </div>
+        <div style="margin-top:14px;font-size:12px;color:var(--muted2);font-style:italic">"Não foi sorte. Foi estrutura."</div>
+      </div>
+    </div>`;
+}
+
+/* =========================================================================
    RENDER — Dashboard
    ========================================================================= */
 function renderDash(){
@@ -825,10 +1023,11 @@ function renderDash(){
     ${kpi("Progresso médio", avgProg+"%", "Entregáveis do Método", "var(--escala)")}
   `;
 
-  // by stage
-  const maxS=Math.max(1,...STAGES.map(s=>data.filter(c=>c.etapa===s.id).length));
-  $("#byStage").innerHTML=STAGES.map(s=>{
-    const n=data.filter(c=>c.etapa===s.id).length;
+  // by stage (só entrega)
+  const ent=data.filter(c=>c.fase==="entrega");
+  const maxS=Math.max(1,...DELIVERY_STAGES.map(s=>ent.filter(c=>c.etapa===s.id).length));
+  $("#byStage").innerHTML=DELIVERY_STAGES.map(s=>{
+    const n=ent.filter(c=>c.etapa===s.id).length;
     return `<div class="bar-row"><span class="name">${s.nome}</span>
       <div class="bar-track"><div class="bar-fill" style="width:${n/maxS*100}%;background:${s.sw}"></div></div>
       <span class="num">${n}</span></div>`;
@@ -866,13 +1065,14 @@ function openModal(c){
   $("#f_drive").value=editing.drive||""; $("#f_dor").value=editing.dor||"";
   $("#f_prioridades").value=editing.prioridades||""; $("#f_notas").value=editing.notas||"";
 
-  $("#f_etapa").innerHTML=STAGES.map(s=>`<option value="${s.id}">${s.nome}</option>`).join("");
-  $("#f_etapa").value=editing.etapa;
+  $("#f_fase").value=editing.fase||"entrega";
+  fillEtapaOptions();
   $("#f_status").innerHTML=STATUS.map(s=>`<option>${s}</option>`).join("");
-  $("#f_status").value=editing.status||"Em proposta";
+  $("#f_status").value=editing.status||"Lead";
   $("#f_plano").innerHTML=Object.entries(PLANS).map(([k,p])=>`<option value="${k}">${p.nome}${p.valor?` — ${brl(p.valor)}/mês`:""}</option>`).join("");
   $("#f_plano").value=editing.plano||"";
 
+  renderQualificacao();
   renderOnboarding();
   renderDeliverables();
   renderAtas();
@@ -880,12 +1080,69 @@ function openModal(c){
   $("#overlay").classList.add("open");
   $("#f_nome").focus();
 }
+function fillEtapaOptions(){
+  const fase=$("#f_fase").value;
+  const stages = fase==="venda"?SALES_STAGES:DELIVERY_STAGES;
+  $("#f_etapa").innerHTML=stages.map(s=>`<option value="${s.id}">${s.nome}</option>`).join("");
+  $("#f_etapa").value = fase==="venda" ? (editing.etapaVenda||"lead") : (editing.etapa||"diagnostico");
+}
+function renderQualificacao(){
+  const q = editing.qualificacao || (editing.qualificacao=emptyQualificacao());
+  if(!Array.isArray(q.crit) || q.crit.length!==ICP_CRITERIA.length) q.crit=new Array(ICP_CRITERIA.length).fill(false);
+  const sc=icpScore(editing);
+  const verdict=s=>`${s.done}/${s.total} ${s.fit?'· Fit ✓':'· rever fit'}`;
+  $("#qualBox").innerHTML=`
+    <div class="accord" id="qualAccord">
+      <div class="accord-head">
+        <span class="sw" style="background:${sc.fit?'var(--green)':'var(--lead)'}"></span>
+        <span class="nm">Critérios do cliente ideal (POP 01)</span>
+        <span class="mini" id="qualVerdict">${verdict(sc)}</span>
+        <span class="chev">▸</span>
+      </div>
+      <div class="accord-body">
+        <div id="qualSteps"></div>
+        <div class="formgrid" style="margin-top:10px">
+          <div class="field"><label>Plano sugerido</label>
+            <select id="q_plano">${Object.entries(PLANS).map(([k,p])=>`<option value="${k}" ${q.planoSugerido===k?'selected':''}>${p.nome}</option>`).join("")}</select></div>
+          <div class="field"><label>Motivo / observação</label><input id="q_motivo" value="${esc(q.motivo||'')}" placeholder="origem do lead, dor principal…" /></div>
+        </div>
+        <div style="font-size:11.5px;color:var(--muted2);margin-top:8px;line-height:1.6">Avança pro 1x1 se marcar ≥4 dos 5. Regra de ouro: entre dois planos, indique o de baixo — Plano 2 é a âncora.</div>
+      </div>
+    </div>`;
+  const acc=$("#qualAccord");
+  acc.querySelector(".accord-head").addEventListener("click",e=>{ if(e.target.tagName!=="INPUT") acc.classList.toggle("open"); });
+  const steps=$("#qualSteps");
+  steps.innerHTML=ICP_CRITERIA.map((it,i)=>`<label class="chk ${q.crit[i]?'done':''}"><input type="checkbox" data-q="${i}" ${q.crit[i]?'checked':''}/><span>${esc(it)}</span></label>`).join("");
+  steps.querySelectorAll("input[type=checkbox]").forEach(cb=>cb.addEventListener("change",()=>{
+    q.crit[+cb.dataset.q]=cb.checked; cb.closest(".chk").classList.toggle("done",cb.checked);
+    $("#qualVerdict").textContent=verdict(icpScore(editing));
+  }));
+}
+function collectQualificacao(){
+  const q=editing.qualificacao||(editing.qualificacao=emptyQualificacao());
+  const ps=$("#q_plano"); if(ps) q.planoSugerido=ps.value;
+  const mo=$("#q_motivo"); if(mo) q.motivo=mo.value.trim();
+}
 function newCompany(){
   const d={}; PILLARS.forEach(p=>d[p.key]=new Array(p.items.length).fill(false));
-  return { id:uid(), nome:"", setor:"", cidade:"", decisor:"", faturamento:"", etapa:"lead",
-    status:"Em proposta", plano:"", sessoes:"", inicio:"", fim:"", proxima:"", whatsapp:"", drive:"",
+  return { id:uid(), nome:"", setor:"", cidade:"", decisor:"", faturamento:"",
+    fase:"venda", etapaVenda:"lead", etapa:"diagnostico", dataProposta:"",
+    status:"Lead", plano:"", sessoes:"", inicio:"", fim:"", proxima:"", whatsapp:"", drive:"",
     dor:"", prioridades:"", notas:"", atas:[], deliverables:d, onboarding:emptyOnboarding(),
-    createdAt:new Date().toISOString() };
+    qualificacao:emptyQualificacao(), createdAt:new Date().toISOString() };
+}
+function emptyQualificacao(){ return { crit:new Array(ICP_CRITERIA.length).fill(false), planoSugerido:"", motivo:"" }; }
+function normalizeCompany(c){
+  if(!c.fase){
+    if(c.etapa==="lead"){ c.fase="venda"; c.etapaVenda="lead"; c.etapa="diagnostico"; }
+    else if(c.etapa==="proposta"){ c.fase="venda"; c.etapaVenda="proposta"; c.etapa="diagnostico"; }
+    else c.fase="entrega";
+  }
+  if(!c.etapaVenda) c.etapaVenda="lead";
+  if(c.dataProposta==null) c.dataProposta="";
+  if(!c.qualificacao || !Array.isArray(c.qualificacao.crit)) c.qualificacao=emptyQualificacao();
+  if(c.qualificacao.crit.length!==ICP_CRITERIA.length) c.qualificacao.crit=new Array(ICP_CRITERIA.length).fill(false);
+  return c;
 }
 function renderDeliverables(){
   const box=$("#deliverables"); box.innerHTML="";
@@ -1091,11 +1348,18 @@ function collectForm(){
   editing.nome=$("#f_nome").value.trim(); editing.setor=$("#f_setor").value.trim();
   editing.cidade=$("#f_cidade").value.trim(); editing.decisor=$("#f_decisor").value.trim();
   editing.faturamento=$("#f_faturamento").value.trim(); editing.sessoes=$("#f_sessoes").value;
-  editing.etapa=$("#f_etapa").value; editing.status=$("#f_status").value; editing.plano=$("#f_plano").value;
+  editing.fase=$("#f_fase").value; editing.status=$("#f_status").value; editing.plano=$("#f_plano").value;
+  if(editing.fase==="venda"){
+    editing.etapaVenda=$("#f_etapa").value;
+    if(editing.etapaVenda==="ganho"){ // fechou pela ficha → vira cliente em entrega
+      editing.fase="entrega"; editing.etapa="diagnostico"; editing.status="Ativo"; if(!editing.inicio) editing.inicio=todayISO();
+    }
+  } else editing.etapa=$("#f_etapa").value;
   editing.inicio=$("#f_inicio").value; editing.fim=$("#f_fim").value; editing.proxima=$("#f_proxima").value;
   editing.whatsapp=$("#f_whatsapp").value.trim(); editing.drive=$("#f_drive").value.trim();
   editing.dor=$("#f_dor").value.trim(); editing.prioridades=$("#f_prioridades").value.trim();
   editing.notas=$("#f_notas").value.trim();
+  collectQualificacao();
   collectOnboarding();
 }
 function closeModal(){ $("#overlay").classList.remove("open"); editing=null; }
@@ -1134,8 +1398,8 @@ $("#btnDelete").addEventListener("click",async()=>{
 $("#searchInput").addEventListener("input",e=>{ filter=e.target.value.trim().toLowerCase(); renderActive(); });
 
 /* ---------- Sidebar navigation ---------- */
-let activeView="board";
-const VIEWS=["board","list","agenda","dash","metodo"];
+let activeView="sales";
+const VIEWS=["sales","metas","board","list","agenda","dash","metodo"];
 function setView(v){
   activeView=v;
   $$(".modlink").forEach(x=>x.classList.toggle("active",x.dataset.view===v));
@@ -1146,7 +1410,9 @@ function setView(v){
   closeSidebar();
 }
 function renderActive(){
-  if(activeView==="board") renderBoard();
+  if(activeView==="sales") renderSales();
+  else if(activeView==="metas") renderMetas();
+  else if(activeView==="board") renderBoard();
   else if(activeView==="list") renderList();
   else if(activeView==="agenda") renderAgenda();
   else if(activeView==="dash") renderDash();
@@ -1154,6 +1420,7 @@ function renderActive(){
   refreshBadges();
 }
 $$(".modlink").forEach(t=>t.addEventListener("click",()=>setView(t.dataset.view)));
+$("#f_fase").addEventListener("change",()=>{ if(editing) fillEtapaOptions(); });
 
 /* ---------- Mobile sidebar toggle ---------- */
 function openSidebar(){ $("#sidebar").classList.add("open"); $("#backdrop").classList.add("show"); }
@@ -1162,22 +1429,30 @@ $("#btnMenu").addEventListener("click",openSidebar);
 $("#backdrop").addEventListener("click",closeSidebar);
 
 function refreshBadges(){
-  $("#badgeBoard").textContent=Store.cache.length;
+  const sales=Store.cache.filter(c=>c.fase==="venda" && c.etapaVenda!=="perdido").length;
+  const entrega=Store.cache.filter(c=>c.fase==="entrega").length;
+  if($("#badgeSales")) $("#badgeSales").textContent=sales;
+  if($("#badgeBoard")) $("#badgeBoard").textContent=entrega;
   const pend=Store.cache.filter(c=>c.proxima && c.status!=="Encerrado").length;
-  $("#badgeAgenda").textContent=pend;
+  if($("#badgeAgenda")) $("#badgeAgenda").textContent=pend;
 }
 
 /* =========================================================================
    RENDER — Clientes (tabela)
    ========================================================================= */
-function stageInfo(id){ return STAGES.find(s=>s.id===id)||STAGES[0]; }
+function stageInfo(id){ return ALL_STAGES.find(s=>s.id===id)||DELIVERY_STAGES[0]; }
+function currentStage(c){
+  return c.fase==="venda"
+    ? (SALES_STAGES.find(s=>s.id===c.etapaVenda)||SALES_STAGES[0])
+    : (DELIVERY_STAGES.find(s=>s.id===c.etapa)||DELIVERY_STAGES[0]);
+}
 function renderList(){
   const data=Store.cache.filter(matchFilter)
     .sort((a,b)=>(a.nome||"").localeCompare(b.nome||"","pt-BR"));
   const body=$("#listBody");
   if(!data.length){ body.innerHTML=`<tr><td colspan="7"><div class="empty" style="margin:8px">Nenhum cliente encontrado</div></td></tr>`; return; }
   body.innerHTML=data.map(c=>{
-    const pg=progressOf(c), plan=PLANS[c.plano||""]||PLANS[""], st=stageInfo(c.etapa);
+    const pg=progressOf(c), plan=PLANS[c.plano||""]||PLANS[""], st=currentStage(c);
     const d=daysUntil(c.proxima);
     let prox = c.proxima?fmtDate(c.proxima):"—";
     if(c.proxima && d!=null){ if(d<0) prox=`<span style="color:var(--danger)">⚠ ${prox}</span>`; else if(d<=3) prox=`<span style="color:#ffce7a">${prox}</span>`; }
@@ -1222,7 +1497,7 @@ function agendaItem(c,cls){
   const [y,m,dd]=c.proxima.split("-");
   const d=daysUntil(c.proxima);
   let when = d===0?"Hoje":d===1?"Amanhã":d<0?`${Math.abs(d)}d atrás`:`em ${d}d`;
-  const st=stageInfo(c.etapa);
+  const st=currentStage(c);
   return `<div class="agenda-item ${cls}" data-id="${c.id}">
     <div class="agenda-date"><div class="dd">${dd}</div><div class="mm">${MESES[+m-1]}</div></div>
     <div class="agenda-main"><div class="an">${esc(c.nome)||"(sem nome)"}</div>

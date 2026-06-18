@@ -26,8 +26,11 @@ create table if not exists public.mr_companies (
   faturamento         text,                                   -- Faturamento médio (texto livre)
 
   -- Funil + contrato
-  etapa               text not null default 'lead',           -- coluna do Kanban
-  status              text default 'Em proposta',             -- Em proposta | Ativo | Pausado | Encerrado
+  fase                text default 'entrega',                 -- 'venda' (funil comercial) | 'entrega' (Método)
+  etapa_venda         text,                                   -- coluna do funil de vendas: lead|qualificado|call|proposta|followup|ganho|perdido
+  etapa               text not null default 'diagnostico',    -- coluna do funil de entrega (Roadmap)
+  data_proposta       date,                                   -- quando a proposta foi enviada (cadência de follow-up)
+  status              text default 'Lead',                    -- Lead | Em proposta | Ativo | Pausado | Encerrado | Perdido
   plano               text,                                   -- '' | plano1 | plano2 | plano3
   sessoes_realizadas  integer default 0,
 
@@ -48,6 +51,7 @@ create table if not exists public.mr_companies (
   atas                jsonb default '[]'::jsonb,              -- [{data, texto}]
   deliverables        jsonb default '{}'::jsonb,              -- {diagnostico:[bool], cultura:[...], ...}
   onboarding          jsonb default '{}'::jsonb,              -- dados cadastrais + checklist pós-fechamento (POP 02)
+  qualificacao        jsonb default '{}'::jsonb,              -- ICP (POP 01): {crit:[bool], planoSugerido, motivo}
 
   created_at          timestamptz default now(),
   updated_at          timestamptz default now()
