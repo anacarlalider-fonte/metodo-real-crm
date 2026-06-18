@@ -494,6 +494,7 @@
         <div class="field"><label>Etapa</label><select id="f_etapa"></select></div>
         <div class="field"><label>Status</label><select id="f_status"></select></div>
         <div class="field"><label>Plano</label><select id="f_plano"></select></div>
+        <div class="field"><label>Valor mensal (R$)</label><input id="f_valor" type="number" min="0" step="100" placeholder="negociado — ex.: 8000" /></div>
         <div class="field"><label>Sessões realizadas</label><input id="f_sessoes" type="number" min="0" placeholder="0" /></div>
 
         <div class="field"><label>Data de início</label><input id="f_inicio" type="date" /></div>
@@ -739,6 +740,7 @@ function objToRow(o,userId){
     id:o.id, user_id:userId, nome:o.nome, setor:o.setor, cidade:o.cidade, decisor:o.decisor,
     faturamento:o.faturamento, etapa:o.etapa, status:o.status, plano:o.plano,
     fase:o.fase||"entrega", etapa_venda:o.etapaVenda||null, data_proposta:o.dataProposta||null,
+    valor_mensal:o.valorMensal!==""&&o.valorMensal!=null?Number(o.valorMensal):null,
     sessoes_realizadas:Number(o.sessoes||0), data_inicio:o.inicio||null, data_fim:o.fim||null,
     proxima_sessao:o.proxima||null, whatsapp:o.whatsapp, drive:o.drive, dor:o.dor,
     prioridades:o.prioridades, notas:o.notas, atas:o.atas||[], deliverables:o.deliverables||{},
@@ -751,6 +753,7 @@ function rowToObj(r){
     id:r.id, nome:r.nome, setor:r.setor, cidade:r.cidade, decisor:r.decisor, faturamento:r.faturamento,
     etapa:r.etapa, status:r.status, plano:r.plano, sessoes:r.sessoes_realizadas, inicio:r.data_inicio,
     fase:r.fase||"entrega", etapaVenda:r.etapa_venda||"lead", dataProposta:r.data_proposta||"",
+    valorMensal:r.valor_mensal!=null?r.valor_mensal:"",
     fim:r.data_fim, proxima:r.proxima_sessao, whatsapp:r.whatsapp, drive:r.drive, dor:r.dor,
     prioridades:r.prioridades, notas:r.notas, atas:r.atas||[], deliverables:r.deliverables||{},
     onboarding:r.onboarding||{}, qualificacao:r.qualificacao||{},
@@ -858,7 +861,7 @@ function cardEl(c){
 /* =========================================================================
    RENDER — Vendas (funil comercial · POP 01)
    ========================================================================= */
-function plval(c){ return (PLANS[c.plano||""]||PLANS[""]).valor; }
+function plval(c){ const v=Number(c.valorMensal); return v>0?v:(PLANS[c.plano||""]||PLANS[""]).valor; }
 function icpScore(c){
   const crit=(c.qualificacao&&c.qualificacao.crit)||[];
   const done=crit.filter(Boolean).length;
@@ -1011,8 +1014,8 @@ function renderDash(){
   const data=Store.cache;
   const ativos=data.filter(c=>c.status==="Ativo");
   const emProposta=data.filter(c=>c.status==="Em proposta");
-  const mrr=ativos.reduce((s,c)=>s+((PLANS[c.plano||""]||PLANS[""]).valor),0);
-  const pipeline=emProposta.reduce((s,c)=>s+((PLANS[c.plano||""]||PLANS[""]).valor),0);
+  const mrr=ativos.reduce((s,c)=>s+plval(c),0);
+  const pipeline=emProposta.reduce((s,c)=>s+plval(c),0);
   const avgProg = data.length? Math.round(data.reduce((s,c)=>s+progressOf(c).pct,0)/data.length):0;
 
   $("#kpis").innerHTML=`
@@ -1071,6 +1074,7 @@ function openModal(c){
   $("#f_status").value=editing.status||"Lead";
   $("#f_plano").innerHTML=Object.entries(PLANS).map(([k,p])=>`<option value="${k}">${p.nome}${p.valor?` — ${brl(p.valor)}/mês`:""}</option>`).join("");
   $("#f_plano").value=editing.plano||"";
+  $("#f_valor").value=editing.valorMensal||"";
 
   renderQualificacao();
   renderOnboarding();
@@ -1127,7 +1131,7 @@ function newCompany(){
   const d={}; PILLARS.forEach(p=>d[p.key]=new Array(p.items.length).fill(false));
   return { id:uid(), nome:"", setor:"", cidade:"", decisor:"", faturamento:"",
     fase:"venda", etapaVenda:"lead", etapa:"diagnostico", dataProposta:"",
-    status:"Lead", plano:"", sessoes:"", inicio:"", fim:"", proxima:"", whatsapp:"", drive:"",
+    status:"Lead", plano:"", valorMensal:"", sessoes:"", inicio:"", fim:"", proxima:"", whatsapp:"", drive:"",
     dor:"", prioridades:"", notas:"", atas:[], deliverables:d, onboarding:emptyOnboarding(),
     qualificacao:emptyQualificacao(), createdAt:new Date().toISOString() };
 }
@@ -1348,6 +1352,7 @@ function collectForm(){
   editing.nome=$("#f_nome").value.trim(); editing.setor=$("#f_setor").value.trim();
   editing.cidade=$("#f_cidade").value.trim(); editing.decisor=$("#f_decisor").value.trim();
   editing.faturamento=$("#f_faturamento").value.trim(); editing.sessoes=$("#f_sessoes").value;
+  editing.valorMensal=$("#f_valor").value;
   editing.fase=$("#f_fase").value; editing.status=$("#f_status").value; editing.plano=$("#f_plano").value;
   if(editing.fase==="venda"){
     editing.etapaVenda=$("#f_etapa").value;

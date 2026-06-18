@@ -32,6 +32,7 @@ create table if not exists public.mr_companies (
   data_proposta       date,                                   -- quando a proposta foi enviada (cadência de follow-up)
   status              text default 'Lead',                    -- Lead | Em proposta | Ativo | Pausado | Encerrado | Perdido
   plano               text,                                   -- '' | plano1 | plano2 | plano3
+  valor_mensal        numeric,                                -- valor negociado real (sobrepõe o preço de tabela do plano)
   sessoes_realizadas  integer default 0,
 
   data_inicio         date,
