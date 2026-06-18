@@ -53,5 +53,61 @@ Na ficha de cada cliente:
 - Depois de publicado e logado, clique em **↑ Importar** e selecione esse `.json` — os clientes sobem pra sua conta na nuvem.
 
 ---
-**Arquivos:** `index.html` (o sistema), `schema.sql` (banco), `README.md` (este guia).
+
+## 🎙 Integração com o Tactiq (atas automáticas das reuniões)
+
+Quando o **Tactiq** termina de transcrever uma reunião, a ata entra **sozinha** na ficha do
+cliente certo — o sistema descobre qual cliente é pelo **e-mail de quem participou da call**.
+
+### Como o sistema sabe de qual cliente é a reunião
+Na ficha de cada empresa existe o bloco **🎙 Contatos para vincular reuniões (Tactiq)**.
+Cadastre ali até **5 pessoas** (nome + e-mail) com quem você fala naquela empresa. Quando o
+Tactiq mandar a reunião, o sistema:
+- pega os e-mails dos participantes,
+- ignora o **seu** e-mail (você sempre está na call),
+- e procura uma empresa que tenha algum desses e-mails nos contatos.
+
+➡️ **Bateu em 1 empresa:** a ata cai direto na ficha dela (com selo *🎙 Tactiq*, resumo e próximos passos).
+➡️ **Não bateu, ou bateu em mais de uma:** a ata vai pra **Caixa de entrada** (aviso no topo do app).
+Clique em **Revisar**, escolha o cliente e clique **Vincular**. Nada se perde.
+
+> Dica: pra o vínculo automático funcionar, o e-mail que a pessoa usa na reunião (Google
+> Meet / Zoom) precisa ser o **mesmo** cadastrado no contato.
+
+### Ligar o Tactiq → CRM (uma vez, ~5 min, sem código)
+Feito pelo **Zapier** (plano grátis dá conta de poucas reuniões/mês).
+
+1. No Zapier, **Create Zap**.
+2. **Gatilho (Trigger):** app **Tactiq** → evento **“Meeting Transcript Is Ready”**. Conecte sua conta Tactiq.
+   - *Para vir resumo e próximos passos, sua conta Tactiq precisa ter o resumo com IA ativo.*
+3. **Ação (Action):** app **Webhooks by Zapier** → evento **POST**.
+4. Configure a ação assim:
+   - **URL:**
+     ```
+     https://vkuixvooivsqwmjymunk.functions.supabase.co/tactiq-webhook?token=d62fc71384da0e1aa76bdf107fce16b45612eb1370c1be7a
+     ```
+   - **Payload Type:** `json`
+   - **Data** (cada linha é um campo → escolha o valor vindo do Tactiq):
+     | Campo (esquerda) | Valor (direita — do Tactiq) |
+     |---|---|
+     | `title`        | título da reunião |
+     | `date`         | data da reunião |
+     | `attendees`    | **e-mails dos participantes** ← o mais importante |
+     | `summary`      | resumo (AI summary) |
+     | `action_items` | action items / pontos de ação |
+     | `transcript`   | transcrição completa |
+   - **Wrap Request In Array:** No · **Unflatten:** Yes · **Headers:** deixe em branco.
+5. **Test** → deve responder `"ok": true`. Pronto, publique o Zap (**Publish**).
+
+A partir daí, toda reunião transcrita pelo Tactiq aparece no CRM. No app, o botão **↻ Sincronizar**
+(no topo) puxa as atas que chegaram desde que você abriu a página.
+
+### Segredo do webhook
+O `?token=...` na URL é a senha que protege o webhook — só o seu Zapier conhece. Se algum dia
+quiser trocá-lo, crie o secret **`TACTIQ_WEBHOOK_SECRET`** nas *Edge Functions* do Supabase com o
+novo valor e atualize a URL no Zapier. (A Edge Function fica em `supabase/functions/tactiq-webhook/`.)
+
+---
+**Arquivos:** `index.html` (o sistema), `schema.sql` (banco), `README.md` (este guia),
+`supabase/functions/tactiq-webhook/` (recebe as reuniões do Tactiq).
 A chave `anon` é pública por natureza — a segurança real está nas regras (RLS) que o `schema.sql` cria. Pode publicá-la sem medo.

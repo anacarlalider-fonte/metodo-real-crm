@@ -175,6 +175,16 @@
   .ata .d{font-size:11px;color:var(--brand);font-weight:700;margin-bottom:3px}
   .ata .del{position:absolute;top:8px;right:8px;background:none;border:none;color:var(--muted2);font-size:14px}
   .ata .del:hover{color:var(--danger)}
+  .ata-tactiq{border-color:var(--brand)}
+  .tag-tactiq{display:inline-block;background:var(--brand);color:#fff;font-size:10px;font-weight:800;padding:1px 7px;border-radius:999px;letter-spacing:.3px;vertical-align:middle}
+  .inbox-banner{display:flex;align-items:center;gap:12px;background:#3a2a08;border:1px solid var(--brand);color:#ffe9c2;border-radius:10px;padding:10px 14px;margin:14px 20px 0;font-size:13px}
+  .inbox-banner .grow{flex:1}
+  .inbox-item{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px}
+  .inbox-item .d{font-size:12px;color:var(--brand);font-weight:700;margin-bottom:4px}
+  .inbox-meta{font-size:12px;color:var(--muted2);margin-bottom:6px}
+  .inbox-resumo{font-size:13px;color:var(--txt);background:var(--bg);border-radius:7px;padding:8px 10px;margin-bottom:8px}
+  .inbox-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .inbox-actions select{flex:1;min-width:160px;padding:8px 10px;background:var(--bg);border:1px solid var(--line2);border-radius:8px;color:var(--txt)}
 
   .modal-foot{display:flex;align-items:center;gap:10px;padding:16px 22px;border-top:1px solid var(--line);position:sticky;bottom:0;background:var(--panel)}
   .modal-foot .grow{flex:1}
@@ -330,6 +340,13 @@
   .partrow .delp:hover{color:var(--danger)}
   .parthead{font-size:11px;color:var(--muted2);font-weight:700}
   @media(max-width:620px){.partrow{grid-template-columns:1fr 1fr}}
+  .contatos-hint{font-size:12px;color:var(--muted);line-height:1.5;margin:-4px 0 12px}
+  .ctrow{display:grid;grid-template-columns:1fr 1.4fr 30px;gap:7px;margin-bottom:7px;align-items:center}
+  .ctrow input{padding:9px 11px;font-size:13px;background:var(--bg);border:1px solid var(--line2);border-radius:8px;color:var(--txt);outline:none}
+  .ctrow input:focus{border-color:var(--brand)}
+  .ctrow .delc{background:none;border:none;color:var(--muted2);font-size:15px;cursor:pointer;justify-self:center}
+  .ctrow .delc:hover{color:var(--danger)}
+  @media(max-width:620px){.ctrow{grid-template-columns:1fr 1fr 26px}}
 
   @media print{
     body>*{visibility:hidden}
@@ -414,11 +431,18 @@
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
       <input id="searchInput" placeholder="Buscar cliente, setor, decisor…" />
     </div>
+    <button class="btn ghost sm" id="btnSync" title="Buscar atas novas do Tactiq e atualizar">↻ Sincronizar</button>
     <button class="btn ghost sm" id="btnBackup" title="Baixar backup .json">↓ Backup</button>
     <button class="btn ghost sm" id="btnImport" title="Importar backup .json">↑ Importar</button>
     <input type="file" id="fileImport" accept="application/json" class="hidden" />
     <button class="btn primary" id="btnNew">+ Novo lead</button>
    </header>
+
+   <div id="inboxBanner" class="inbox-banner hidden">
+     <span>🎙 <b id="inboxCount">0</b> transcrição(ões) do Tactiq aguardando vínculo a um cliente.</span>
+     <div class="grow"></div>
+     <button class="btn sm" id="btnOpenInbox">Revisar</button>
+   </div>
 
    <!-- ===== VENDAS (FUNIL COMERCIAL) VIEW ===== -->
    <div id="view-sales" class="wrap">
@@ -518,6 +542,11 @@
         <div class="field full"><label>3 prioridades acordadas</label><textarea id="f_prioridades" placeholder="1. …&#10;2. …&#10;3. …"></textarea></div>
       </div>
 
+      <div class="sec-title">🎙 Contatos para vincular reuniões (Tactiq)</div>
+      <div class="contatos-hint">Cadastre até <b>5 pessoas</b> com quem você fala nesta empresa (nome + e-mail). Quando o Tactiq transcrever uma reunião, o CRM identifica a empresa pelo e-mail de quem participou e anexa a ata aqui automaticamente.</div>
+      <div id="contatosBox"></div>
+      <button class="btn sm ghost" id="btnAddContato" type="button" style="margin-top:8px">+ Adicionar contato</button>
+
       <div class="sec-title">🎯 Qualificação (ICP)</div>
       <div id="qualBox"></div>
 
@@ -544,6 +573,20 @@
       <div class="grow"></div>
       <button class="btn ghost" id="btnCancel">Cancelar</button>
       <button class="btn primary" id="btnSave">Salvar cliente</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CAIXA DE ENTRADA TACTIQ ============ -->
+<div id="inboxOverlay" class="overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>🎙 Caixa de entrada — Tactiq</h2>
+      <button class="iconbtn" id="inboxClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:14px">Reuniões transcritas que o sistema não conseguiu vincular sozinho (nenhum cliente com esse e-mail, ou e-mail batendo em mais de um). Escolha o cliente e clique <b>Vincular</b>.</div>
+      <div id="inboxList"></div>
     </div>
   </div>
 </div>
@@ -674,12 +717,19 @@ function toast(msg,kind){const t=$("#toast");t.textContent=msg;t.className="toas
 function fmtDate(d){ if(!d) return ""; const [y,m,dd]=d.split("-"); return `${dd}/${m}/${y.slice(2)}`; }
 function todayISO(){ return new Date().toISOString().slice(0,10); }
 function daysUntil(d){ if(!d) return null; return Math.ceil((new Date(d+"T00:00")-new Date(todayISO()+"T00:00"))/86400000); }
+function composeTactiqTexto(it){
+  const parts=[];
+  if(it.resumo) parts.push("📋 Resumo (Tactiq):\n"+it.resumo);
+  if(it.acoes)  parts.push("✅ Próximos passos:\n"+it.acoes);
+  if(it.texto)  parts.push("🎙 Transcrição:\n"+it.texto);
+  return parts.join("\n\n———\n\n");
+}
 
 /* =========================================================================
    STORE — abstrai demo (localStorage) e nuvem (Supabase)
    ========================================================================= */
 const Store = {
-  mode:"demo", sb:null, user:null, cache:[], LS:"mr_crm_companies",
+  mode:"demo", sb:null, user:null, cache:[], inbox:[], LS:"mr_crm_companies",
 
   async init(){
     if(SUPABASE_URL && SUPABASE_ANON_KEY){
@@ -709,6 +759,33 @@ const Store = {
     }
     this.cache = this.cache.map(normalizeCompany);
     return this.cache;
+  },
+  /* --- caixa de entrada do Tactiq (só nuvem) --- */
+  async loadInbox(){
+    this.inbox=[];
+    if(this.mode!=="cloud" || !this.user) return this.inbox;
+    const { data, error } = await this.sb.from("mr_tactiq_inbox")
+      .select("*").eq("resolvido",false).order("created_at",{ascending:false});
+    if(error) throw error;
+    this.inbox = data||[];
+    return this.inbox;
+  },
+  async resolveInbox(id){
+    const { error } = await this.sb.from("mr_tactiq_inbox").update({resolvido:true}).eq("id",id);
+    if(error) throw error;
+    await this.loadInbox();
+  },
+  async assignInbox(item, companyId){
+    const c=this.cache.find(x=>x.id===companyId);
+    if(!c) throw new Error("cliente não encontrado");
+    c.atas=c.atas||[];
+    c.atas.unshift({
+      data:item.data||todayISO(), titulo:item.titulo||"Reunião",
+      texto:composeTactiqTexto(item), resumo:item.resumo||"", acoes:item.acoes||"",
+      emails:item.emails||[], fonte:"tactiq", criado:new Date().toISOString()
+    });
+    await this.save(c);
+    await this.resolveInbox(item.id);
   },
   async save(obj){
     obj.updatedAt = new Date().toISOString();
@@ -755,7 +832,7 @@ function objToRow(o,userId){
     sessoes_realizadas:Number(o.sessoes||0), data_inicio:o.inicio||null, data_fim:o.fim||null,
     proxima_sessao:o.proxima||null, whatsapp:o.whatsapp, drive:o.drive, dor:o.dor,
     prioridades:o.prioridades, notas:o.notas, atas:o.atas||[], deliverables:o.deliverables||{},
-    onboarding:o.onboarding||{}, qualificacao:o.qualificacao||{},
+    onboarding:o.onboarding||{}, qualificacao:o.qualificacao||{}, contatos:o.contatos||[],
     created_at:o.createdAt||new Date().toISOString(), updated_at:o.updatedAt||new Date().toISOString()
   };
 }
@@ -767,7 +844,7 @@ function rowToObj(r){
     valorMensal:r.valor_mensal!=null?r.valor_mensal:"",
     fim:r.data_fim, proxima:r.proxima_sessao, whatsapp:r.whatsapp, drive:r.drive, dor:r.dor,
     prioridades:r.prioridades, notas:r.notas, atas:r.atas||[], deliverables:r.deliverables||{},
-    onboarding:r.onboarding||{}, qualificacao:r.qualificacao||{},
+    onboarding:r.onboarding||{}, qualificacao:r.qualificacao||{}, contatos:r.contatos||[],
     createdAt:r.created_at, updatedAt:r.updated_at
   };
 }
@@ -1085,6 +1162,7 @@ function openModal(c){
   $("#f_valor").value=editing.valorMensal||"";
 
   renderQualificacao();
+  renderContatos();
   renderOnboarding();
   renderDeliverables();
   renderAtas();
@@ -1141,7 +1219,7 @@ function newCompany(){
     fase:"venda", etapaVenda:"lead", etapa:"diagnostico", dataProposta:"",
     status:"Lead", plano:"", valorMensal:"", sessoes:"", inicio:"", fim:"", proxima:"", whatsapp:"", drive:"",
     dor:"", prioridades:"", notas:"", atas:[], deliverables:d, onboarding:emptyOnboarding(),
-    qualificacao:emptyQualificacao(), createdAt:new Date().toISOString() };
+    qualificacao:emptyQualificacao(), contatos:[], createdAt:new Date().toISOString() };
 }
 function emptyQualificacao(){ return { crit:new Array(ICP_CRITERIA.length).fill(false), planoSugerido:"", motivo:"" }; }
 function normalizeCompany(c){
@@ -1198,9 +1276,15 @@ function renderDeliverables(){
 function renderAtas(){
   const box=$("#atasList");
   if(!editing.atas||!editing.atas.length){ box.innerHTML=`<div class="empty">Nenhuma ata registrada ainda</div>`; return; }
-  box.innerHTML=editing.atas.map((a,i)=>`
-    <div class="ata"><div class="d">${fmtDate(a.data)||"Sem data"}</div>${esc(a.texto)}
-      <button class="del" data-i="${i}" title="Remover">✕</button></div>`).join("");
+  box.innerHTML=editing.atas.map((a,i)=>{
+    const tactiq=a.fonte==="tactiq";
+    const badge=tactiq?` <span class="tag-tactiq">🎙 Tactiq</span>`:"";
+    const title=a.titulo?` · ${esc(a.titulo)}`:"";
+    const texto=esc(a.texto).replace(/\n/g,"<br>");
+    return `<div class="ata${tactiq?' ata-tactiq':''}">
+      <div class="d">${fmtDate(a.data)||"Sem data"}${badge}${title}</div>${texto}
+      <button class="del" data-i="${i}" title="Remover">✕</button></div>`;
+  }).join("");
   box.querySelectorAll(".del").forEach(b=>b.addEventListener("click",()=>{
     editing.atas.splice(+b.dataset.i,1); renderAtas();
   }));
@@ -1358,6 +1442,37 @@ function collectOnboarding(){
   o.participantes=parts;
 }
 
+/* Contatos para vínculo de reuniões (Tactiq) — até 5 (nome + e-mail) */
+const MAX_CONTATOS=5;
+function contatoRow(c){
+  const row=document.createElement("div"); row.className="ctrow";
+  row.innerHTML=`
+    <input class="c-nome" placeholder="Nome do contato" value="${esc(c.nome||"")}" />
+    <input class="c-email" type="email" placeholder="email@empresa.com" value="${esc(c.email||"")}" />
+    <button class="delc" type="button" title="Remover">✕</button>`;
+  row.querySelector(".delc").addEventListener("click",()=>{ row.remove(); updateAddContatoBtn(); });
+  return row;
+}
+function updateAddContatoBtn(){
+  const btn=$("#btnAddContato");
+  if(btn) btn.style.display = $$("#contatosBox .ctrow").length>=MAX_CONTATOS ? "none" : "";
+}
+function renderContatos(){
+  const box=$("#contatosBox"); box.innerHTML="";
+  const list=(editing.contatos&&editing.contatos.length)?editing.contatos:[{}];
+  list.slice(0,MAX_CONTATOS).forEach(c=>box.appendChild(contatoRow(c)));
+  updateAddContatoBtn();
+}
+function collectContatos(){
+  const arr=[];
+  $$("#contatosBox .ctrow").forEach(r=>{
+    const nome=r.querySelector(".c-nome").value.trim(),
+      email=r.querySelector(".c-email").value.trim().toLowerCase();
+    if(nome||email) arr.push({nome,email});
+  });
+  editing.contatos=arr.slice(0,MAX_CONTATOS);
+}
+
 function collectForm(){
   editing.nome=$("#f_nome").value.trim(); editing.setor=$("#f_setor").value.trim();
   editing.cidade=$("#f_cidade").value.trim(); editing.decisor=$("#f_decisor").value.trim();
@@ -1376,6 +1491,7 @@ function collectForm(){
   editing.notas=$("#f_notas").value.trim();
   collectQualificacao();
   collectOnboarding();
+  collectContatos();
 }
 function closeModal(){ $("#overlay").classList.remove("open"); editing=null; }
 
@@ -1389,7 +1505,14 @@ $("#overlay").addEventListener("click",e=>{ if(e.target===$("#overlay")) closeMo
 document.addEventListener("keydown",e=>{
   if(e.key!=="Escape") return;
   if($("#reportOverlay").classList.contains("open")) closeReport();
+  else if($("#inboxOverlay").classList.contains("open")) closeInbox();
   else if($("#overlay").classList.contains("open")) closeModal();
+});
+
+$("#btnAddContato").addEventListener("click",()=>{
+  if($$("#contatosBox .ctrow").length>=MAX_CONTATOS){ toast(`Máximo de ${MAX_CONTATOS} contatos`,"err"); return; }
+  $("#contatosBox").appendChild(contatoRow({}));
+  updateAddContatoBtn();
 });
 
 $("#btnAddAta").addEventListener("click",()=>{
@@ -1759,6 +1882,60 @@ $("#btnPrintReport").addEventListener("click",()=>window.print());
 /* =========================================================================
    BOOT
    ========================================================================= */
+/* =========================================================================
+   CAIXA DE ENTRADA TACTIQ
+   ========================================================================= */
+function renderInboxBanner(){
+  const n=(Store.inbox||[]).length;
+  const b=$("#inboxBanner"); if(!b) return;
+  b.classList.toggle("hidden", n===0);
+  const cnt=$("#inboxCount"); if(cnt) cnt.textContent=n;
+}
+function openInbox(){ renderInboxList(); $("#inboxOverlay").classList.add("open"); }
+function closeInbox(){ $("#inboxOverlay").classList.remove("open"); }
+function renderInboxList(){
+  const box=$("#inboxList"); const items=Store.inbox||[];
+  if(!items.length){ box.innerHTML=`<div class="empty">Nada pendente. Tudo vinculado. 🎉</div>`; return; }
+  const opts=Store.cache.map(c=>`<option value="${c.id}">${esc(c.nome)}</option>`).join("");
+  box.innerHTML=items.map(it=>{
+    const motivo=it.motivo==="multiplos_matches"
+      ? "Vários clientes têm esse e-mail cadastrado"
+      : "Nenhum cliente cadastrado com esse e-mail";
+    const emails=(it.emails||[]).join(", ");
+    return `<div class="inbox-item" data-id="${it.id}">
+      <div class="d">${fmtDate(it.data)||"Sem data"} · ${esc(it.titulo||"Reunião")}</div>
+      <div class="inbox-meta">${esc(motivo)}${emails?` — ${esc(emails)}`:""}</div>
+      ${it.resumo?`<div class="inbox-resumo">${esc(it.resumo)}</div>`:""}
+      <div class="inbox-actions">
+        <select class="inbox-sel">${opts}</select>
+        <button class="btn sm primary inbox-link" data-id="${it.id}">Vincular</button>
+        <button class="btn sm ghost inbox-drop" data-id="${it.id}">Descartar</button>
+      </div></div>`;
+  }).join("");
+  box.querySelectorAll(".inbox-link").forEach(btn=>btn.addEventListener("click",async()=>{
+    const item=items.find(x=>x.id===btn.dataset.id);
+    const cid=btn.closest(".inbox-item").querySelector(".inbox-sel").value;
+    try{ await Store.assignInbox(item,cid); toast("Ata vinculada ao cliente","ok"); renderInboxList(); renderInboxBanner(); renderActive(); }
+    catch(e){ toast("Erro ao vincular: "+(e.message||e),"err"); }
+  }));
+  box.querySelectorAll(".inbox-drop").forEach(btn=>btn.addEventListener("click",async()=>{
+    if(!confirm("Descartar esta transcrição? Ela some da caixa de entrada.")) return;
+    try{ await Store.resolveInbox(btn.dataset.id); toast("Descartada","ok"); renderInboxList(); renderInboxBanner(); }
+    catch(e){ toast("Erro: "+(e.message||e),"err"); }
+  }));
+}
+$("#btnOpenInbox").addEventListener("click",openInbox);
+$("#inboxClose").addEventListener("click",closeInbox);
+$("#inboxOverlay").addEventListener("click",e=>{ if(e.target===$("#inboxOverlay")) closeInbox(); });
+$("#btnSync").addEventListener("click",async()=>{
+  if(!Store.isCloud()){ toast("Sincronização disponível no modo nuvem","err"); return; }
+  try{
+    await Store.list(); await Store.loadInbox();
+    renderActive(); renderInboxBanner();
+    toast("Atualizado","ok");
+  }catch(e){ toast("Erro ao sincronizar: "+(e.message||e),"err"); }
+});
+
 async function boot(){
   if(Store.isCloud()){
     $("#modePill").className="modepill cloud"; $("#modePill").textContent="● Nuvem (Supabase)";
@@ -1769,7 +1946,9 @@ async function boot(){
   }
   showApp();
   try{ await Store.list(); }catch(e){ toast("Erro ao carregar dados: "+(e.message||e),"err"); }
+  try{ await Store.loadInbox(); }catch(e){ /* tabela pode não existir ainda */ }
   renderActive();
+  renderInboxBanner();
 }
 
 (async function(){
