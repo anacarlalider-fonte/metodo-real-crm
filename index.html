@@ -417,7 +417,7 @@
     <button class="btn ghost sm" id="btnBackup" title="Baixar backup .json">↓ Backup</button>
     <button class="btn ghost sm" id="btnImport" title="Importar backup .json">↑ Importar</button>
     <input type="file" id="fileImport" accept="application/json" class="hidden" />
-    <button class="btn primary" id="btnNew">+ Novo cliente</button>
+    <button class="btn primary" id="btnNew">+ Novo lead</button>
    </header>
 
    <!-- ===== VENDAS (FUNIL COMERCIAL) VIEW ===== -->
@@ -1065,7 +1065,7 @@ function kpi(lbl,val,sub,color){
 function openModal(c){
   editing = c ? JSON.parse(JSON.stringify(c)) : newCompany();
   const isNew = !c;
-  $("#modalTitle").textContent = isNew ? "Novo cliente" : editing.nome || "Editar cliente";
+  $("#modalTitle").textContent = isNew ? "Novo lead" : editing.nome || "Editar registro";
   $("#btnDelete").classList.toggle("hidden", isNew);
 
   $("#f_nome").value=editing.nome||""; $("#f_setor").value=editing.setor||"";
@@ -1462,10 +1462,10 @@ function currentStage(c){
     : (DELIVERY_STAGES.find(s=>s.id===c.etapa)||DELIVERY_STAGES[0]);
 }
 function renderList(){
-  const data=Store.cache.filter(matchFilter)
+  const data=Store.cache.filter(c=>c.fase==="entrega" && matchFilter(c))
     .sort((a,b)=>(a.nome||"").localeCompare(b.nome||"","pt-BR"));
   const body=$("#listBody");
-  if(!data.length){ body.innerHTML=`<tr><td colspan="7"><div class="empty" style="margin:8px">Nenhum cliente encontrado</div></td></tr>`; return; }
+  if(!data.length){ body.innerHTML=`<tr><td colspan="7"><div class="empty" style="margin:8px">Nenhum cliente ainda. Os leads em negociação ficam no funil de <b>Vendas</b> — viram clientes quando fecham.</div></td></tr>`; return; }
   body.innerHTML=data.map(c=>{
     const pg=progressOf(c), plan=PLANS[c.plano||""]||PLANS[""], st=currentStage(c);
     const d=daysUntil(c.proxima);
