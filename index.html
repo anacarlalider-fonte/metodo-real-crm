@@ -1215,7 +1215,7 @@ const ONB_STEPS=[
 function emptyOnboarding(){
   return { razaoSocial:"",nomeFantasia:"",cnpj:"",inscricao:"",endereco:"",telComercial:"",emailComercial:"",siteInsta:"",
     respNome:"",respCpf:"",respDoc:"",respCargo:"",respEmail:"",respWhats:"",
-    formaPgto:"",periodicidade:"",pgtoDetalhe:"", logoUrl:"",cores:"",formsLink:"",
+    formaPgto:"",periodicidade:"",vencimento:"",pgtoDetalhe:"", logoUrl:"",cores:"",formsLink:"",
     participantes:[], steps:new Array(ONB_STEPS.length).fill(false) };
 }
 function ensureOnboarding(c){
@@ -1267,7 +1267,9 @@ function renderOnboarding(){
             <select id="onb_formaPgto">${["","PIX","Boleto","Cartão"].map(v=>`<option ${o.formaPgto===v?"selected":""}>${v||"—"}</option>`).join("")}</select></div>
           <div class="field"><label>Periodicidade</label>
             <select id="onb_periodicidade">${["","Mensal","À vista","Parcelado"].map(v=>`<option ${o.periodicidade===v?"selected":""}>${v||"—"}</option>`).join("")}</select></div>
-          <div class="field full"><label>Detalhe (chave PIX / dia venc. / link cobrança)</label>
+          <div class="field"><label>Dia de vencimento</label>
+            <input id="onb_vencimento" value="${esc(o.vencimento||"")}" placeholder="ex.: dia 10" /></div>
+          <div class="field"><label>Chave PIX / link de cobrança</label>
             <input id="onb_pgtoDetalhe" value="${esc(o.pgtoDetalhe||"")}" /></div>
         </div>
 
@@ -1337,7 +1339,7 @@ function partRow(p){
 function collectOnboarding(){
   const o=ensureOnboarding(editing);
   [...ONB_FIELDS_EMPRESA,...ONB_FIELDS_RESP].forEach(f=>{ const el=$("#onb_"+f.k); if(el) o[f.k]=el.value.trim(); });
-  ["formaPgto","periodicidade","pgtoDetalhe","logoUrl","cores","formsLink"].forEach(k=>{ const el=$("#onb_"+k); if(el) o[k]=(el.value||"").trim(); });
+  ["formaPgto","periodicidade","vencimento","pgtoDetalhe","logoUrl","cores","formsLink"].forEach(k=>{ const el=$("#onb_"+k); if(el) o[k]=(el.value||"").trim(); });
   if(o.formaPgto==="—") o.formaPgto=""; if(o.periodicidade==="—") o.periodicidade="";
   const parts=[];
   $$("#partList .partrow").forEach(r=>{
