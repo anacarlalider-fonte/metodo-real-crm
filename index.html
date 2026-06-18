@@ -247,6 +247,17 @@
   .minibar i{display:block;height:100%;background:linear-gradient(90deg,var(--brand),#f0a85b)}
   .stagechip,.statuschip{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
 
+  /* ---------- Matriz de Entrega ---------- */
+  .mtxtable th{white-space:nowrap;text-align:center}
+  .mtxtable th:first-child{text-align:left}
+  .mtxtable td{vertical-align:middle}
+  .mtx{display:flex;align-items:center;gap:7px;min-width:84px}
+  .mtx-bar{flex:1;height:7px;background:var(--bg);border-radius:999px;overflow:hidden;min-width:44px}
+  .mtx-bar i{display:block;height:100%;border-radius:999px}
+  .mtx-n{font-size:11px;color:var(--muted2);white-space:nowrap;width:32px;text-align:right;flex:none}
+  .mtx-n.full{color:var(--green);font-weight:800}
+  .mtx-zero{color:var(--line2);font-size:13px;display:block;text-align:center}
+
   /* ---------- Agenda ---------- */
   .agenda-group{margin-bottom:24px}
   .agenda-group .gh{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;margin-bottom:11px;color:var(--muted)}
@@ -787,41 +798,38 @@ function matchFilter(c){
   const hay=`${c.nome} ${c.setor} ${c.decisor} ${c.cidade}`.toLowerCase();
   return hay.includes(filter);
 }
+function pillarHead(p){ const t=p.nome.split(" "); return t[0]+" "+(t[1]||""); }
 function renderBoard(){
-  const board=$("#board"); board.innerHTML="";
-  const data=Store.cache.filter(c=>c.fase==="entrega" && matchFilter(c));
-  DELIVERY_STAGES.forEach(st=>{
-    const items=data.filter(c=>c.etapa===st.id);
-    const col=document.createElement("div");
-    col.className="col";
-    col.innerHTML=`
-      <div class="col-head">
-        <span class="swatch" style="background:${st.sw}"></span>
-        <span class="ttl">${st.nome}</span>
-        <span class="cnt">${items.length}</span>
-        <span class="sum">${st.sum}</span>
-      </div>
-      <div class="col-body" data-stage="${st.id}"></div>`;
-    const body=col.querySelector(".col-body");
-    items.forEach(c=>body.appendChild(cardEl(c)));
-    if(!items.length) body.innerHTML=`<div class="empty">Arraste um cliente aqui</div>`;
-    // drag targets
-    body.addEventListener("dragover",e=>{e.preventDefault();body.classList.add("drag-over");});
-    body.addEventListener("dragleave",()=>body.classList.remove("drag-over"));
-    body.addEventListener("drop",async e=>{
-      e.preventDefault();body.classList.remove("drag-over");
-      const id=e.dataTransfer.getData("text/plain");
-      const c=Store.cache.find(x=>x.id===id);
-      if(c && c.etapa!==st.id){
-        c.etapa=st.id;
-        if(st.id==="encerrado") c.status="Encerrado";
-        else if(!["Ativo","Pausado"].includes(c.status)) c.status="Ativo";
-        await Store.save(c); renderActive();
-        toast(`${c.nome} → ${st.nome}`,"ok");
-      }
-    });
-    board.appendChild(col);
-  });
+  const board=$("#board"); board.className="wrapfull";
+  const data=Store.cache.filter(c=>c.fase==="entrega" && matchFilter(c))
+    .sort((a,b)=>progressOf(b).pct-progressOf(a).pct || (a.nome||"").localeCompare(b.nome||"","pt-BR"));
+  if(!data.length){
+    board.innerHTML=`<div class="empty" style="margin-top:10px">Nenhum cliente em entrega. Feche um negócio no funil de Vendas (solte o card em "Fechado 🎉").</div>`;
+    return;
+  }
+  const cell=(c,p)=>{
+    const pg=pillarProgress(c,p.key);
+    const done=pg.pct===100;
+    return `<td>${pg.done?`<div class="mtx"><span class="mtx-bar"><i style="width:${pg.pct}%;background:${p.cor}"></i></span><span class="mtx-n ${done?'full':''}">${done?'✓':pg.done+'/'+pg.total}</span></div>`:`<span class="mtx-zero">—</span>`}</td>`;
+  };
+  board.innerHTML=`
+    <div class="card tablecard"><div class="tablewrap">
+      <table class="dtable mtxtable">
+        <thead><tr><th>Cliente</th>${PILLARS.map(p=>`<th>${pillarHead(p)}</th>`).join("")}<th>Geral</th></tr></thead>
+        <tbody>${data.map(c=>{
+          const g=progressOf(c);
+          return `<tr data-id="${c.id}">
+            <td><div class="cname">${esc(c.nome)||"(sem nome)"}</div><div class="csub">${esc(c.setor||"")}${c.status&&c.status!=="Ativo"?" · "+esc(c.status):""}</div></td>
+            ${PILLARS.map(p=>cell(c,p)).join("")}
+            <td><div class="mtx"><span class="mtx-bar"><i style="width:${g.pct}%;background:linear-gradient(90deg,var(--brand),#f0a85b)"></i></span><span class="mtx-n">${g.pct}%</span></div></td>
+          </tr>`;
+        }).join("")}</tbody>
+      </table>
+    </div></div>
+    <div style="font-size:12px;color:var(--muted2);margin-top:10px">Clique numa empresa pra abrir a ficha e marcar os entregáveis (em qualquer pilar, em paralelo). Ordenado por % geral.</div>`;
+  board.querySelectorAll("tr[data-id]").forEach(tr=>tr.addEventListener("click",()=>{
+    const c=Store.cache.find(x=>x.id===tr.dataset.id); if(c) openModal(c);
+  }));
 }
 function cardEl(c){
   const el=document.createElement("div");
