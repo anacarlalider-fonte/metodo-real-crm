@@ -212,6 +212,8 @@
   .inbox-resumo{font-size:13px;color:var(--txt);background:var(--bg);border-radius:7px;padding:8px 10px;margin-bottom:8px}
   .inbox-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .inbox-actions select{flex:1;min-width:160px;padding:8px 10px;background:var(--bg);border:1px solid var(--line2);border-radius:8px;color:var(--txt)}
+  .hoje-cols{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+  @media(max-width:820px){.hoje-cols{grid-template-columns:1fr}}
   .hcard{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:6px 14px;margin-bottom:6px}
   .hrow{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
   .hrow:last-child{border-bottom:none}
@@ -1088,7 +1090,7 @@ function cardEl(c){
 /* =========================================================================
    RENDER — Vendas (funil comercial · POP 01)
    ========================================================================= */
-function plval(c){ const v=Number(c.valorMensal); return v>0?v:(PLANS[c.plano||""]||PLANS[""]).valor; }
+function plval(c){ const v=Number(c.valorMensal); return v>0?v:0; }
 function icpScore(c){
   const crit=(c.qualificacao&&c.qualificacao.crit)||[];
   const done=crit.filter(Boolean).length;
@@ -1159,7 +1161,7 @@ function salesCardEl(c){
       ${c.decisor?`<span>👤 ${esc(c.decisor)}</span>`:""}
     </div>
     <div class="tags">
-      ${plan.valor?`<span class="plan" style="background:${plan.cor}22;color:${plan.cor}">${plan.nome.split(" — ")[0]} · ${brl(plan.valor)}</span>`:""}
+      ${c.plano?`<span class="plan" style="background:${plan.cor}22;color:${plan.cor}">${plan.nome.split(" — ")[0]}${plval(c)>0?` · ${brl(plval(c))}`:""}</span>`:""}
       <span class="plan" style="background:${icp.fit?'var(--green)':'var(--enc)'}22;color:${icp.fit?'var(--green)':'var(--muted)'}">ICP ${icp.done}/${icp.total}${icp.fit?' ✓':''}</span>
     </div>
     ${fu}`;
@@ -1265,9 +1267,9 @@ function renderDash(){
 
   // by plan (active revenue)
   const planKeys=["plano1","plano2","plano3"];
-  const maxP=Math.max(1,...planKeys.map(k=>ativos.filter(c=>c.plano===k).reduce((s,c)=>s+PLANS[k].valor,0)));
+  const maxP=Math.max(1,...planKeys.map(k=>ativos.filter(c=>c.plano===k).reduce((s,c)=>s+plval(c),0)));
   $("#byPlan").innerHTML=planKeys.map(k=>{
-    const arr=ativos.filter(c=>c.plano===k); const val=arr.reduce((s,c)=>s+PLANS[k].valor,0);
+    const arr=ativos.filter(c=>c.plano===k); const val=arr.reduce((s,c)=>s+plval(c),0);
     return `<div class="bar-row"><span class="name">${PLANS[k].nome.split(" — ")[0]}</span>
       <div class="bar-track"><div class="bar-fill" style="width:${val/maxP*100}%;background:${PLANS[k].cor}"></div></div>
       <span class="num" style="width:auto">${arr.length}× · ${brl(val)}</span></div>`;
@@ -1886,64 +1888,68 @@ function renderHoje(){
   const cliOpts=[...Store.cache].sort((a,b)=>(a.nome||"").localeCompare(b.nome||"")).map(c=>`<option value="${c.id}">${esc(c.nome)}</option>`).join("");
   const chip=(n,l,cor)=>`<div style="background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:10px 14px"><div style="font-size:24px;font-weight:800;color:${cor||'var(--txt)'}">${n}</div><div style="font-size:12px;color:var(--muted)">${l}</div></div>`;
 
-  let html=`<div style="max-width:760px">
-    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px">
-      <div style="font-size:20px;font-weight:800">${saudacao()}, Ana 👋</div>
-      <div style="font-size:13px;color:var(--muted)">${new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"short"})}</div>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px">
-      ${chip(sessoes.filter(s=>s.dateISO===today).length,"sessões hoje","var(--brand)")}
-      ${chip(atrasadas.length,"ações atrasadas",atrasadas.length?"#ff8f8f":"var(--txt)")}
-      ${chip(abertas.length,"ações abertas","var(--txt)")}
-    </div>`;
-
-  // Sessões
-  html+=`<div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:8px">📅 Próximas sessões</div>`;
+  // ---- bloco: PRÓXIMAS SESSÕES ----
+  let sessoesHTML=`<div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:8px">📅 Próximas sessões</div>`;
   if(sessoes.length){
-    html+=`<div class="hcard">`+sessoes.map(s=>`<div class="hrow ${s.companyId?'sess-go':''}" ${s.companyId?`data-id="${s.companyId}"`:''} style="${s.companyId?'cursor:pointer':''}">
+    sessoesHTML+=`<div class="hcard">`+sessoes.map(s=>`<div class="hrow ${s.companyId?'sess-go':''}" ${s.companyId?`data-id="${s.companyId}"`:''} style="${s.companyId?'cursor:pointer':''}">
       <span style="font-size:13px;font-weight:700;color:var(--brand);width:78px">${s.dateISO===today?"hoje":fmtDiaMes(s.dateISO)}${s.hora?" · "+s.hora:""}</span>
       <span style="flex:1;font-size:14px">${esc(s.nome)}${s.google?` <span style="font-size:10px;color:var(--muted2);border:1px solid var(--line2);border-radius:5px;padding:0 5px;vertical-align:middle">Google</span>`:""}</span>
       <span style="font-size:12px;color:var(--muted2)">${s.companyId?"abrir →":""}</span></div>`).join("")+`</div>`;
-  } else html+=`<div class="empty" style="margin-bottom:16px">Nenhuma sessão futura. Ligue o Google Calendar (ou defina "Próxima sessão" na ficha).</div>`;
+  } else sessoesHTML+=`<div class="empty">Nenhuma sessão futura. Ligue o Google Calendar (ou defina "Próxima sessão" na ficha).</div>`;
 
-  // Ações
-  html+=`<div style="display:flex;align-items:center;justify-content:space-between;margin:18px 0 8px">
-      <div style="font-size:13px;font-weight:700;color:var(--muted)">✅ Ações pendentes</div></div>
+  // ---- bloco: ALERTAS (vai junto da coluna das sessões) ----
+  const alertas=[];
+  onbParado.forEach(c=>{ const o=c.onboarding||{}; const done=(o.steps||[]).filter(Boolean).length; alertas.push({c,ic:"⚠️",txt:`onboarding parado (${done} de ${ONB_STEPS.length})`,act:"retomar"}); });
+  let alertasHTML="";
+  if(alertas.length){
+    alertasHTML=`<div style="font-size:13px;font-weight:700;color:var(--muted);margin:20px 0 8px">🔔 Precisam de atenção</div>`+
+      alertas.slice(0,8).map(a=>`<div class="alert-row alert-go" data-id="${a.c.id}" style="cursor:pointer">
+        <span style="flex:1;font-size:13px">${a.ic} <b>${esc(a.c.nome)}</b> · ${a.txt}</span>
+        <span style="font-size:12px;color:var(--brand)">${a.act} →</span></div>`).join("");
+  }
+
+  // ---- bloco: AÇÕES ----
+  let acoesHTML=`<div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:8px">✅ Ações pendentes</div>
     <div class="hcard">
       <div class="acadd" style="display:flex;gap:6px;flex-wrap:wrap;padding:8px 0 12px;border-bottom:1px solid var(--line);margin-bottom:4px">
-        <input id="acDesc" placeholder="Nova ação…" style="flex:1;min-width:160px;padding:8px 10px;background:var(--bg);border:1px solid var(--line2);border-radius:8px;color:var(--txt)" />
+        <input id="acDesc" placeholder="Nova ação…" style="flex:1;min-width:140px;padding:8px 10px;background:var(--bg);border:1px solid var(--line2);border-radius:8px;color:var(--txt)" />
         <select id="acCli" style="padding:8px 10px;background:var(--bg);border:1px solid var(--line2);border-radius:8px;color:var(--txt)"><option value="">— cliente —</option>${cliOpts}</select>
         <input id="acPrazo" type="date" style="padding:8px 10px;background:var(--bg);border:1px solid var(--line2);border-radius:8px;color:var(--txt)" />
         <button class="btn sm primary" id="acAdd">Adicionar</button>
       </div>`;
-  if(!abertas.length) html+=`<div class="empty" style="margin:6px 0">Nenhuma ação pendente. 🎉</div>`;
-  html+=acaoGrupo("Atrasadas",atrasadas,"#ff8f8f");
-  html+=acaoGrupo("Para hoje",deHoje,"#ffce6e");
-  html+=acaoGrupo("Esta semana",semana);
-  html+=acaoGrupo("Sem prazo",semPrazo);
-  html+=acaoGrupo("Mais pra frente",depois);
-  if(feitasRecentes.length) html+=acaoGrupo("Concluídas recentemente",feitasRecentes,"var(--muted2)");
-  html+=`</div>`;
+  if(!abertas.length) acoesHTML+=`<div class="empty" style="margin:6px 0">Nenhuma ação pendente. 🎉</div>`;
+  acoesHTML+=acaoGrupo("Atrasadas",atrasadas,"#ff8f8f");
+  acoesHTML+=acaoGrupo("Para hoje",deHoje,"#ffce6e");
+  acoesHTML+=acaoGrupo("Esta semana",semana);
+  acoesHTML+=acaoGrupo("Sem prazo",semPrazo);
+  acoesHTML+=acaoGrupo("Mais pra frente",depois);
+  if(feitasRecentes.length) acoesHTML+=acaoGrupo("Concluídas recentemente",feitasRecentes,"var(--muted2)");
+  acoesHTML+=`</div>`;
 
-  // Alertas
-  const alertas=[];
-  onbParado.forEach(c=>{ const o=c.onboarding||{}; const done=(o.steps||[]).filter(Boolean).length; alertas.push({c,ic:"⚠️",txt:`onboarding parado (${done} de ${ONB_STEPS.length})`,act:"retomar"}); });
-  if(alertas.length){
-    html+=`<div style="font-size:13px;font-weight:700;color:var(--muted);margin:18px 0 8px">🔔 Precisam de atenção</div>`;
-    html+=alertas.slice(0,8).map(a=>`<div class="alert-row alert-go" data-id="${a.c.id}" style="cursor:pointer">
-      <span style="flex:1;font-size:13px">${a.ic} <b>${esc(a.c.nome)}</b> · ${a.txt}</span>
-      <span style="font-size:12px;color:var(--brand)">${a.act} →</span></div>`).join("");
-  }
-
-  // Ações por cliente (período)
-  html+=`<div style="display:flex;align-items:center;justify-content:space-between;margin:18px 0 8px">
+  // ---- bloco: AÇÕES POR CLIENTE (largura total) ----
+  const porClienteHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin:20px 0 8px">
       <div style="font-size:13px;font-weight:700;color:var(--muted)">📊 Ações por cliente</div>
       <select id="acPeriodo" style="padding:6px 10px;background:var(--bg);border:1px solid var(--line2);border-radius:8px;color:var(--txt);font-size:12px">
         <option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option><option value="90">Últimos 90 dias</option><option value="0">Tudo</option>
       </select></div>
     <div id="acPorCli" class="hcard"></div>`;
 
-  html+=`</div>`;
+  const html=`<div style="max-width:1000px">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px">
+      <div style="font-size:20px;font-weight:800">${saudacao()}, Ana 👋</div>
+      <div style="font-size:13px;color:var(--muted)">${new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"short"})}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;max-width:560px">
+      ${chip(sessoes.filter(s=>s.dateISO===today).length,"sessões hoje","var(--brand)")}
+      ${chip(atrasadas.length,"ações atrasadas",atrasadas.length?"#ff8f8f":"var(--txt)")}
+      ${chip(abertas.length,"ações abertas","var(--txt)")}
+    </div>
+    <div class="hoje-cols">
+      <div>${acoesHTML}</div>
+      <div>${sessoesHTML}${alertasHTML}</div>
+    </div>
+    ${porClienteHTML}
+  </div>`;
   box.innerHTML=html;
   renderAcPorCli();
   const selP=$("#acPeriodo"); if(selP) selP.addEventListener("change",renderAcPorCli);
