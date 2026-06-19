@@ -212,6 +212,12 @@
   .inbox-resumo{font-size:13px;color:var(--txt);background:var(--bg);border-radius:7px;padding:8px 10px;margin-bottom:8px}
   .inbox-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .inbox-actions select{flex:1;min-width:160px;padding:8px 10px;background:var(--bg);border:1px solid var(--line2);border-radius:8px;color:var(--txt)}
+  .hcard{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:6px 14px;margin-bottom:6px}
+  .hrow{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .hrow:last-child{border-bottom:none}
+  .acrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+  .acrow:last-child{border-bottom:none}
+  .alert-row{display:flex;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--line);border-left:3px solid #c79a3a;border-radius:0 9px 9px 0;padding:10px 12px;margin-bottom:8px}
 
   .modal-foot{display:flex;align-items:center;gap:10px;padding:16px 22px;border-top:1px solid var(--line);position:sticky;bottom:0;background:var(--panel)}
   .modal-foot .grow{flex:1}
@@ -413,7 +419,11 @@
   <aside id="sidebar" class="sidebar">
     <div class="logo"><span class="mark">R</span><div>Método Real<small>CRM · Grupo Real</small></div></div>
     <nav class="modnav">
-      <button class="modlink active" data-view="sales" data-title="Funil de vendas">
+      <button class="modlink active" data-view="hoje" data-title="Hoje">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"/></svg>
+        Hoje <span class="badge" id="badgeHoje">0</span>
+      </button>
+      <button class="modlink" data-view="sales" data-title="Funil de vendas">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         Vendas <span class="badge" id="badgeSales">0</span>
       </button>
@@ -471,8 +481,13 @@
      <button class="btn sm" id="btnOpenInbox">Revisar</button>
    </div>
 
+   <!-- ===== HOJE VIEW ===== -->
+   <div id="view-hoje" class="wrap">
+     <div id="hoje"></div>
+   </div>
+
    <!-- ===== VENDAS (FUNIL COMERCIAL) VIEW ===== -->
-   <div id="view-sales" class="wrap">
+   <div id="view-sales" class="wrap hidden">
      <div id="salesBoard" class="board"></div>
    </div>
 
@@ -786,7 +801,7 @@ function composeTactiqTexto(it){
    STORE — abstrai demo (localStorage) e nuvem (Supabase)
    ========================================================================= */
 const Store = {
-  mode:"demo", sb:null, user:null, cache:[], inbox:[], LS:"mr_crm_companies",
+  mode:"demo", sb:null, user:null, cache:[], inbox:[], acoes:[], pagamentos:[], LS:"mr_crm_companies",
 
   async init(){
     if(SUPABASE_URL && SUPABASE_ANON_KEY){
@@ -843,6 +858,62 @@ const Store = {
     });
     await this.save(c);
     await this.resolveInbox(item.id);
+  },
+  /* --- ações / tarefas (só nuvem) --- */
+  async loadAcoes(){
+    this.acoes=[];
+    if(this.mode!=="cloud" || !this.user) return this.acoes;
+    const { data, error } = await this.sb.from("mr_acoes").select("*")
+      .order("status",{ascending:true}).order("prazo",{ascending:true,nullsFirst:false}).order("created_at",{ascending:false});
+    if(error) throw error;
+    this.acoes = data||[];
+    return this.acoes;
+  },
+  async addAcao(a){
+    if(this.mode!=="cloud"||!this.user) throw new Error("disponível só no modo nuvem");
+    const row={ user_id:this.user.id, company_id:a.company_id||null, descricao:a.descricao,
+      responsavel:a.responsavel||"você", prazo:a.prazo||null, status:a.status||"aberto",
+      origem:a.origem||"manual", origem_ref:a.origem_ref||null };
+    const { data, error } = await this.sb.from("mr_acoes").insert(row).select().single();
+    if(error) throw error;
+    await this.loadAcoes(); return data;
+  },
+  async toggleAcao(id, feito){
+    const { error } = await this.sb.from("mr_acoes").update({status:feito?"feito":"aberto", done_at:feito?new Date().toISOString():null}).eq("id",id);
+    if(error) throw error; await this.loadAcoes();
+  },
+  async updateAcao(id, patch){
+    const { error } = await this.sb.from("mr_acoes").update(patch).eq("id",id);
+    if(error) throw error; await this.loadAcoes();
+  },
+  async removeAcao(id){
+    const { error } = await this.sb.from("mr_acoes").delete().eq("id",id);
+    if(error) throw error; await this.loadAcoes();
+  },
+  /* --- pagamentos / financeiro (só nuvem) --- */
+  async loadPagamentos(){
+    this.pagamentos=[];
+    if(this.mode!=="cloud" || !this.user) return this.pagamentos;
+    const { data, error } = await this.sb.from("mr_pagamentos").select("*").order("vencimento",{ascending:false});
+    if(error) throw error;
+    this.pagamentos = data||[];
+    return this.pagamentos;
+  },
+  async addPagamento(p){
+    if(this.mode!=="cloud"||!this.user) throw new Error("disponível só no modo nuvem");
+    const row={ user_id:this.user.id, company_id:p.company_id||null, competencia:p.competencia||null,
+      valor:p.valor!=null?Number(p.valor):null, vencimento:p.vencimento||null, status:p.status||"pendente",
+      pago_em:p.pago_em||null, obs:p.obs||null };
+    const { data, error } = await this.sb.from("mr_pagamentos").insert(row).select().single();
+    if(error) throw error; await this.loadPagamentos(); return data;
+  },
+  async updatePagamento(id, patch){
+    const { error } = await this.sb.from("mr_pagamentos").update(patch).eq("id",id);
+    if(error) throw error; await this.loadPagamentos();
+  },
+  async removePagamento(id){
+    const { error } = await this.sb.from("mr_pagamentos").delete().eq("id",id);
+    if(error) throw error; await this.loadPagamentos();
   },
   async save(obj){
     obj.updatedAt = new Date().toISOString();
@@ -1704,8 +1775,8 @@ $("#btnDelete").addEventListener("click",async()=>{
 $("#searchInput").addEventListener("input",e=>{ filter=e.target.value.trim().toLowerCase(); renderActive(); });
 
 /* ---------- Sidebar navigation ---------- */
-let activeView="sales";
-const VIEWS=["sales","metas","board","list","agenda","dash","metodo"];
+let activeView="hoje";
+const VIEWS=["hoje","sales","metas","board","list","agenda","dash","metodo"];
 function setView(v){
   activeView=v;
   $$(".modlink").forEach(x=>x.classList.toggle("active",x.dataset.view===v));
@@ -1715,8 +1786,130 @@ function setView(v){
   renderActive();
   closeSidebar();
 }
+/* =========================================================================
+   HOJE — agenda + ações + alertas
+   ========================================================================= */
+function coById(id){ return Store.cache.find(c=>c.id===id); }
+function coNome(id){ const c=coById(id); return c?c.nome:"—"; }
+function lastAtaDate(c){ const a=(c.atas||[]).map(x=>x.data).filter(Boolean).sort(); return a.length?a[a.length-1]:null; }
+function saudacao(){ const h=new Date().getHours(); return h<12?"Bom dia":h<18?"Boa tarde":"Boa noite"; }
+function fmtDiaMes(d){ if(!d) return ""; const [,m,dd]=d.split("-"); const M=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"]; return `${dd}/${M[+m-1]}`; }
+
+function acaoLi(a){
+  const cli = a.company_id ? coNome(a.company_id) : "";
+  const resp = a.responsavel && a.responsavel!=="você" ? a.responsavel : "você";
+  let pill="", pcls="muted";
+  if(a.status==="feito"){ pill="feito"; pcls="ok"; }
+  else if(a.prazo){ const du=daysUntil(a.prazo); if(du<0){pill=`venceu ${fmtDiaMes(a.prazo)}`;pcls="danger";} else if(du===0){pill="hoje";pcls="warn";} else {pill=fmtDiaMes(a.prazo);pcls="muted";} }
+  const pillBg = pcls==="danger"?"background:#3a1414;color:#ff8f8f" : pcls==="warn"?"background:#3a2a08;color:#ffce6e" : pcls==="ok"?"background:#0f2a1c;color:#7fe0b0" : "background:var(--panel2);color:var(--muted)";
+  const done=a.status==="feito";
+  return `<div class="acrow" data-id="${a.id}">
+    <span class="ac-check" data-id="${a.id}" style="cursor:pointer;font-size:18px;color:${done?'var(--brand)':'var(--muted2)'}">${done?"☑":"☐"}</span>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:14px;${done?'color:var(--muted2);text-decoration:line-through':''}">${esc(a.descricao)}</div>
+      <div style="font-size:12px;color:var(--muted)">${cli?esc(cli)+" · ":""}${esc(resp)}</div>
+    </div>
+    ${pill?`<span style="font-size:11px;padding:2px 8px;border-radius:7px;white-space:nowrap;${pillBg}">${pill}</span>`:""}
+    <span class="ac-del" data-id="${a.id}" title="Remover" style="cursor:pointer;color:var(--muted2);font-size:13px;margin-left:4px">✕</span>
+  </div>`;
+}
+function acaoGrupo(titulo,arr,cor){
+  if(!arr.length) return "";
+  return `<div style="font-size:12px;color:${cor||'var(--muted)'};padding:10px 0 2px">${titulo}</div>`+arr.map(acaoLi).join("");
+}
+function renderHoje(){
+  const box=$("#hoje"); if(!box) return;
+  const today=todayISO();
+  const acoes=Store.acoes||[];
+  const abertas=acoes.filter(a=>a.status!=="feito");
+  const atrasadas=abertas.filter(a=>a.prazo && a.prazo<today);
+  const deHoje=abertas.filter(a=>a.prazo===today);
+  const semana=abertas.filter(a=>a.prazo && a.prazo>today && daysUntil(a.prazo)<=7);
+  const depois=abertas.filter(a=>a.prazo && daysUntil(a.prazo)>7);
+  const semPrazo=abertas.filter(a=>!a.prazo);
+  const feitasRecentes=acoes.filter(a=>a.status==="feito").slice(0,4);
+  const sessoes=Store.cache.filter(c=>c.proxima && c.proxima>=today && c.status!=="Encerrado").sort((a,b)=>a.proxima.localeCompare(b.proxima)).slice(0,6);
+  const ativos=Store.cache.filter(c=>c.fase==="entrega" && c.status!=="Encerrado");
+  const sumidos=ativos.filter(c=>{ const fut=c.proxima && c.proxima>=today; const last=lastAtaDate(c); const dias=last?-daysUntil(last):999; return !fut && dias>=20; });
+  const onbParado=ativos.filter(c=>{ const o=c.onboarding||{}; const st=Array.isArray(o.steps)?o.steps:[]; const done=st.filter(Boolean).length; return done>0 && done<ONB_STEPS.length; });
+
+  const cliOpts=[...Store.cache].sort((a,b)=>(a.nome||"").localeCompare(b.nome||"")).map(c=>`<option value="${c.id}">${esc(c.nome)}</option>`).join("");
+  const chip=(n,l,cor)=>`<div style="background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:10px 14px"><div style="font-size:24px;font-weight:800;color:${cor||'var(--txt)'}">${n}</div><div style="font-size:12px;color:var(--muted)">${l}</div></div>`;
+
+  let html=`<div style="max-width:760px">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px">
+      <div style="font-size:20px;font-weight:800">${saudacao()}, ${esc((Store.user&&(Store.user.email||"").split("@")[0])||"Ana")} 👋</div>
+      <div style="font-size:13px;color:var(--muted)">${new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"short"})}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px">
+      ${chip(sessoes.filter(c=>c.proxima===today).length,"sessões hoje","var(--brand)")}
+      ${chip(atrasadas.length,"ações atrasadas",atrasadas.length?"#ff8f8f":"var(--txt)")}
+      ${chip(sumidos.length,"clientes sumidos",sumidos.length?"#ffce6e":"var(--txt)")}
+    </div>`;
+
+  // Sessões
+  html+=`<div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:8px">📅 Próximas sessões</div>`;
+  if(sessoes.length){
+    html+=`<div class="hcard">`+sessoes.map(c=>`<div class="hrow sess-go" data-id="${c.id}" style="cursor:pointer">
+      <span style="font-size:13px;font-weight:700;color:var(--brand);width:54px">${c.proxima===today?"hoje":fmtDiaMes(c.proxima)}</span>
+      <span style="flex:1;font-size:14px">${esc(c.nome)}</span>
+      <span style="font-size:12px;color:var(--muted2)">abrir →</span></div>`).join("")+`</div>`;
+  } else html+=`<div class="empty" style="margin-bottom:16px">Nenhuma sessão agendada. Defina a "Próxima sessão" na ficha de um cliente.</div>`;
+
+  // Ações
+  html+=`<div style="display:flex;align-items:center;justify-content:space-between;margin:18px 0 8px">
+      <div style="font-size:13px;font-weight:700;color:var(--muted)">✅ Ações pendentes</div></div>
+    <div class="hcard">
+      <div class="acadd" style="display:flex;gap:6px;flex-wrap:wrap;padding:8px 0 12px;border-bottom:1px solid var(--line);margin-bottom:4px">
+        <input id="acDesc" placeholder="Nova ação…" style="flex:1;min-width:160px;padding:8px 10px;background:var(--bg);border:1px solid var(--line2);border-radius:8px;color:var(--txt)" />
+        <select id="acCli" style="padding:8px 10px;background:var(--bg);border:1px solid var(--line2);border-radius:8px;color:var(--txt)"><option value="">— cliente —</option>${cliOpts}</select>
+        <input id="acPrazo" type="date" style="padding:8px 10px;background:var(--bg);border:1px solid var(--line2);border-radius:8px;color:var(--txt)" />
+        <button class="btn sm primary" id="acAdd">Adicionar</button>
+      </div>`;
+  if(!abertas.length) html+=`<div class="empty" style="margin:6px 0">Nenhuma ação pendente. 🎉</div>`;
+  html+=acaoGrupo("Atrasadas",atrasadas,"#ff8f8f");
+  html+=acaoGrupo("Para hoje",deHoje,"#ffce6e");
+  html+=acaoGrupo("Esta semana",semana);
+  html+=acaoGrupo("Sem prazo",semPrazo);
+  html+=acaoGrupo("Mais pra frente",depois);
+  if(feitasRecentes.length) html+=acaoGrupo("Concluídas recentemente",feitasRecentes,"var(--muted2)");
+  html+=`</div>`;
+
+  // Alertas
+  const alertas=[];
+  sumidos.forEach(c=>alertas.push({c,ic:"⏸",txt:`sem contato há mais de 20 dias`,act:"agendar"}));
+  onbParado.forEach(c=>{ const o=c.onboarding||{}; const done=(o.steps||[]).filter(Boolean).length; alertas.push({c,ic:"⚠️",txt:`onboarding parado (${done} de ${ONB_STEPS.length})`,act:"retomar"}); });
+  if(alertas.length){
+    html+=`<div style="font-size:13px;font-weight:700;color:var(--muted);margin:18px 0 8px">🔔 Precisam de atenção</div>`;
+    html+=alertas.slice(0,8).map(a=>`<div class="alert-row alert-go" data-id="${a.c.id}" style="cursor:pointer">
+      <span style="flex:1;font-size:13px">${a.ic} <b>${esc(a.c.nome)}</b> · ${a.txt}</span>
+      <span style="font-size:12px;color:var(--brand)">${a.act} →</span></div>`).join("");
+  }
+  html+=`</div>`;
+  box.innerHTML=html;
+
+  // listeners
+  box.querySelectorAll(".ac-check").forEach(el=>el.addEventListener("click",async()=>{
+    const a=Store.acoes.find(x=>x.id===el.dataset.id); if(!a) return;
+    try{ await Store.toggleAcao(a.id, a.status!=="feito"); renderHoje(); refreshBadges(); }catch(e){ toast("Erro: "+(e.message||e),"err"); }
+  }));
+  box.querySelectorAll(".ac-del").forEach(el=>el.addEventListener("click",async()=>{
+    if(!confirm("Remover esta ação?")) return;
+    try{ await Store.removeAcao(el.dataset.id); renderHoje(); refreshBadges(); }catch(e){ toast("Erro: "+(e.message||e),"err"); }
+  }));
+  const addFn=async()=>{
+    const desc=$("#acDesc").value.trim(); if(!desc){ toast("Escreva a ação","err"); return; }
+    try{ await Store.addAcao({descricao:desc, company_id:$("#acCli").value||null, prazo:$("#acPrazo").value||null}); renderHoje(); refreshBadges(); }
+    catch(e){ toast("Erro ao salvar: "+(e.message||e),"err"); }
+  };
+  $("#acAdd").addEventListener("click",addFn);
+  $("#acDesc").addEventListener("keydown",e=>{ if(e.key==="Enter") addFn(); });
+  box.querySelectorAll(".sess-go,.alert-go").forEach(el=>el.addEventListener("click",()=>{ const c=coById(el.dataset.id); if(c) openModal(c); }));
+}
+
 function renderActive(){
-  if(activeView==="sales") renderSales();
+  if(activeView==="hoje") renderHoje();
+  else if(activeView==="sales") renderSales();
   else if(activeView==="metas") renderMetas();
   else if(activeView==="board") renderBoard();
   else if(activeView==="list") renderList();
@@ -1737,6 +1930,9 @@ $("#backdrop").addEventListener("click",closeSidebar);
 function refreshBadges(){
   const sales=Store.cache.filter(c=>c.fase==="venda" && c.etapaVenda!=="perdido").length;
   const entrega=Store.cache.filter(c=>c.fase==="entrega").length;
+  const t=todayISO();
+  const pendAc=(Store.acoes||[]).filter(a=>a.status!=="feito" && a.prazo && a.prazo<=t).length;
+  if($("#badgeHoje")) $("#badgeHoje").textContent=pendAc;
   if($("#badgeSales")) $("#badgeSales").textContent=sales;
   if($("#badgeBoard")) $("#badgeBoard").textContent=entrega;
   const pend=Store.cache.filter(c=>c.proxima && c.status!=="Encerrado").length;
@@ -2098,7 +2294,7 @@ $("#inboxOverlay").addEventListener("click",e=>{ if(e.target===$("#inboxOverlay"
 $("#btnSync").addEventListener("click",async()=>{
   if(!Store.isCloud()){ toast("Sincronização disponível no modo nuvem","err"); return; }
   try{
-    await Store.list(); await Store.loadInbox();
+    await Store.list(); await Store.loadInbox(); await Store.loadAcoes(); await Store.loadPagamentos();
     renderActive(); renderInboxBanner();
     toast("Atualizado","ok");
   }catch(e){ toast("Erro ao sincronizar: "+(e.message||e),"err"); }
@@ -2115,6 +2311,8 @@ async function boot(){
   showApp();
   try{ await Store.list(); }catch(e){ toast("Erro ao carregar dados: "+(e.message||e),"err"); }
   try{ await Store.loadInbox(); }catch(e){ /* tabela pode não existir ainda */ }
+  try{ await Store.loadAcoes(); }catch(e){ /* ok */ }
+  try{ await Store.loadPagamentos(); }catch(e){ /* ok */ }
   renderActive();
   renderInboxBanner();
 }
