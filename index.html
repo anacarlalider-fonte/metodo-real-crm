@@ -152,6 +152,22 @@
   .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--brand)}
 
   .sec-title{font-size:12px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--muted2);margin:22px 0 12px;display:flex;align-items:center;gap:8px}
+  .sec-title:first-child{margin-top:4px}
+  .mtabs{display:flex;gap:6px;flex-wrap:wrap;position:sticky;top:0;background:var(--panel);padding-bottom:12px;margin-bottom:6px;z-index:5;border-bottom:1px solid var(--line)}
+  .mtab{background:var(--panel2);border:1px solid var(--line2);color:var(--muted);font-size:13px;font-weight:600;padding:8px 14px;border-radius:9px;cursor:pointer;white-space:nowrap}
+  .mtab:hover{color:var(--txt)}
+  .mtab.active{background:var(--brand);border-color:var(--brand);color:#fff}
+  .mpanel{padding-top:6px}
+  .docrow{display:grid;grid-template-columns:1fr 1.6fr 30px;gap:7px;margin-bottom:7px;align-items:center}
+  .docrow input{padding:9px 11px;font-size:13px;background:var(--bg);border:1px solid var(--line2);border-radius:8px;color:var(--txt);outline:none}
+  .docrow input:focus{border-color:var(--brand)}
+  .docrow .delc{background:none;border:none;color:var(--muted2);font-size:15px;cursor:pointer;justify-self:center}
+  .docrow .delc:hover{color:var(--danger)}
+  .prog-big{display:flex;align-items:center;gap:14px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:6px}
+  .prog-big .pct{font-size:30px;font-weight:800;color:var(--brand);line-height:1}
+  .prog-big .ptrack{flex:1;height:10px;background:var(--panel2);border-radius:999px;overflow:hidden}
+  .prog-big .pfill{height:100%;background:var(--brand);border-radius:999px}
+  @media(max-width:620px){.docrow{grid-template-columns:1fr 1fr 26px}}
   .sec-title::after{content:"";flex:1;height:1px;background:var(--line)}
 
   .accord{border:1px solid var(--line);border-radius:11px;overflow:hidden;margin-bottom:10px}
@@ -177,6 +193,17 @@
   .ata .del:hover{color:var(--danger)}
   .ata-tactiq{border-color:var(--brand)}
   .tag-tactiq{display:inline-block;background:var(--brand);color:#fff;font-size:10px;font-weight:800;padding:1px 7px;border-radius:999px;letter-spacing:.3px;vertical-align:middle}
+  .ata-meta{font-size:11.5px;color:var(--muted2);margin-bottom:7px}
+  .ata-sec{margin-bottom:9px}
+  .ata-sec>b{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted2);margin-bottom:3px}
+  .ata-sec>div{font-size:13px;line-height:1.55}
+  .ata-sec a,.ata-link a{color:var(--brand)}
+  .ata-link{font-size:12px;margin-top:2px;margin-bottom:8px}
+  .ata-ul{margin:2px 0 0;padding-left:18px;font-size:13px;line-height:1.5}
+  .ata-ul li{margin-bottom:2px}
+  .ata-ul.check{list-style:none;padding-left:2px}
+  .ata-ul.check li::before{content:"☐ ";color:var(--brand)}
+  .ata-person{font-weight:700;font-size:12.5px;margin:6px 0 2px;color:var(--txt)}
   .inbox-banner{display:flex;align-items:center;gap:12px;background:#3a2a08;border:1px solid var(--brand);color:#ffe9c2;border-radius:10px;padding:10px 14px;margin:14px 20px 0;font-size:13px}
   .inbox-banner .grow{flex:1}
   .inbox-item{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px}
@@ -518,54 +545,84 @@
       <button class="iconbtn" id="modalClose">✕</button>
     </div>
     <div class="modal-body">
-      <div class="formgrid">
-        <div class="field full"><label>Cliente (empresa) *</label><input id="f_nome" placeholder="Nome da empresa" /></div>
-        <div class="field"><label>Setor / Segmento</label><input id="f_setor" placeholder="Ex.: Varejo, Indústria…" /></div>
-        <div class="field"><label>Cidade / UF</label><input id="f_cidade" placeholder="Ex.: São Paulo / SP" /></div>
-        <div class="field"><label>Decisor principal</label><input id="f_decisor" placeholder="Nome do dono / decisor" /></div>
-        <div class="field"><label>Faturamento médio</label><input id="f_faturamento" placeholder="Ex.: R$ 300 mil/mês" /></div>
-
-        <div class="field"><label>Fase</label><select id="f_fase"><option value="venda">Venda (funil comercial)</option><option value="entrega">Entrega (Método)</option></select></div>
-        <div class="field"><label>Etapa</label><select id="f_etapa"></select></div>
-        <div class="field"><label>Status</label><select id="f_status"></select></div>
-        <div class="field"><label>Plano</label><select id="f_plano"></select></div>
-        <div class="field"><label>Valor mensal (R$)</label><input id="f_valor" type="number" min="0" step="100" placeholder="negociado — ex.: 8000" /></div>
-        <div class="field"><label>Sessões realizadas</label><input id="f_sessoes" type="number" min="0" placeholder="0" /></div>
-
-        <div class="field"><label>Data de início</label><input id="f_inicio" type="date" /></div>
-        <div class="field"><label>Data fim de contrato</label><input id="f_fim" type="date" /></div>
-        <div class="field"><label>Próxima sessão</label><input id="f_proxima" type="date" /></div>
-        <div class="field"><label>WhatsApp do grupo (link)</label><input id="f_whatsapp" placeholder="https://chat.whatsapp.com/…" /></div>
-        <div class="field full"><label>Drive do cliente (link)</label><input id="f_drive" placeholder="https://drive.google.com/…" /></div>
-
-        <div class="field full"><label>Principal dor</label><input id="f_dor" placeholder="O maior problema a resolver" /></div>
-        <div class="field full"><label>3 prioridades acordadas</label><textarea id="f_prioridades" placeholder="1. …&#10;2. …&#10;3. …"></textarea></div>
+      <div class="mtabs" id="mtabs">
+        <button class="mtab active" type="button" data-mtab="cadastro">📋 Cadastro</button>
+        <button class="mtab" type="button" data-mtab="time">👥 Time</button>
+        <button class="mtab" type="button" data-mtab="atas">📝 Atas de reuniões</button>
+        <button class="mtab" type="button" data-mtab="progresso">📊 Progresso</button>
+        <button class="mtab" type="button" data-mtab="docs">📎 Documentos</button>
       </div>
 
-      <div class="sec-title">🎙 Contatos para vincular reuniões (Tactiq)</div>
-      <div class="contatos-hint">Cadastre até <b>5 pessoas</b> com quem você fala nesta empresa (nome + e-mail). Quando o Tactiq transcrever uma reunião, o CRM identifica a empresa pelo e-mail de quem participou e anexa a ata aqui automaticamente.</div>
-      <div id="contatosBox"></div>
-      <button class="btn sm ghost" id="btnAddContato" type="button" style="margin-top:8px">+ Adicionar contato</button>
+      <!-- ABA: CADASTRO -->
+      <div class="mpanel" data-mpanel="cadastro">
+        <div class="formgrid">
+          <div class="field full"><label>Cliente (empresa) *</label><input id="f_nome" placeholder="Nome da empresa" /></div>
+          <div class="field"><label>Setor / Segmento</label><input id="f_setor" placeholder="Ex.: Varejo, Indústria…" /></div>
+          <div class="field"><label>Cidade / UF</label><input id="f_cidade" placeholder="Ex.: São Paulo / SP" /></div>
+          <div class="field"><label>Decisor principal</label><input id="f_decisor" placeholder="Nome do dono / decisor" /></div>
+          <div class="field"><label>Faturamento médio</label><input id="f_faturamento" placeholder="Ex.: R$ 300 mil/mês" /></div>
 
-      <div class="sec-title">🎯 Qualificação (ICP)</div>
-      <div id="qualBox"></div>
+          <div class="field"><label>Fase</label><select id="f_fase"><option value="venda">Venda (funil comercial)</option><option value="entrega">Entrega (Método)</option></select></div>
+          <div class="field"><label>Etapa</label><select id="f_etapa"></select></div>
+          <div class="field"><label>Status</label><select id="f_status"></select></div>
+          <div class="field"><label>Plano</label><select id="f_plano"></select></div>
+          <div class="field"><label>Valor mensal (R$)</label><input id="f_valor" type="number" min="0" step="100" placeholder="negociado — ex.: 8000" /></div>
+          <div class="field"><label>Sessões realizadas</label><input id="f_sessoes" type="number" min="0" placeholder="0" /></div>
 
-      <div class="sec-title">🚀 Onboarding (pós-fechamento)</div>
-      <div id="onboardingBox"></div>
+          <div class="field"><label>Data de início</label><input id="f_inicio" type="date" /></div>
+          <div class="field"><label>Data fim de contrato</label><input id="f_fim" type="date" /></div>
+          <div class="field"><label>Próxima sessão</label><input id="f_proxima" type="date" /></div>
+          <div class="field"><label>WhatsApp do grupo (link)</label><input id="f_whatsapp" placeholder="https://chat.whatsapp.com/…" /></div>
+          <div class="field full"><label>Drive do cliente (link)</label><input id="f_drive" placeholder="https://drive.google.com/…" /></div>
 
-      <div class="sec-title">📚 Entregáveis do Método Real</div>
-      <div id="deliverables"></div>
+          <div class="field full"><label>Principal dor</label><input id="f_dor" placeholder="O maior problema a resolver" /></div>
+          <div class="field full"><label>3 prioridades acordadas</label><textarea id="f_prioridades" placeholder="1. …&#10;2. …&#10;3. …"></textarea></div>
+        </div>
 
-      <div class="sec-title">📝 Atas das sessões</div>
-      <div id="atasList" class="atas-list"></div>
-      <div class="formgrid">
-        <div class="field"><label>Data</label><input id="ataDate" type="date" /></div>
-        <div class="field"><label>Anotação da sessão</label><input id="ataText" placeholder="Pauta, decisões, tarefas…" /></div>
+        <div class="sec-title">🎯 Qualificação (ICP)</div>
+        <div id="qualBox"></div>
+
+        <div class="sec-title">🚀 Onboarding (pós-fechamento)</div>
+        <div id="onboardingBox"></div>
+
+        <div class="sec-title">💡 Notas e observações</div>
+        <div class="field full"><textarea id="f_notas" placeholder="Particularidades, alertas, padrões percebidos…"></textarea></div>
       </div>
-      <button class="btn sm ghost" id="btnAddAta" style="margin-top:8px">+ Adicionar ata</button>
 
-      <div class="sec-title">💡 Notas e observações</div>
-      <div class="field full"><textarea id="f_notas" placeholder="Particularidades, alertas, padrões percebidos…"></textarea></div>
+      <!-- ABA: TIME -->
+      <div class="mpanel hidden" data-mpanel="time">
+        <div class="sec-title">👥 Time do cliente · contatos</div>
+        <div class="contatos-hint">As pessoas com quem você fala nesta empresa (nome + e-mail), até <b>5</b>. É por esse e-mail que o Tactiq vincula automaticamente as reuniões a este cliente.</div>
+        <div id="contatosBox"></div>
+        <button class="btn sm ghost" id="btnAddContato" type="button" style="margin-top:8px">+ Adicionar contato</button>
+      </div>
+
+      <!-- ABA: ATAS -->
+      <div class="mpanel hidden" data-mpanel="atas">
+        <div class="sec-title">📝 Atas das sessões</div>
+        <div id="atasList" class="atas-list"></div>
+        <div class="formgrid">
+          <div class="field"><label>Data</label><input id="ataDate" type="date" /></div>
+          <div class="field"><label>Anotação da sessão</label><input id="ataText" placeholder="Pauta, decisões, tarefas…" /></div>
+        </div>
+        <button class="btn sm ghost" id="btnAddAta" style="margin-top:8px">+ Adicionar ata</button>
+      </div>
+
+      <!-- ABA: PROGRESSO -->
+      <div class="mpanel hidden" data-mpanel="progresso">
+        <div id="progressoResumo"></div>
+        <div class="sec-title">📚 Entregáveis do Método Real</div>
+        <div id="deliverables"></div>
+      </div>
+
+      <!-- ABA: DOCUMENTOS -->
+      <div class="mpanel hidden" data-mpanel="docs">
+        <div class="sec-title">📎 Documentos do cliente</div>
+        <div id="docsDrive"></div>
+        <div class="contatos-hint">Anexe links de documentos do cliente (contrato, proposta, materiais no Drive, planilhas…). Cole o link e dê um nome.</div>
+        <div id="docsBox"></div>
+        <button class="btn sm ghost" id="btnAddDoc" type="button" style="margin-top:8px">+ Adicionar documento</button>
+      </div>
     </div>
     <div class="modal-foot">
       <button class="btn ghost" id="btnDelete" style="color:var(--danger);border-color:#5a2222">Excluir</button>
@@ -832,7 +889,7 @@ function objToRow(o,userId){
     sessoes_realizadas:Number(o.sessoes||0), data_inicio:o.inicio||null, data_fim:o.fim||null,
     proxima_sessao:o.proxima||null, whatsapp:o.whatsapp, drive:o.drive, dor:o.dor,
     prioridades:o.prioridades, notas:o.notas, atas:o.atas||[], deliverables:o.deliverables||{},
-    onboarding:o.onboarding||{}, qualificacao:o.qualificacao||{}, contatos:o.contatos||[],
+    onboarding:o.onboarding||{}, qualificacao:o.qualificacao||{}, contatos:o.contatos||[], documentos:o.documentos||[],
     created_at:o.createdAt||new Date().toISOString(), updated_at:o.updatedAt||new Date().toISOString()
   };
 }
@@ -844,7 +901,7 @@ function rowToObj(r){
     valorMensal:r.valor_mensal!=null?r.valor_mensal:"",
     fim:r.data_fim, proxima:r.proxima_sessao, whatsapp:r.whatsapp, drive:r.drive, dor:r.dor,
     prioridades:r.prioridades, notas:r.notas, atas:r.atas||[], deliverables:r.deliverables||{},
-    onboarding:r.onboarding||{}, qualificacao:r.qualificacao||{}, contatos:r.contatos||[],
+    onboarding:r.onboarding||{}, qualificacao:r.qualificacao||{}, contatos:r.contatos||[], documentos:r.documentos||[],
     createdAt:r.created_at, updatedAt:r.updated_at
   };
 }
@@ -1166,6 +1223,9 @@ function openModal(c){
   renderOnboarding();
   renderDeliverables();
   renderAtas();
+  renderDocumentos();
+  renderProgressoResumo();
+  setModalTab("cadastro");
   $("#ataDate").value=todayISO(); $("#ataText").value="";
   $("#overlay").classList.add("open");
   $("#f_nome").focus();
@@ -1219,7 +1279,7 @@ function newCompany(){
     fase:"venda", etapaVenda:"lead", etapa:"diagnostico", dataProposta:"",
     status:"Lead", plano:"", valorMensal:"", sessoes:"", inicio:"", fim:"", proxima:"", whatsapp:"", drive:"",
     dor:"", prioridades:"", notas:"", atas:[], deliverables:d, onboarding:emptyOnboarding(),
-    qualificacao:emptyQualificacao(), contatos:[], createdAt:new Date().toISOString() };
+    qualificacao:emptyQualificacao(), contatos:[], documentos:[], createdAt:new Date().toISOString() };
 }
 function emptyQualificacao(){ return { crit:new Array(ICP_CRITERIA.length).fill(false), planoSugerido:"", motivo:"" }; }
 function normalizeCompany(c){
@@ -1273,20 +1333,70 @@ function renderDeliverables(){
     box.appendChild(acc);
   });
 }
+const linkifyAta=s=>esc(s).replace(/(https?:\/\/[^\s<]+)/g,'<a href="$1" target="_blank" rel="noopener" style="color:var(--brand);word-break:break-all">$1</a>').replace(/\n/g,"<br>");
+function isEstrut(a){ return a.fonte==="tactiq" && (Array.isArray(a.temas)||Array.isArray(a.decisoes)||Array.isArray(a.plano)||Array.isArray(a.proximos)); }
+/* texto plano da ata (pra copiar / enviar) */
+function buildAtaText(a){
+  const L=[]; const dr=(editing&&editing.drive)||"";
+  L.push(`Ata da reunião — ${fmtDate(a.data)||""}`);
+  if(a.titulo) L.push(a.titulo);
+  L.push("");
+  if(dr) L.push(`🔗 Drive: ${dr}`);
+  if(a.link) L.push(`🔗 Transcrição (Tactiq): ${a.link}`);
+  L.push("");
+  if(a.participantes){ L.push("Participantes"); a.participantes.split(/,\s*/).forEach(p=>L.push(`- ${p}`)); L.push(""); }
+  if(a.temas&&a.temas.length){ L.push("Principais temas discutidos"); a.temas.forEach(t=>L.push(`- ${t}`)); L.push(""); }
+  if(a.decisoes&&a.decisoes.length){ L.push("Decisões alinhadas"); a.decisoes.forEach(t=>L.push(`- ${t}`)); L.push(""); }
+  if(a.plano&&a.plano.length){ L.push("Checklist de plano de ação"); a.plano.forEach(g=>{ L.push(g.pessoa); (g.itens||[]).forEach(it=>L.push(`☐ ${it}`)); }); L.push(""); }
+  if(a.proximos&&a.proximos.length){ L.push("Próximos passos"); a.proximos.forEach(t=>L.push(`☐ ${t}`)); L.push(""); }
+  return L.join("\n").trim();
+}
 function renderAtas(){
   const box=$("#atasList");
   if(!editing.atas||!editing.atas.length){ box.innerHTML=`<div class="empty">Nenhuma ata registrada ainda</div>`; return; }
+  const ul=arr=>arr&&arr.length?`<ul class="ata-ul">${arr.map(x=>`<li>${linkifyAta(x)}</li>`).join("")}</ul>`:"";
   box.innerHTML=editing.atas.map((a,i)=>{
     const tactiq=a.fonte==="tactiq";
     const badge=tactiq?` <span class="tag-tactiq">🎙 Tactiq</span>`:"";
     const title=a.titulo?` · ${esc(a.titulo)}`:"";
-    const texto=esc(a.texto).replace(/\n/g,"<br>");
+    let body;
+    if(isEstrut(a)){
+      const blk=[]; const dr=(editing&&editing.drive)||"";
+      if(a.participantes) blk.push(`<div class="ata-meta">👥 ${esc(a.participantes)}</div>`);
+      const links=[];
+      if(dr) links.push(`📁 <a href="${esc(dr)}" target="_blank" rel="noopener">Drive</a>`);
+      if(a.link) links.push(`🎙 <a href="${esc(a.link)}" target="_blank" rel="noopener">Transcrição</a>`);
+      if(links.length) blk.push(`<div class="ata-link">${links.join(" &nbsp;·&nbsp; ")}</div>`);
+      if(a.temas&&a.temas.length) blk.push(`<div class="ata-sec"><b>Principais temas</b>${ul(a.temas)}</div>`);
+      if(a.decisoes&&a.decisoes.length) blk.push(`<div class="ata-sec"><b>Decisões alinhadas</b>${ul(a.decisoes)}</div>`);
+      if(a.plano&&a.plano.length){
+        const p=a.plano.map(g=>`<div class="ata-person">${esc(g.pessoa)}</div><ul class="ata-ul check">${(g.itens||[]).map(it=>`<li>${linkifyAta(it)}</li>`).join("")}</ul>`).join("");
+        blk.push(`<div class="ata-sec"><b>✅ Plano de ação</b>${p}</div>`);
+      }
+      if(a.proximos&&a.proximos.length) blk.push(`<div class="ata-sec"><b>Próximos passos</b><ul class="ata-ul check">${a.proximos.map(x=>`<li>${linkifyAta(x)}</li>`).join("")}</ul></div>`);
+      blk.push(`<div style="margin-top:8px"><button class="btn sm ghost ata-cli" data-i="${i}" title="Copiar a ata inteira pra enviar/salvar">📋 Copiar ata</button></div>`);
+      body=blk.join("");
+    } else if(tactiq && (a.resumo||a.acoes)){
+      const blk=[];
+      if(a.participantes) blk.push(`<div class="ata-meta">👥 ${esc(a.participantes)}</div>`);
+      if(a.resumo) blk.push(`<div class="ata-sec"><b>📋 Resumo</b><div>${linkifyAta(a.resumo)}</div></div>`);
+      if(a.acoes) blk.push(`<div class="ata-sec"><b>✅ Plano de ação</b><div>${linkifyAta(a.acoes)}</div></div>`);
+      if(a.link) blk.push(`<div class="ata-link">🔗 <a href="${esc(a.link)}" target="_blank" rel="noopener">Transcrição no Tactiq</a></div>`);
+      body=blk.join("");
+    } else {
+      body=linkifyAta(a.texto||"");
+    }
     return `<div class="ata${tactiq?' ata-tactiq':''}">
-      <div class="d">${fmtDate(a.data)||"Sem data"}${badge}${title}</div>${texto}
+      <div class="d">${fmtDate(a.data)||"Sem data"}${badge}${title}</div>${body}
       <button class="del" data-i="${i}" title="Remover">✕</button></div>`;
   }).join("");
   box.querySelectorAll(".del").forEach(b=>b.addEventListener("click",()=>{
     editing.atas.splice(+b.dataset.i,1); renderAtas();
+  }));
+  box.querySelectorAll(".ata-cli").forEach(b=>b.addEventListener("click",async()=>{
+    const a=editing.atas[+b.dataset.i]; if(!a) return; const txt=buildAtaText(a);
+    try{ await navigator.clipboard.writeText(txt); toast("Ata copiada!","ok"); }
+    catch{ const ta=document.createElement("textarea"); ta.value=txt; document.body.appendChild(ta); ta.select(); try{document.execCommand("copy");toast("Copiada!","ok");}catch{toast("Não foi possível copiar","err");} ta.remove(); }
   }));
 }
 /* =========================================================================
@@ -1473,6 +1583,56 @@ function collectContatos(){
   editing.contatos=arr.slice(0,MAX_CONTATOS);
 }
 
+/* Documentos do cliente (links) */
+function docRow(d){
+  const row=document.createElement("div"); row.className="docrow";
+  row.innerHTML=`
+    <input class="d-nome" placeholder="Nome (ex.: Contrato 2026)" value="${esc(d.nome||"")}" />
+    <input class="d-url" type="url" placeholder="https://..." value="${esc(d.url||"")}" />
+    <button class="delc" type="button" title="Remover">✕</button>`;
+  row.querySelector(".delc").addEventListener("click",()=>row.remove());
+  return row;
+}
+function renderDocsDrive(){
+  const box=$("#docsDrive"); if(!box) return;
+  const dr=($("#f_drive")&&$("#f_drive").value.trim())||editing.drive||"";
+  box.innerHTML = dr
+    ? `<div class="ata-link" style="margin-bottom:10px">📁 <a href="${esc(dr)}" target="_blank" rel="noopener">Abrir Drive do cliente</a></div>`
+    : `<div class="contatos-hint" style="margin-bottom:10px">Defina o <b>Drive do cliente</b> na aba Cadastro para ter o atalho aqui.</div>`;
+}
+function renderDocumentos(){
+  const box=$("#docsBox"); if(!box) return; box.innerHTML="";
+  const list=(editing.documentos&&editing.documentos.length)?editing.documentos:[{}];
+  list.forEach(d=>box.appendChild(docRow(d)));
+  renderDocsDrive();
+}
+function collectDocumentos(){
+  const arr=[];
+  $$("#docsBox .docrow").forEach(r=>{
+    const nome=r.querySelector(".d-nome").value.trim(), url=r.querySelector(".d-url").value.trim();
+    if(nome||url) arr.push({nome,url});
+  });
+  editing.documentos=arr;
+}
+
+/* Resumo de progresso (aba Progresso) */
+function renderProgressoResumo(){
+  const box=$("#progressoResumo"); if(!box) return;
+  const p=progressOf(editing);
+  box.innerHTML=`<div class="prog-big">
+    <div class="pct">${p.pct}%</div>
+    <div style="flex:1">
+      <div style="font-size:12.5px;color:var(--muted);margin-bottom:6px">${p.done} de ${p.total} entregáveis do Método concluídos</div>
+      <div class="ptrack"><div class="pfill" style="width:${p.pct}%"></div></div>
+    </div></div>`;
+}
+
+/* Troca de abas do modal */
+function setModalTab(name){
+  $$("#mtabs .mtab").forEach(t=>t.classList.toggle("active",t.dataset.mtab===name));
+  $$(".mpanel").forEach(p=>p.classList.toggle("hidden",p.dataset.mpanel!==name));
+}
+
 function collectForm(){
   editing.nome=$("#f_nome").value.trim(); editing.setor=$("#f_setor").value.trim();
   editing.cidade=$("#f_cidade").value.trim(); editing.decisor=$("#f_decisor").value.trim();
@@ -1492,6 +1652,7 @@ function collectForm(){
   collectQualificacao();
   collectOnboarding();
   collectContatos();
+  collectDocumentos();
 }
 function closeModal(){ $("#overlay").classList.remove("open"); editing=null; }
 
@@ -1514,6 +1675,13 @@ $("#btnAddContato").addEventListener("click",()=>{
   $("#contatosBox").appendChild(contatoRow({}));
   updateAddContatoBtn();
 });
+
+$("#btnAddDoc").addEventListener("click",()=>$("#docsBox").appendChild(docRow({})));
+$$("#mtabs .mtab").forEach(t=>t.addEventListener("click",()=>{
+  setModalTab(t.dataset.mtab);
+  if(t.dataset.mtab==="docs") renderDocsDrive();
+  if(t.dataset.mtab==="progresso") renderProgressoResumo();
+}));
 
 $("#btnAddAta").addEventListener("click",()=>{
   const t=$("#ataText").value.trim(); if(!t){ toast("Escreva a anotação da ata","err"); return; }
