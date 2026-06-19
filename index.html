@@ -556,7 +556,10 @@
 <div id="overlay" class="overlay">
   <div class="modal">
     <div class="modal-head">
-      <h2 id="modalTitle">Novo cliente</h2>
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <h2 id="modalTitle" style="margin:0">Novo cliente</h2>
+        <span id="modalKind"></span>
+      </div>
       <button class="iconbtn" id="modalClose">✕</button>
     </div>
     <div class="modal-body">
@@ -597,8 +600,10 @@
         <div class="sec-title">🎯 Qualificação (ICP)</div>
         <div id="qualBox"></div>
 
-        <div class="sec-title">🚀 Onboarding (pós-fechamento)</div>
-        <div id="onboardingBox"></div>
+        <div id="onbSection">
+          <div class="sec-title">🚀 Onboarding (pós-fechamento)</div>
+          <div id="onboardingBox"></div>
+        </div>
 
         <div class="sec-title">💡 Notas e observações</div>
         <div class="field full"><textarea id="f_notas" placeholder="Particularidades, alertas, padrões percebidos…"></textarea></div>
@@ -1279,7 +1284,7 @@ function kpi(lbl,val,sub,color){
 function openModal(c){
   editing = c ? JSON.parse(JSON.stringify(c)) : newCompany();
   const isNew = !c;
-  $("#modalTitle").textContent = isNew ? "Novo lead" : editing.nome || "Editar registro";
+  $("#modalTitle").textContent = isNew ? "Nova oportunidade" : editing.nome || "Editar registro";
   $("#btnDelete").classList.toggle("hidden", isNew);
 
   $("#f_nome").value=editing.nome||""; $("#f_setor").value=editing.setor||"";
@@ -1306,6 +1311,7 @@ function openModal(c){
   renderDocumentos();
   renderProgressoResumo();
   setModalTab("cadastro");
+  applyFaseLayout(editing.fase);
   $("#ataDate").value=todayISO(); $("#ataText").value="";
   $("#overlay").classList.add("open");
   $("#f_nome").focus();
@@ -1712,6 +1718,20 @@ function setModalTab(name){
   $$("#mtabs .mtab").forEach(t=>t.classList.toggle("active",t.dataset.mtab===name));
   $$(".mpanel").forEach(p=>p.classList.toggle("hidden",p.dataset.mpanel!==name));
 }
+/* Layout diferente para OPORTUNIDADE (venda) x CLIENTE (entrega) */
+function applyFaseLayout(fase){
+  const lead = fase==="venda";
+  const badge=$("#modalKind");
+  if(badge){
+    badge.textContent = lead ? "Oportunidade" : "Cliente";
+    badge.style.cssText = "font-size:11px;font-weight:800;padding:3px 10px;border-radius:999px;letter-spacing:.3px;white-space:nowrap;"+(lead?"background:#3a2a08;color:#ffce6e":"background:#0f2a1c;color:#7fe0b0");
+  }
+  // Progresso (entregáveis do Método) e Onboarding só fazem sentido depois de fechar
+  const tabProg=$('#mtabs .mtab[data-mtab="progresso"]'); if(tabProg) tabProg.style.display = lead?"none":"";
+  const onb=$("#onbSection"); if(onb) onb.style.display = lead?"none":"";
+  // se a aba ativa sumiu (Progresso) ao virar oportunidade, volta pro Cadastro
+  if(lead){ const act=$('#mtabs .mtab.active'); if(act && act.dataset.mtab==="progresso") setModalTab("cadastro"); }
+}
 
 function collectForm(){
   editing.nome=$("#f_nome").value.trim(); editing.setor=$("#f_setor").value.trim();
@@ -1959,7 +1979,7 @@ function renderActive(){
   refreshBadges();
 }
 $$(".modlink").forEach(t=>t.addEventListener("click",()=>setView(t.dataset.view)));
-$("#f_fase").addEventListener("change",()=>{ if(editing) fillEtapaOptions(); });
+$("#f_fase").addEventListener("change",()=>{ if(editing){ fillEtapaOptions(); applyFaseLayout($("#f_fase").value); } });
 
 /* ---------- Mobile sidebar toggle ---------- */
 function openSidebar(){ $("#sidebar").classList.add("open"); $("#backdrop").classList.add("show"); }
