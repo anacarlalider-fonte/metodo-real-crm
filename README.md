@@ -108,6 +108,41 @@ quiser trocá-lo, crie o secret **`TACTIQ_WEBHOOK_SECRET`** nas *Edge Functions*
 novo valor e atualize a URL no Zapier. (A Edge Function fica em `supabase/functions/tactiq-webhook/`.)
 
 ---
+
+## 📅 Integração com o Google Calendar (sessões automáticas)
+
+As reuniões que você marca no **Google Calendar** aparecem sozinhas em **"Próximas sessões"**
+na tela Hoje, vinculadas ao cliente pelo **e-mail de quem você convidou** (os mesmos contatos).
+Mesmo modelo do Tactiq — via Zapier, sem login do Google no app.
+
+### Ligar (uma vez, ~5 min)
+1. No Zapier, **Create Zap**.
+2. **Gatilho:** app **Google Calendar** → evento **"New or Updated Event"** (assim edições também sincronizam). Conecte sua conta Google e escolha o calendário onde marca as reuniões.
+3. **Ação:** **Webhooks by Zapier** → **POST**.
+   - **URL:**
+     ```
+     https://vkuixvooivsqwmjymunk.functions.supabase.co/calendar-webhook?token=0060781fc42fc66a75adfa7eb2ee83b2d6c2e9a01ef37970
+     ```
+   - **Payload Type:** `json`
+   - **Data:**
+     | Campo | Valor (do Google Calendar) |
+     |---|---|
+     | `id`         | Event ID |
+     | `summary`    | Event Title / Summary |
+     | `start`      | Event Begin / Start |
+     | `end`        | Event End |
+     | `location`   | Location (ou link do Meet) |
+     | `attendees`  | **e-mails dos convidados** ← o que vincula ao cliente |
+   - **Unflatten:** Yes · **Headers:** em branco.
+4. **Test** → deve responder `"ok": true`. **Publish**.
+
+Pra vincular ao cliente, o e-mail do convidado precisa estar nos **Contatos** da empresa (aba Time).
+Sessões sem match aparecem assim mesmo na agenda, só sem cliente vinculado.
+
+> Secret: `?token=...` protege o webhook. Pra trocar, crie o secret `CALENDAR_WEBHOOK_SECRET`
+> nas Edge Functions. (Função em `supabase/functions/calendar-webhook/`.)
+
+---
 **Arquivos:** `index.html` (o sistema), `schema.sql` (banco), `README.md` (este guia),
-`supabase/functions/tactiq-webhook/` (recebe as reuniões do Tactiq).
+`supabase/functions/tactiq-webhook/` (reuniões do Tactiq), `supabase/functions/calendar-webhook/` (sessões do Google Calendar).
 A chave `anon` é pública por natureza — a segurança real está nas regras (RLS) que o `schema.sql` cria. Pode publicá-la sem medo.
