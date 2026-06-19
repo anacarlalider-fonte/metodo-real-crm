@@ -1794,6 +1794,23 @@ function coNome(id){ const c=coById(id); return c?c.nome:"—"; }
 function lastAtaDate(c){ const a=(c.atas||[]).map(x=>x.data).filter(Boolean).sort(); return a.length?a[a.length-1]:null; }
 function saudacao(){ const h=new Date().getHours(); return h<12?"Bom dia":h<18?"Boa tarde":"Boa noite"; }
 function fmtDiaMes(d){ if(!d) return ""; const [,m,dd]=d.split("-"); const M=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"]; return `${dd}/${M[+m-1]}`; }
+function isoMinusDays(n){ const d=new Date(); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); }
+function renderAcPorCli(){
+  const box=$("#acPorCli"); if(!box) return;
+  const dias=+(($("#acPeriodo")&&$("#acPeriodo").value)||30);
+  const cut= dias>0 ? isoMinusDays(dias) : null;
+  const acoes=(Store.acoes||[]).filter(a=>a.company_id && (!cut || (a.created_at||"").slice(0,10)>=cut));
+  const map={};
+  acoes.forEach(a=>{ map[a.company_id]=map[a.company_id]||{t:0,f:0}; map[a.company_id].t++; if(a.status==="feito")map[a.company_id].f++; });
+  const rows=Object.entries(map).map(([id,v])=>({nome:coNome(id),t:v.t,f:v.f})).sort((a,b)=>b.t-a.t);
+  if(!rows.length){ box.innerHTML=`<div class="empty" style="margin:6px 0">Nenhuma ação no período.</div>`; return; }
+  const max=Math.max(...rows.map(r=>r.t));
+  box.innerHTML=rows.map(r=>`<div class="hrow">
+    <span style="flex:1;font-size:14px">${esc(r.nome)}</span>
+    <div style="width:120px;height:8px;background:var(--panel2);border-radius:99px;overflow:hidden;margin:0 10px"><div style="height:100%;width:${Math.round(r.t/max*100)}%;background:var(--brand)"></div></div>
+    <span style="font-size:13px;font-weight:700;width:60px;text-align:right">${r.t} <span style="color:var(--muted2);font-weight:400;font-size:11px">(${r.f}✓)</span></span>
+  </div>`).join("");
+}
 
 function acaoLi(a){
   const cli = a.company_id ? coNome(a.company_id) : "";
@@ -1830,7 +1847,6 @@ function renderHoje(){
   const feitasRecentes=acoes.filter(a=>a.status==="feito").slice(0,4);
   const sessoes=Store.cache.filter(c=>c.proxima && c.proxima>=today && c.status!=="Encerrado").sort((a,b)=>a.proxima.localeCompare(b.proxima)).slice(0,6);
   const ativos=Store.cache.filter(c=>c.fase==="entrega" && c.status!=="Encerrado");
-  const sumidos=ativos.filter(c=>{ const fut=c.proxima && c.proxima>=today; const last=lastAtaDate(c); const dias=last?-daysUntil(last):999; return !fut && dias>=20; });
   const onbParado=ativos.filter(c=>{ const o=c.onboarding||{}; const st=Array.isArray(o.steps)?o.steps:[]; const done=st.filter(Boolean).length; return done>0 && done<ONB_STEPS.length; });
 
   const cliOpts=[...Store.cache].sort((a,b)=>(a.nome||"").localeCompare(b.nome||"")).map(c=>`<option value="${c.id}">${esc(c.nome)}</option>`).join("");
@@ -1838,13 +1854,13 @@ function renderHoje(){
 
   let html=`<div style="max-width:760px">
     <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px">
-      <div style="font-size:20px;font-weight:800">${saudacao()}, ${esc((Store.user&&(Store.user.email||"").split("@")[0])||"Ana")} 👋</div>
+      <div style="font-size:20px;font-weight:800">${saudacao()}, Ana 👋</div>
       <div style="font-size:13px;color:var(--muted)">${new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"short"})}</div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px">
       ${chip(sessoes.filter(c=>c.proxima===today).length,"sessões hoje","var(--brand)")}
       ${chip(atrasadas.length,"ações atrasadas",atrasadas.length?"#ff8f8f":"var(--txt)")}
-      ${chip(sumidos.length,"clientes sumidos",sumidos.length?"#ffce6e":"var(--txt)")}
+      ${chip(abertas.length,"ações abertas","var(--txt)")}
     </div>`;
 
   // Sessões
@@ -1877,7 +1893,6 @@ function renderHoje(){
 
   // Alertas
   const alertas=[];
-  sumidos.forEach(c=>alertas.push({c,ic:"⏸",txt:`sem contato há mais de 20 dias`,act:"agendar"}));
   onbParado.forEach(c=>{ const o=c.onboarding||{}; const done=(o.steps||[]).filter(Boolean).length; alertas.push({c,ic:"⚠️",txt:`onboarding parado (${done} de ${ONB_STEPS.length})`,act:"retomar"}); });
   if(alertas.length){
     html+=`<div style="font-size:13px;font-weight:700;color:var(--muted);margin:18px 0 8px">🔔 Precisam de atenção</div>`;
@@ -1885,8 +1900,19 @@ function renderHoje(){
       <span style="flex:1;font-size:13px">${a.ic} <b>${esc(a.c.nome)}</b> · ${a.txt}</span>
       <span style="font-size:12px;color:var(--brand)">${a.act} →</span></div>`).join("");
   }
+
+  // Ações por cliente (período)
+  html+=`<div style="display:flex;align-items:center;justify-content:space-between;margin:18px 0 8px">
+      <div style="font-size:13px;font-weight:700;color:var(--muted)">📊 Ações por cliente</div>
+      <select id="acPeriodo" style="padding:6px 10px;background:var(--bg);border:1px solid var(--line2);border-radius:8px;color:var(--txt);font-size:12px">
+        <option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option><option value="90">Últimos 90 dias</option><option value="0">Tudo</option>
+      </select></div>
+    <div id="acPorCli" class="hcard"></div>`;
+
   html+=`</div>`;
   box.innerHTML=html;
+  renderAcPorCli();
+  const selP=$("#acPeriodo"); if(selP) selP.addEventListener("change",renderAcPorCli);
 
   // listeners
   box.querySelectorAll(".ac-check").forEach(el=>el.addEventListener("click",async()=>{
