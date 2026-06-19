@@ -801,7 +801,7 @@ function composeTactiqTexto(it){
    STORE — abstrai demo (localStorage) e nuvem (Supabase)
    ========================================================================= */
 const Store = {
-  mode:"demo", sb:null, user:null, cache:[], inbox:[], acoes:[], pagamentos:[], LS:"mr_crm_companies",
+  mode:"demo", sb:null, user:null, cache:[], inbox:[], acoes:[], pagamentos:[], sessoes:[], LS:"mr_crm_companies",
 
   async init(){
     if(SUPABASE_URL && SUPABASE_ANON_KEY){
@@ -898,6 +898,15 @@ const Store = {
     if(error) throw error;
     this.pagamentos = data||[];
     return this.pagamentos;
+  },
+  /* --- sessões (Google Calendar via webhook) --- */
+  async loadSessoes(){
+    this.sessoes=[];
+    if(this.mode!=="cloud" || !this.user) return this.sessoes;
+    const { data, error } = await this.sb.from("mr_sessoes").select("*").order("inicio",{ascending:true});
+    if(error) throw error;
+    this.sessoes = data||[];
+    return this.sessoes;
   },
   async addPagamento(p){
     if(this.mode!=="cloud"||!this.user) throw new Error("disponível só no modo nuvem");
@@ -1845,7 +1854,12 @@ function renderHoje(){
   const depois=abertas.filter(a=>a.prazo && daysUntil(a.prazo)>7);
   const semPrazo=abertas.filter(a=>!a.prazo);
   const feitasRecentes=acoes.filter(a=>a.status==="feito").slice(0,4);
-  const sessoes=Store.cache.filter(c=>c.proxima && c.proxima>=today && c.status!=="Encerrado").sort((a,b)=>a.proxima.localeCompare(b.proxima)).slice(0,6);
+  const gsess=(Store.sessoes||[]).filter(s=>s.inicio && s.inicio.slice(0,10)>=today).map(s=>{
+    const d=new Date(s.inicio); const hora=isNaN(d)?"":d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+    return { dateISO:s.inicio.slice(0,10), hora, nome:s.company_id?coNome(s.company_id):(s.titulo||"Sessão"), companyId:s.company_id||null, sort:s.inicio, google:true };
+  });
+  const msess=Store.cache.filter(c=>c.proxima && c.proxima>=today && c.status!=="Encerrado").map(c=>({ dateISO:c.proxima, hora:"", nome:c.nome, companyId:c.id, sort:c.proxima+"T09:00", google:false }));
+  const sessoes=[...gsess,...msess].sort((a,b)=>(a.sort||"").localeCompare(b.sort||"")).slice(0,8);
   const ativos=Store.cache.filter(c=>c.fase==="entrega" && c.status!=="Encerrado");
   const onbParado=ativos.filter(c=>{ const o=c.onboarding||{}; const st=Array.isArray(o.steps)?o.steps:[]; const done=st.filter(Boolean).length; return done>0 && done<ONB_STEPS.length; });
 
@@ -1858,7 +1872,7 @@ function renderHoje(){
       <div style="font-size:13px;color:var(--muted)">${new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"short"})}</div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px">
-      ${chip(sessoes.filter(c=>c.proxima===today).length,"sessões hoje","var(--brand)")}
+      ${chip(sessoes.filter(s=>s.dateISO===today).length,"sessões hoje","var(--brand)")}
       ${chip(atrasadas.length,"ações atrasadas",atrasadas.length?"#ff8f8f":"var(--txt)")}
       ${chip(abertas.length,"ações abertas","var(--txt)")}
     </div>`;
@@ -1866,11 +1880,11 @@ function renderHoje(){
   // Sessões
   html+=`<div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:8px">📅 Próximas sessões</div>`;
   if(sessoes.length){
-    html+=`<div class="hcard">`+sessoes.map(c=>`<div class="hrow sess-go" data-id="${c.id}" style="cursor:pointer">
-      <span style="font-size:13px;font-weight:700;color:var(--brand);width:54px">${c.proxima===today?"hoje":fmtDiaMes(c.proxima)}</span>
-      <span style="flex:1;font-size:14px">${esc(c.nome)}</span>
-      <span style="font-size:12px;color:var(--muted2)">abrir →</span></div>`).join("")+`</div>`;
-  } else html+=`<div class="empty" style="margin-bottom:16px">Nenhuma sessão agendada. Defina a "Próxima sessão" na ficha de um cliente.</div>`;
+    html+=`<div class="hcard">`+sessoes.map(s=>`<div class="hrow ${s.companyId?'sess-go':''}" ${s.companyId?`data-id="${s.companyId}"`:''} style="${s.companyId?'cursor:pointer':''}">
+      <span style="font-size:13px;font-weight:700;color:var(--brand);width:78px">${s.dateISO===today?"hoje":fmtDiaMes(s.dateISO)}${s.hora?" · "+s.hora:""}</span>
+      <span style="flex:1;font-size:14px">${esc(s.nome)}${s.google?` <span style="font-size:10px;color:var(--muted2);border:1px solid var(--line2);border-radius:5px;padding:0 5px;vertical-align:middle">Google</span>`:""}</span>
+      <span style="font-size:12px;color:var(--muted2)">${s.companyId?"abrir →":""}</span></div>`).join("")+`</div>`;
+  } else html+=`<div class="empty" style="margin-bottom:16px">Nenhuma sessão futura. Ligue o Google Calendar (ou defina "Próxima sessão" na ficha).</div>`;
 
   // Ações
   html+=`<div style="display:flex;align-items:center;justify-content:space-between;margin:18px 0 8px">
@@ -2320,7 +2334,7 @@ $("#inboxOverlay").addEventListener("click",e=>{ if(e.target===$("#inboxOverlay"
 $("#btnSync").addEventListener("click",async()=>{
   if(!Store.isCloud()){ toast("Sincronização disponível no modo nuvem","err"); return; }
   try{
-    await Store.list(); await Store.loadInbox(); await Store.loadAcoes(); await Store.loadPagamentos();
+    await Store.list(); await Store.loadInbox(); await Store.loadAcoes(); await Store.loadPagamentos(); await Store.loadSessoes();
     renderActive(); renderInboxBanner();
     toast("Atualizado","ok");
   }catch(e){ toast("Erro ao sincronizar: "+(e.message||e),"err"); }
@@ -2339,6 +2353,7 @@ async function boot(){
   try{ await Store.loadInbox(); }catch(e){ /* tabela pode não existir ainda */ }
   try{ await Store.loadAcoes(); }catch(e){ /* ok */ }
   try{ await Store.loadPagamentos(); }catch(e){ /* ok */ }
+  try{ await Store.loadSessoes(); }catch(e){ /* ok */ }
   renderActive();
   renderInboxBanner();
 }
