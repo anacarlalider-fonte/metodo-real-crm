@@ -509,7 +509,7 @@
        <div class="tablewrap">
          <table class="dtable">
            <thead><tr>
-             <th>Cliente</th><th>Decisor</th><th>Plano</th><th>Etapa</th>
+             <th>Cliente</th><th>Decisor</th><th>Plano</th>
              <th>Status</th><th>Progresso</th><th>Próx. sessão</th>
            </tr></thead>
            <tbody id="listBody"></tbody>
@@ -1091,6 +1091,14 @@ function cardEl(c){
    RENDER — Vendas (funil comercial · POP 01)
    ========================================================================= */
 function plval(c){ const v=Number(c.valorMensal); return v>0?v:0; }
+/* próxima sessão do cliente: 1º da agenda (Google), senão o campo manual */
+function proximaSessaoDe(c){
+  const today=todayISO();
+  const cal=(Store.sessoes||[]).filter(s=>s.company_id===c.id && s.inicio && s.inicio.slice(0,10)>=today).map(s=>s.inicio).sort();
+  if(cal.length) return cal[0].slice(0,10);
+  if(c.proxima && c.proxima>=today) return c.proxima;
+  return null;
+}
 function icpScore(c){
   const crit=(c.qualificacao&&c.qualificacao.crit)||[];
   const done=crit.filter(Boolean).length;
@@ -2018,17 +2026,16 @@ function renderList(){
   const data=Store.cache.filter(c=>c.fase==="entrega" && matchFilter(c))
     .sort((a,b)=>(a.nome||"").localeCompare(b.nome||"","pt-BR"));
   const body=$("#listBody");
-  if(!data.length){ body.innerHTML=`<tr><td colspan="7"><div class="empty" style="margin:8px">Nenhum cliente ainda. Os leads em negociação ficam no funil de <b>Vendas</b> — viram clientes quando fecham.</div></td></tr>`; return; }
+  if(!data.length){ body.innerHTML=`<tr><td colspan="6"><div class="empty" style="margin:8px">Nenhum cliente ainda. Os leads em negociação ficam no funil de <b>Vendas</b> — viram clientes quando fecham.</div></td></tr>`; return; }
   body.innerHTML=data.map(c=>{
-    const pg=progressOf(c), plan=PLANS[c.plano||""]||PLANS[""], st=currentStage(c);
-    const d=daysUntil(c.proxima);
-    let prox = c.proxima?fmtDate(c.proxima):"—";
-    if(c.proxima && d!=null){ if(d<0) prox=`<span style="color:var(--danger)">⚠ ${prox}</span>`; else if(d<=3) prox=`<span style="color:#ffce7a">${prox}</span>`; }
+    const pg=progressOf(c), plan=PLANS[c.plano||""]||PLANS[""];
+    const px=proximaSessaoDe(c); const d=px?daysUntil(px):null;
+    let prox = px?fmtDate(px):"—";
+    if(px && d!=null){ if(d<0) prox=`<span style="color:var(--danger)">⚠ ${prox}</span>`; else if(d<=3) prox=`<span style="color:#ffce7a">${prox}</span>`; }
     return `<tr data-id="${c.id}">
       <td><div class="cname">${esc(c.nome)||"(sem nome)"}</div><div class="csub">${esc(c.setor||"")}${c.cidade?" · "+esc(c.cidade):""}</div></td>
       <td>${esc(c.decisor||"—")}</td>
       <td>${c.plano?`<span class="stagechip" style="background:${plan.cor}22;color:${plan.cor}">${plan.nome.split(" — ")[0]}</span>`:"—"}</td>
-      <td><span class="stagechip" style="background:${st.sw}22;color:${st.sw}">${st.nome}</span></td>
       <td><span class="statuschip" style="background:var(--panel2);color:var(--muted)">${esc(c.status||"—")}</span></td>
       <td><span class="minibar"><i style="width:${pg.pct}%"></i></span><span class="csub">${pg.pct}%</span></td>
       <td>${prox}</td>
