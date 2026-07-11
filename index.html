@@ -82,19 +82,27 @@
 
   /* ---------- Dashboard ---------- */
   .wrap{padding:18px 20px 40px}
-  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:18px}
-  .kpi{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px}
-  .kpi .lbl{color:var(--muted);font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:7px}
-  .kpi .val{font-size:27px;font-weight:800;margin-top:8px;letter-spacing:-.5px}
-  .kpi .sub{font-size:12px;color:var(--muted2);margin-top:3px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-bottom:26px}
+  .kpi{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;position:relative;overflow:hidden;transition:.15s}
+  .kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--kc,var(--brand))}
+  .kpi:hover{border-color:var(--line2);transform:translateY(-1px)}
+  .kpi .lbl{color:var(--muted);font-size:12px;font-weight:600;letter-spacing:.2px;text-transform:uppercase;display:flex;align-items:center;gap:8px}
+  .kpi .val{font-size:32px;font-weight:800;margin-top:12px;letter-spacing:-.7px;line-height:1}
+  .kpi .sub{font-size:12px;color:var(--muted2);margin-top:8px}
   .kpi .dot{width:9px;height:9px;border-radius:3px}
+  .kpi.hero{grid-column:span 2}
+  .kpi.hero .val{font-size:40px}
+  @media(max-width:640px){.kpi.hero{grid-column:span 1}}
 
-  .grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:14px}
+  .dash-sec{font-size:12px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--muted2);margin:26px 0 14px}
+  .grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
   @media(max-width:900px){.grid2{grid-template-columns:1fr}}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
-  .card h3{margin:0 0 14px;font-size:14.5px;font-weight:700}
-  .bar-row{display:flex;align-items:center;gap:12px;margin-bottom:11px;font-size:13px}
-  .bar-row .name{width:120px;color:var(--muted);flex:none}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px}
+  .card h3{margin:0 0 16px;font-size:14.5px;font-weight:700}
+  .card+.card{margin-top:16px}
+  .bar-row{display:flex;align-items:center;gap:12px;margin-bottom:14px;font-size:13px}
+  .bar-row:last-child{margin-bottom:0}
+  .bar-row .name{width:150px;color:var(--muted);flex:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .bar-track{flex:1;height:9px;background:var(--bg);border-radius:999px;overflow:hidden}
   .bar-fill{height:100%;border-radius:999px;transition:.5s}
   .bar-row .num{width:34px;text-align:right;font-weight:700;flex:none}
@@ -531,18 +539,18 @@
      <div id="agenda"></div>
    </div>
 
-   <!-- ===== DASHBOARD VIEW ===== -->
+   <!-- ===== PAINEL (SAÚDE DA ENTREGA) VIEW ===== -->
    <div id="view-dash" class="wrap hidden">
+     <div class="dash-sec">Visão geral da carteira</div>
      <div class="kpis" id="kpis"></div>
-     <div class="grid2">
-       <div class="card">
-         <h3>Clientes por etapa do Método</h3>
-         <div id="byStage"></div>
-       </div>
-       <div class="card">
-         <h3>Receita recorrente por plano</h3>
-         <div id="byPlan"></div>
-       </div>
+     <div class="dash-sec">Entrega do Método</div>
+     <div class="card">
+       <h3>Progresso médio por pilar <span style="color:var(--muted2);font-weight:500">· clientes ativos</span></h3>
+       <div id="byPillar"></div>
+     </div>
+     <div class="card">
+       <h3>MRR por cliente <span style="color:var(--muted2);font-weight:500">· composição da receita</span></h3>
+       <div id="byPlan"></div>
      </div>
    </div>
 
@@ -1257,39 +1265,35 @@ function renderMetas(){
    ========================================================================= */
 function renderDash(){
   const data=Store.cache;
-  const ativos=data.filter(c=>c.status==="Ativo");
-  const emProposta=data.filter(c=>c.status==="Em proposta");
+  const ent=data.filter(c=>c.fase==="entrega");
+  const ativos=ent.filter(c=>c.status==="Ativo");
   const mrr=ativos.reduce((s,c)=>s+plval(c),0);
-  const pipeline=emProposta.reduce((s,c)=>s+plval(c),0);
-  const avgProg = data.length? Math.round(data.reduce((s,c)=>s+progressOf(c).pct,0)/data.length):0;
+  const avgProg = ativos.length? Math.round(ativos.reduce((s,c)=>s+progressOf(c).pct,0)/ativos.length):0;
+  const agendadas = ent.filter(c=>c.proxima && daysUntil(c.proxima)>=0).length;
 
   $("#kpis").innerHTML=`
-    ${kpi("Clientes ativos", ativos.length, "Receita recorrente garantida", "var(--green)")}
-    ${kpi("Receita recorrente (MRR)", brl(mrr), `${ativos.length} contrato(s) ativo(s)`, "var(--brand)")}
-    ${kpi("Em proposta", emProposta.length, `Pipeline ${brl(pipeline)}`, "var(--blue)")}
-    ${kpi("Total de clientes", data.length, "Na base", "var(--diag)")}
-    ${kpi("Progresso médio", avgProg+"%", "Entregáveis do Método", "var(--escala)")}
+    ${kpi("Clientes ativos", ativos.length, "Contratos em entrega", "var(--green)")}
+    ${kpi("Progresso médio", avgProg+"%", "Entregáveis concluídos (média)", "var(--brand)")}
+    ${kpi("Sessões agendadas", agendadas, "Com data futura marcada", "var(--blue)")}
   `;
 
-  // by stage (só entrega)
-  const ent=data.filter(c=>c.fase==="entrega");
-  const maxS=Math.max(1,...DELIVERY_STAGES.map(s=>ent.filter(c=>c.etapa===s.id).length));
-  $("#byStage").innerHTML=DELIVERY_STAGES.map(s=>{
-    const n=ent.filter(c=>c.etapa===s.id).length;
-    return `<div class="bar-row"><span class="name">${s.nome}</span>
-      <div class="bar-track"><div class="bar-fill" style="width:${n/maxS*100}%;background:${s.sw}"></div></div>
-      <span class="num">${n}</span></div>`;
-  }).join("");
+  // progresso médio por pilar (clientes ativos)
+  $("#byPillar").innerHTML = ativos.length ? PILLARS.map(p=>{
+    const avg = Math.round(ativos.reduce((s,c)=>s+pillarProgress(c,p.key).pct,0)/ativos.length);
+    return `<div class="bar-row"><span class="name">${p.nome}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${avg}%;background:${p.cor}"></div></div>
+      <span class="num">${avg}%</span></div>`;
+  }).join("") : `<div class="empty">Nenhum cliente em entrega ainda.</div>`;
 
-  // by plan (active revenue)
-  const planKeys=["plano1","plano2","plano3"];
-  const maxP=Math.max(1,...planKeys.map(k=>ativos.filter(c=>c.plano===k).reduce((s,c)=>s+plval(c),0)));
-  $("#byPlan").innerHTML=planKeys.map(k=>{
-    const arr=ativos.filter(c=>c.plano===k); const val=arr.reduce((s,c)=>s+plval(c),0);
-    return `<div class="bar-row"><span class="name">${PLANS[k].nome.split(" — ")[0]}</span>
-      <div class="bar-track"><div class="bar-fill" style="width:${val/maxP*100}%;background:${PLANS[k].cor}"></div></div>
-      <span class="num" style="width:auto">${arr.length}× · ${brl(val)}</span></div>`;
-  }).join("") + (ativos.length?"":`<div class="empty">Nenhum contrato ativo ainda</div>`);
+  // composição do MRR por cliente
+  const pagantes=ativos.filter(c=>plval(c)>0).sort((a,b)=>plval(b)-plval(a));
+  const maxV=Math.max(1,...pagantes.map(c=>plval(c)));
+  $("#byPlan").innerHTML = pagantes.length ? pagantes.map(c=>`
+    <div class="bar-row"><span class="name" title="${esc(c.nome)}">${esc(c.nome)}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${plval(c)/maxV*100}%;background:linear-gradient(90deg,var(--brand),#f0a85b)"></div></div>
+      <span class="num" style="width:auto">${brl(plval(c))}</span></div>`).join("")
+    + `<div class="bar-row" style="border-top:1px solid var(--line);padding-top:13px;margin-top:3px"><span class="name" style="font-weight:700;color:var(--txt)">MRR total</span><div class="bar-track" style="background:transparent"></div><span class="num" style="width:auto;font-weight:800;color:var(--brand)">${brl(mrr)}</span></div>`
+    : `<div class="empty">Sem receita recorrente registrada.</div>`;
 }
 function kpi(lbl,val,sub,color){
   return `<div class="kpi"><div class="lbl"><span class="dot" style="background:${color}"></span>${lbl}</div>
