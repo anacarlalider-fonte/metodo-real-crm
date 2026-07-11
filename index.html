@@ -8,21 +8,21 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <style>
   :root{
-    --bg:#0e1116; --bg2:#151a22; --panel:#1b212b; --panel2:#212934;
-    --line:#2a3340; --line2:#374252;
-    --txt:#e8edf4; --muted:#9aa7b8; --muted2:#6b7787;
+    --bg:#e9ebf1; --bg2:#f2f4f8; --panel:#ffffff; --panel2:#f2f4f8;
+    --line:#e3e6ec; --line2:#d3d8e0;
+    --txt:#1b2430; --muted:#5f6b7a; --muted2:#98a1ad;
     --brand:#e8852b; --brand-d:#cf6f1c;
-    --green:#34c26a; --gray:#9aa7b8; --blue:#3b86f0; --orange:#e8852b;
-    --diag:#a06bff; --escala:#16c2c2; --lead:#7b8794; --enc:#5b6675;
-    --danger:#ef5b5b; --ok:#34c26a;
+    --green:#1f9d54; --gray:#8a94a2; --blue:#2f7fe0; --orange:#e8852b;
+    --diag:#7b5bd6; --escala:#0f9e8e; --lead:#8a94a2; --enc:#aeb6c0;
+    --danger:#e0574f; --ok:#1f9d54;
     --radius:14px; --radius-s:10px;
-    --shadow:0 10px 30px rgba(0,0,0,.35);
+    --shadow:0 8px 24px rgba(23,33,51,.08);
   }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%}
   body{
     font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-    background:radial-gradient(1200px 600px at 80% -10%,#1c2530 0,transparent 60%),var(--bg);
+    background:var(--bg);
     color:var(--txt); -webkit-font-smoothing:antialiased;
   }
   button{font-family:inherit;cursor:pointer}
@@ -35,7 +35,7 @@
   header.topbar{
     display:flex;align-items:center;gap:14px;
     padding:12px 20px;border-bottom:1px solid var(--line);
-    background:rgba(21,26,34,.7);backdrop-filter:blur(8px);
+    background:rgba(255,255,255,.82);backdrop-filter:blur(8px);
     position:sticky;top:0;z-index:30;
   }
   .logo{display:flex;align-items:center;gap:11px;font-weight:800;letter-spacing:.2px}
@@ -65,8 +65,8 @@
   .pill{font-size:11px;padding:3px 9px;border-radius:999px;font-weight:700}
 
   .modepill{font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;border:1px solid var(--line2)}
-  .modepill.demo{color:#ffce7a;border-color:#5a4a22;background:#2a2110}
-  .modepill.cloud{color:#7adf9e;border-color:#225a36;background:#102a18}
+  .modepill.demo{color:#a86a12;border-color:#f0d9b0;background:#fdf2df}
+  .modepill.cloud{color:#0f7a45;border-color:#bfe6cd;background:#e7f6ee}
 
   .userchip{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)}
   .userchip b{color:var(--txt);font-weight:600}
@@ -136,7 +136,7 @@
   .tcard .prog .pfill{height:100%;background:linear-gradient(90deg,var(--brand),#f0a85b);border-radius:999px}
   .tcard .prog .plbl{font-size:10.5px;color:var(--muted2);margin-top:4px;display:flex;justify-content:space-between}
   .tcard .next{font-size:11px;color:var(--muted);margin-top:8px;display:flex;align-items:center;gap:6px}
-  .tcard .next.soon{color:#ffce7a}
+  .tcard .next.soon{color:#a86a12}
   .tcard .next.late{color:var(--danger)}
 
   /* ---------- Modal ---------- */
@@ -250,8 +250,8 @@
   .auth-switch{text-align:center;margin-top:16px;font-size:13px;color:var(--muted)}
   .auth-switch a{color:var(--brand);font-weight:600;text-decoration:none;cursor:pointer}
   .auth-msg{font-size:13px;padding:10px 12px;border-radius:9px;margin-bottom:14px;display:none}
-  .auth-msg.err{display:block;background:#2a1414;color:#ff9b9b;border:1px solid #4a2020}
-  .auth-msg.ok{display:block;background:#102a18;color:#7adf9e;border:1px solid #225a36}
+  .auth-msg.err{display:block;background:#fdeaea;color:#b3352f;border:1px solid #f2c9c6}
+  .auth-msg.ok{display:block;background:#e7f6ee;color:#0f7a45;border:1px solid #bfe6cd}
 
   .empty{color:var(--muted2);font-size:12.5px;text-align:center;padding:14px 8px;border:1px dashed var(--line2);border-radius:10px}
   .hidden{display:none!important}
@@ -326,7 +326,7 @@
   .agenda-item{display:flex;align-items:center;gap:14px;padding:13px 16px;background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:9px;cursor:pointer;transition:.12s}
   .agenda-item:hover{border-color:var(--brand);transform:translateX(2px)}
   .agenda-item.late{border-left:3px solid var(--danger)}
-  .agenda-item.soon{border-left:3px solid #ffce7a}
+  .agenda-item.soon{border-left:3px solid #e8a53b}
   .agenda-date{flex:none;width:64px;text-align:center}
   .agenda-date .dd{font-size:20px;font-weight:800;line-height:1}
   .agenda-date .mm{font-size:11px;color:var(--muted);text-transform:uppercase}
@@ -1746,7 +1746,7 @@ function applyFaseLayout(fase){
   const badge=$("#modalKind");
   if(badge){
     badge.textContent = lead ? "Oportunidade" : "Cliente";
-    badge.style.cssText = "font-size:11px;font-weight:800;padding:3px 10px;border-radius:999px;letter-spacing:.3px;white-space:nowrap;"+(lead?"background:#3a2a08;color:#ffce6e":"background:#0f2a1c;color:#7fe0b0");
+    badge.style.cssText = "font-size:11px;font-weight:800;padding:3px 10px;border-radius:999px;letter-spacing:.3px;white-space:nowrap;"+(lead?"background:#fdf2df;color:#a86a12":"background:#e7f6ee;color:#0f7a45");
   }
   // Progresso (entregáveis do Método) e Onboarding só fazem sentido depois de fechar
   const tabProg=$('#mtabs .mtab[data-mtab="progresso"]'); if(tabProg) tabProg.style.display = lead?"none":"";
@@ -1869,7 +1869,7 @@ function acaoLi(a){
   let pill="", pcls="muted";
   if(a.status==="feito"){ pill="feito"; pcls="ok"; }
   else if(a.prazo){ const du=daysUntil(a.prazo); if(du<0){pill=`venceu ${fmtDiaMes(a.prazo)}`;pcls="danger";} else if(du===0){pill="hoje";pcls="warn";} else {pill=fmtDiaMes(a.prazo);pcls="muted";} }
-  const pillBg = pcls==="danger"?"background:#3a1414;color:#ff8f8f" : pcls==="warn"?"background:#3a2a08;color:#ffce6e" : pcls==="ok"?"background:#0f2a1c;color:#7fe0b0" : "background:var(--panel2);color:var(--muted)";
+  const pillBg = pcls==="danger"?"background:#fdeaea;color:#c0392f" : pcls==="warn"?"background:#fdf2df;color:#a86a12" : pcls==="ok"?"background:#e7f6ee;color:#0f7a45" : "background:var(--panel2);color:var(--muted)";
   const done=a.status==="feito";
   return `<div class="acrow" data-id="${a.id}">
     <span class="ac-check" data-id="${a.id}" style="cursor:pointer;font-size:18px;color:${done?'var(--brand)':'var(--muted2)'}">${done?"☑":"☐"}</span>
@@ -1936,8 +1936,8 @@ function renderHoje(){
         <button class="btn sm primary" id="acAdd">Adicionar</button>
       </div>`;
   if(!abertas.length && !feitasRecentes.length) acoesBody+=`<div class="empty" style="margin:12px 0">Nenhuma ação pendente. 🎉</div>`;
-  acoesBody+=acaoGrupo("Atrasadas",atrasadas,"#ff8f8f");
-  acoesBody+=acaoGrupo("Para hoje",deHoje,"#ffce6e");
+  acoesBody+=acaoGrupo("Atrasadas",atrasadas,"#c0392f");
+  acoesBody+=acaoGrupo("Para hoje",deHoje,"#a86a12");
   acoesBody+=acaoGrupo("Esta semana",semana);
   acoesBody+=acaoGrupo("Sem prazo",semPrazo);
   acoesBody+=acaoGrupo("Mais pra frente",depois);
@@ -1956,7 +1956,7 @@ function renderHoje(){
     </div>
     <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:22px;max-width:620px">
       ${chip(sessoes.filter(s=>s.dateISO===today).length,"sessões hoje","var(--brand)")}
-      ${chip(atrasadas.length,"ações atrasadas",atrasadas.length?"#ff8f8f":"var(--txt)")}
+      ${chip(atrasadas.length,"ações atrasadas",atrasadas.length?"#c0392f":"var(--txt)")}
       ${chip(abertas.length,"ações abertas","var(--txt)")}
     </div>
     <div class="hoje-cols">
@@ -2037,7 +2037,7 @@ function renderList(){
     const pg=progressOf(c), plan=PLANS[c.plano||""]||PLANS[""];
     const px=proximaSessaoDe(c); const d=px?daysUntil(px):null;
     let prox = px?fmtDate(px):"—";
-    if(px && d!=null){ if(d<0) prox=`<span style="color:var(--danger)">⚠ ${prox}</span>`; else if(d<=3) prox=`<span style="color:#ffce7a">${prox}</span>`; }
+    if(px && d!=null){ if(d<0) prox=`<span style="color:var(--danger)">⚠ ${prox}</span>`; else if(d<=3) prox=`<span style="color:#a86a12">${prox}</span>`; }
     return `<tr data-id="${c.id}">
       <td><div class="cname">${esc(c.nome)||"(sem nome)"}</div><div class="csub">${esc(c.setor||"")}${c.cidade?" · "+esc(c.cidade):""}</div></td>
       <td>${esc(c.decisor||"—")}</td>
