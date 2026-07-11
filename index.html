@@ -230,9 +230,12 @@
   .hcard{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:6px 14px;margin-bottom:6px}
   .hrow{display:flex;align-items:center;gap:12px;padding:12px 2px;border-bottom:1px solid var(--line)}
   .hrow:last-child{border-bottom:none}
-  .acrow{display:flex;align-items:center;gap:11px;padding:11px 2px;border-bottom:1px solid var(--line)}
+  .acrow{display:flex;align-items:center;gap:11px;padding:13px 2px;border-bottom:1px solid var(--line)}
   .acrow:last-child{border-bottom:none}
-  .acgrp{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;padding:16px 0 4px;color:var(--muted2)}
+  .acgrp{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;padding:22px 0 6px;color:var(--muted2)}
+  .acsep{height:1px;background:var(--line2);margin:26px 0 2px;border-radius:0}
+  .acdone{opacity:.72}
+  .acdone .acgrp{padding-top:12px}
   .hchip{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
   .hchip .n{font-size:26px;font-weight:800;line-height:1}
   .hchip .l{font-size:12px;color:var(--muted);margin-top:5px}
@@ -1941,7 +1944,7 @@ function renderHoje(){
   acoesBody+=acaoGrupo("Esta semana",semana);
   acoesBody+=acaoGrupo("Sem prazo",semPrazo);
   acoesBody+=acaoGrupo("Mais pra frente",depois);
-  if(feitasRecentes.length) acoesBody+=acaoGrupo("Concluídas",feitasRecentes,"var(--muted2)");
+  if(feitasRecentes.length) acoesBody+=`<div class="acsep"></div><div class="acdone">`+acaoGrupo("✓ Concluídas recentemente",feitasRecentes,"var(--muted2)")+`</div>`;
   const acoesPanel = panel(`✅ Ações pendentes <span style="font-weight:400;color:var(--muted2);font-size:12px">${abertas.length}</span>`, acoesBody);
 
   // AÇÕES POR CLIENTE
