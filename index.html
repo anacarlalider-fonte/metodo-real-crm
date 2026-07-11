@@ -2190,30 +2190,43 @@ const ROADMAP_CLIENT=[
 const ETAPA_PILLAR={diagnostico:"diagnostico",cultura:"cultura",gestao:"gestao",lideranca:"lideranca",comercial:"vendas",escala:"escala"};
 const MESES_FULL=["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
 
-function faseAtual(c){
-  if(c.etapa==="lead") return "Início — alinhamento comercial";
-  if(c.etapa==="proposta") return "Proposta em análise";
-  if(c.etapa==="encerrado") return "Consultoria concluída 🎉";
-  const r=ROADMAP_CLIENT.find(x=>ETAPA_PILLAR[c.etapa]===x.key);
-  return r?`Etapa ${ROADMAP_CLIENT.indexOf(r)+1} de 6 — ${r.nome}`:"Em andamento";
+function pillarStatus(c){
+  return ROADMAP_CLIENT.map(r=>{
+    const pg=pillarProgress(c,r.key);
+    return {...r, pct:pg.pct, done:pg.done, total:pg.total,
+      st: pg.pct===100?"done":(pg.done>0?"andamento":"zero")};
+  });
 }
-function roadmapIndex(c){
-  const k=ETAPA_PILLAR[c.etapa];
-  if(c.etapa==="encerrado") return 6;
-  return k?ROADMAP_CLIENT.findIndex(x=>x.key===k):-1;
+function ondeEstamos(c){
+  const g=progressOf(c);
+  if(g.pct===0) return "Início da jornada — diagnóstico";
+  if(g.pct===100) return "Método Real concluído 🎉";
+  const ps=pillarStatus(c);
+  const andamento=ps.filter(p=>p.st==="andamento").map(p=>p.nome.replace(/^[^ ]+ /,""));
+  const feitos=ps.filter(p=>p.st==="done").length;
+  if(andamento.length) return `Em andamento: ${andamento.join(", ")}${feitos?` · ${feitos} pilar(es) concluído(s)`:""}`;
+  return `${feitos} de 6 pilares concluídos`;
+}
+function faseAtual(c){
+  if(c.fase==="venda"){
+    const s=SALES_STAGES.find(x=>x.id===c.etapaVenda);
+    return s?`Comercial — ${s.nome}`:"Início — alinhamento comercial";
+  }
+  return ondeEstamos(c);
 }
 function doneItems(c,key){
   const p=PILLARS.find(x=>x.key===key), arr=(c.deliverables&&c.deliverables[key])||[];
   return p.items.filter((it,i)=>arr[i]);
 }
 function nextSteps(c,limit=4){
-  const order=ROADMAP_CLIENT.map(r=>r.key);
-  let start=0; const cur=ETAPA_PILLAR[c.etapa];
-  if(cur) start=Math.max(0,order.indexOf(cur));
+  const ps=pillarStatus(c);
+  const order=[...ps.filter(p=>p.st==="andamento"), ...ps.filter(p=>p.st==="zero")];
   const out=[];
-  for(let i=start;i<order.length && out.length<limit;i++){
-    const p=PILLARS.find(x=>x.key===order[i]); const arr=(c.deliverables&&c.deliverables[order[i]])||[];
-    p.items.forEach((it,idx)=>{ if(!arr[idx] && out.length<limit) out.push(it); });
+  for(const p of order){
+    const items=PILLARS.find(x=>x.key===p.key).items;
+    const arr=(c.deliverables&&c.deliverables[p.key])||[];
+    items.forEach((it,i)=>{ if(!arr[i] && out.length<limit) out.push(it); });
+    if(out.length>=limit) break;
   }
   return out;
 }
@@ -2221,11 +2234,10 @@ function longDate(d){ if(!d) return ""; const [y,m,dd]=d.split("-"); return `${+
 
 function buildReportHTML(c){
   const pg=progressOf(c);
-  const curIdx=roadmapIndex(c);
-  const road=ROADMAP_CLIENT.map((r,i)=>{
-    let cls=""; if(curIdx>=0){ if(i<curIdx) cls="done"; else if(i===curIdx) cls="cur"; }
-    if(c.etapa==="encerrado") cls="done";
-    return `<div class="rd-step ${cls}"><span class="rk">${r.ico}</span>${r.nome}</div>`;
+  const road=pillarStatus(c).map(p=>{
+    const cls = p.st==="done"?"done":(p.st==="andamento"?"cur":"");
+    const lbl = p.st==="done"?"✓":(p.st==="andamento"?p.pct+"%":"");
+    return `<div class="rd-step ${cls}"><span class="rk">${p.ico}</span>${p.nome}${lbl?`<div style="font-size:10px;margin-top:2px">${lbl}</div>`:""}</div>`;
   }).join("");
 
   const blocks=ROADMAP_CLIENT.map(r=>{
