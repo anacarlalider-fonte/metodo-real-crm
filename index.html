@@ -606,6 +606,7 @@
           <div class="field"><label>Etapa</label><select id="f_etapa"></select></div>
           <div class="field"><label>Status</label><select id="f_status"></select></div>
           <div class="field"><label>Plano</label><select id="f_plano"></select></div>
+          <div class="field" id="fieldProxFup"><label>Próximo follow-up</label><input id="f_proxfup" type="date" /></div>
           <div class="field"><label>Valor mensal (R$)</label><input id="f_valor" type="number" min="0" step="100" placeholder="negociado — ex.: 8000" /></div>
           <div class="field"><label>Sessões realizadas</label><input id="f_sessoes" type="number" min="0" placeholder="0" /></div>
 
@@ -1004,7 +1005,7 @@ function objToRow(o,userId){
   return {
     id:o.id, user_id:userId, nome:o.nome, setor:o.setor, cidade:o.cidade, decisor:o.decisor,
     faturamento:o.faturamento, etapa:o.etapa, status:o.status, plano:o.plano,
-    fase:o.fase||"entrega", etapa_venda:o.etapaVenda||null, data_proposta:o.dataProposta||null, ultimo_contato:o.ultimoContato||null,
+    fase:o.fase||"entrega", etapa_venda:o.etapaVenda||null, data_proposta:o.dataProposta||null, ultimo_contato:o.ultimoContato||null, proximo_followup:o.proximoFollowup||null,
     valor_mensal:o.valorMensal!==""&&o.valorMensal!=null?Number(o.valorMensal):null,
     sessoes_realizadas:Number(o.sessoes||0), data_inicio:o.inicio||null, data_fim:o.fim||null,
     proxima_sessao:o.proxima||null, whatsapp:o.whatsapp, drive:o.drive, dor:o.dor,
@@ -1017,7 +1018,7 @@ function rowToObj(r){
   return {
     id:r.id, nome:r.nome, setor:r.setor, cidade:r.cidade, decisor:r.decisor, faturamento:r.faturamento,
     etapa:r.etapa, status:r.status, plano:r.plano, sessoes:r.sessoes_realizadas, inicio:r.data_inicio,
-    fase:r.fase||"entrega", etapaVenda:r.etapa_venda||"lead", dataProposta:r.data_proposta||"", ultimoContato:r.ultimo_contato||"",
+    fase:r.fase||"entrega", etapaVenda:r.etapa_venda||"lead", dataProposta:r.data_proposta||"", ultimoContato:r.ultimo_contato||"", proximoFollowup:r.proximo_followup||"",
     valorMensal:r.valor_mensal!=null?r.valor_mensal:"",
     fim:r.data_fim, proxima:r.proxima_sessao, whatsapp:r.whatsapp, drive:r.drive, dor:r.dor,
     prioridades:r.prioridades, notas:r.notas, atas:r.atas||[], deliverables:r.deliverables||{},
@@ -1341,6 +1342,7 @@ function openModal(c){
   $("#f_plano").innerHTML=Object.entries(PLANS).map(([k,p])=>`<option value="${k}">${p.nome}${p.valor?` — ${brl(p.valor)}/mês`:""}</option>`).join("");
   $("#f_plano").value=editing.plano||"";
   $("#f_valor").value=editing.valorMensal||"";
+  if($("#f_proxfup")) $("#f_proxfup").value=editing.proximoFollowup||"";
 
   renderQualificacao();
   renderContatos();
@@ -1406,7 +1408,7 @@ function newCompany(){
     fase:"venda", etapaVenda:"lead", etapa:"diagnostico", dataProposta:"",
     status:"Lead", plano:"", valorMensal:"", sessoes:"", inicio:"", fim:"", proxima:"", whatsapp:"", drive:"",
     dor:"", prioridades:"", notas:"", atas:[], deliverables:d, onboarding:emptyOnboarding(),
-    qualificacao:emptyQualificacao(), contatos:[], documentos:[], interacoes:[], createdAt:new Date().toISOString() };
+    qualificacao:emptyQualificacao(), contatos:[], documentos:[], interacoes:[], proximoFollowup:"", createdAt:new Date().toISOString() };
 }
 function emptyQualificacao(){ return { crit:new Array(ICP_CRITERIA.length).fill(false), planoSugerido:"", motivo:"" }; }
 function normalizeCompany(c){
@@ -1784,6 +1786,8 @@ function applyFaseLayout(fase){
   ["f_valor","f_sessoes","f_inicio","f_fim","f_proxima","f_whatsapp","f_drive"].forEach(id=>{
     const el=$("#"+id); if(el){ const f=el.closest(".field"); if(f) f.style.display = lead?"none":""; }
   });
+  // Próximo follow-up é coisa de oportunidade (some no cliente)
+  const pf=$("#fieldProxFup"); if(pf) pf.style.display = lead?"":"none";
   // Relatório de progresso não faz sentido pra oportunidade
   const bRep=$("#btnReport"); if(bRep) bRep.style.display = lead?"none":"";
   // se a aba ativa sumiu ao virar oportunidade, volta pro Cadastro
@@ -1795,6 +1799,7 @@ function collectForm(){
   editing.cidade=$("#f_cidade").value.trim(); editing.decisor=$("#f_decisor").value.trim();
   editing.faturamento=$("#f_faturamento").value.trim(); editing.sessoes=$("#f_sessoes").value;
   editing.valorMensal=$("#f_valor").value;
+  if($("#f_proxfup")) editing.proximoFollowup=$("#f_proxfup").value;
   editing.fase=$("#f_fase").value; editing.status=$("#f_status").value; editing.plano=$("#f_plano").value;
   if(editing.fase==="venda"){
     editing.etapaVenda=$("#f_etapa").value;
@@ -1851,7 +1856,7 @@ $("#btnAddInt").addEventListener("click",()=>{
   const t=$("#intTexto").value.trim(); if(!t){ toast("Descreva a interação","err"); return; }
   editing.interacoes=editing.interacoes||[];
   editing.interacoes.unshift({data:$("#intDate").value||todayISO(), tipo:$("#intTipo").value||"Outro", texto:t});
-  if(editing.fase==="venda") editing.ultimoContato=todayISO();
+  if(editing.fase==="venda"){ editing.ultimoContato=todayISO(); editing.proximoFollowup=""; if($("#f_proxfup")) $("#f_proxfup").value=""; }
   $("#intTexto").value=""; renderInteracoes();
   toast(editing.fase==="venda"?"Interação registrada · follow-up reprogramado 👊":"Interação registrada","ok");
 });
@@ -1933,6 +1938,7 @@ function acaoGrupo(titulo,arr,cor){
 const CADENCIA=[1,3,5,7,14];
 function addDays(iso,n){ const d=new Date(iso+"T00:00"); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
 function nextTouch(c){
+  if(c.proximoFollowup) return { date:c.proximoFollowup, due:daysUntil(c.proximoFollowup), manual:true };
   if(!c.dataProposta) return null;
   const done = (c.ultimoContato && c.ultimoContato>c.dataProposta) ? c.ultimoContato : c.dataProposta;
   const datas = CADENCIA.map(d=>addDays(c.dataProposta,d));
@@ -2005,7 +2011,7 @@ function renderHoje(){
   const porClientePanel = panel("📊 Ações por cliente", `<div id="acPorCli"></div>`, periodSel);
 
   // FOLLOW-UPS DE VENDAS (cadência D+1/3/5/7/14)
-  const leadsFu=Store.cache.filter(c=>c.fase==="venda" && ["proposta","followup"].includes(c.etapaVenda));
+  const leadsFu=Store.cache.filter(c=>c.fase==="venda" && !["perdido","ganho"].includes(c.etapaVenda) && (c.proximoFollowup || ["proposta","followup"].includes(c.etapaVenda)));
   const fups=leadsFu.map(c=>({c,t:nextTouch(c)})).filter(x=>x.t)
     .sort((a,b)=>((a.t.esfriou?-999:(a.t.due==null?999:a.t.due))-(b.t.esfriou?-999:(b.t.due==null?999:b.t.due))));
   const fupPend=fups.filter(x=>x.t.esfriou || (x.t.due!=null && x.t.due<=0)).length;
@@ -2015,11 +2021,12 @@ function renderHoje(){
     else if(t.due<0){ tag=`toque atrasado`; bg="background:#fdeaea;color:#c0392f"; }
     else if(t.due===0){ tag="tocar hoje"; bg="background:#fdf2df;color:#a86a12"; }
     else { tag=`toque em ${t.due}d`; bg="background:var(--panel2);color:var(--muted)"; }
-    const since=-(daysUntil(c.dataProposta));
+    const since=c.dataProposta?-(daysUntil(c.dataProposta)):null;
+    const sub=(t.manual?`follow-up marcado p/ ${fmtDiaMes(t.date)}`:(since!=null?`proposta há ${since}d`:"follow-up"))+(c.ultimoContato?` · último contato ${fmtDiaMes(c.ultimoContato)}`:"");
     return `<div class="hrow" style="align-items:center;gap:10px">
       <div class="fu-open" data-id="${c.id}" style="flex:1;min-width:0;cursor:pointer">
         <div style="font-size:14px;font-weight:500">${esc(c.nome)||"(lead)"}</div>
-        <div style="font-size:12px;color:var(--muted)">proposta há ${since}d${c.ultimoContato?` · último contato ${fmtDiaMes(c.ultimoContato)}`:""}</div>
+        <div style="font-size:12px;color:var(--muted)">${sub}</div>
       </div>
       <span style="font-size:11px;padding:3px 9px;border-radius:99px;white-space:nowrap;${bg}">${tag}</span>
       <button class="fu-done btn sm" data-id="${c.id}" style="white-space:nowrap">✓ contatei</button>
@@ -2068,7 +2075,7 @@ function renderHoje(){
   box.querySelectorAll(".fu-done").forEach(el=>el.addEventListener("click",async e=>{
     e.stopPropagation();
     const c=coById(el.dataset.id); if(!c) return;
-    c.ultimoContato=today;
+    c.ultimoContato=today; c.proximoFollowup="";
     try{ await Store.save(c); toast("Follow-up registrado 👊","ok"); renderHoje(); refreshBadges(); }
     catch(err){ toast("Erro: "+(err.message||err),"err"); }
   }));
