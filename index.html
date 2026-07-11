@@ -528,8 +528,8 @@
        <div class="tablewrap">
          <table class="dtable">
            <thead><tr>
-             <th>Cliente</th><th>Decisor</th><th>Plano</th>
-             <th>Status</th><th>Progresso</th><th>Próx. sessão</th>
+             <th>Cliente</th><th>Decisor</th><th>Cidade</th>
+             <th>Valor mensal</th><th>Vencimento</th><th>Status</th>
            </tr></thead>
            <tbody id="listBody"></tbody>
          </table>
@@ -2036,20 +2036,22 @@ function renderList(){
     .sort((a,b)=>(a.nome||"").localeCompare(b.nome||"","pt-BR"));
   const body=$("#listBody");
   if(!data.length){ body.innerHTML=`<tr><td colspan="6"><div class="empty" style="margin:8px">Nenhum cliente ainda. Os leads em negociação ficam no funil de <b>Vendas</b> — viram clientes quando fecham.</div></td></tr>`; return; }
-  body.innerHTML=data.map(c=>{
-    const pg=progressOf(c), plan=PLANS[c.plano||""]||PLANS[""];
-    const px=proximaSessaoDe(c); const d=px?daysUntil(px):null;
-    let prox = px?fmtDate(px):"—";
-    if(px && d!=null){ if(d<0) prox=`<span style="color:var(--danger)">⚠ ${prox}</span>`; else if(d<=3) prox=`<span style="color:#a86a12">${prox}</span>`; }
+  const rows=data.map(c=>{
+    const valor=plval(c);
+    const permuta=valor<=0 && c.notas && /permuta/i.test(c.notas);
+    const venc=(c.onboarding&&c.onboarding.vencimento)||"";
     return `<tr data-id="${c.id}">
-      <td><div class="cname">${esc(c.nome)||"(sem nome)"}</div><div class="csub">${esc(c.setor||"")}${c.cidade?" · "+esc(c.cidade):""}</div></td>
+      <td><div class="cname">${esc(c.nome)||"(sem nome)"}</div><div class="csub">${esc(c.setor||"—")}</div></td>
       <td>${esc(c.decisor||"—")}</td>
-      <td>${c.plano?`<span class="stagechip" style="background:${plan.cor}22;color:${plan.cor}">${plan.nome.split(" — ")[0]}</span>`:"—"}</td>
+      <td>${esc(c.cidade||"—")}</td>
+      <td>${valor>0?`<b>${brl(valor)}</b>`:(permuta?`<span class="csub">Permuta</span>`:"—")}</td>
+      <td>${venc?esc(venc):"<span class=\"csub\">—</span>"}</td>
       <td><span class="statuschip" style="background:var(--panel2);color:var(--muted)">${esc(c.status||"—")}</span></td>
-      <td><span class="minibar"><i style="width:${pg.pct}%"></i></span><span class="csub">${pg.pct}%</span></td>
-      <td>${prox}</td>
     </tr>`;
   }).join("");
+  const total=data.reduce((s,c)=>s+plval(c),0);
+  const totalRow=`<tr style="border-top:2px solid var(--line2)"><td style="font-weight:700">MRR total <span class="csub">· ${data.length} clientes</span></td><td></td><td></td><td style="font-weight:800;color:var(--brand)">${brl(total)}</td><td></td><td></td></tr>`;
+  body.innerHTML=rows+totalRow;
   body.querySelectorAll("tr[data-id]").forEach(tr=>tr.addEventListener("click",()=>{
     const c=Store.cache.find(x=>x.id===tr.dataset.id); if(c) openModal(c);
   }));
