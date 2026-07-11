@@ -30,6 +30,7 @@ create table if not exists public.mr_companies (
   etapa_venda         text,                                   -- coluna do funil de vendas: lead|qualificado|call|proposta|followup|ganho|perdido
   etapa               text not null default 'diagnostico',    -- coluna do funil de entrega (Roadmap)
   data_proposta       date,                                   -- quando a proposta foi enviada (cadência de follow-up)
+  ultimo_contato      date,                                   -- último follow-up feito (reprograma o próximo toque)
   status              text default 'Lead',                    -- Lead | Em proposta | Ativo | Pausado | Encerrado | Perdido
   plano               text,                                   -- '' | plano1 | plano2 | plano3
   valor_mensal        numeric,                                -- valor negociado real (sobrepõe o preço de tabela do plano)
