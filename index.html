@@ -586,6 +586,7 @@
     <div class="modal-body">
       <div class="mtabs" id="mtabs">
         <button class="mtab active" type="button" data-mtab="cadastro">📋 Cadastro</button>
+        <button class="mtab" type="button" data-mtab="interacoes">💬 Interações</button>
         <button class="mtab" type="button" data-mtab="time">👥 Time</button>
         <button class="mtab" type="button" data-mtab="atas">📝 Atas de reuniões</button>
         <button class="mtab" type="button" data-mtab="progresso">📊 Progresso</button>
@@ -628,6 +629,19 @@
 
         <div class="sec-title">💡 Notas e observações</div>
         <div class="field full"><textarea id="f_notas" placeholder="Particularidades, alertas, padrões percebidos…"></textarea></div>
+      </div>
+
+      <!-- ABA: INTERAÇÕES -->
+      <div class="mpanel hidden" data-mpanel="interacoes">
+        <div class="sec-title">💬 Interações e atendimentos</div>
+        <div class="contatos-hint">Registre cada contato: ligação, WhatsApp, e-mail, reunião, visita. Num lead, registrar aqui já conta como follow-up e reprograma o próximo toque.</div>
+        <div class="formgrid">
+          <div class="field"><label>Data</label><input id="intDate" type="date" /></div>
+          <div class="field"><label>Tipo</label><select id="intTipo"><option>Ligação</option><option>WhatsApp</option><option>E-mail</option><option>Reunião</option><option>Visita</option><option>Mensagem</option><option>Outro</option></select></div>
+          <div class="field full"><label>O que aconteceu</label><input id="intTexto" placeholder="Ex.: liguei, cliente pediu proposta revisada até sexta" /></div>
+        </div>
+        <button class="btn sm ghost" id="btnAddInt" type="button" style="margin-top:8px">+ Registrar interação</button>
+        <div id="interacoesList" class="atas-list" style="margin-top:16px"></div>
       </div>
 
       <!-- ABA: TIME -->
@@ -995,7 +1009,7 @@ function objToRow(o,userId){
     sessoes_realizadas:Number(o.sessoes||0), data_inicio:o.inicio||null, data_fim:o.fim||null,
     proxima_sessao:o.proxima||null, whatsapp:o.whatsapp, drive:o.drive, dor:o.dor,
     prioridades:o.prioridades, notas:o.notas, atas:o.atas||[], deliverables:o.deliverables||{},
-    onboarding:o.onboarding||{}, qualificacao:o.qualificacao||{}, contatos:o.contatos||[], documentos:o.documentos||[],
+    onboarding:o.onboarding||{}, qualificacao:o.qualificacao||{}, contatos:o.contatos||[], documentos:o.documentos||[], interacoes:o.interacoes||[],
     created_at:o.createdAt||new Date().toISOString(), updated_at:o.updatedAt||new Date().toISOString()
   };
 }
@@ -1007,7 +1021,7 @@ function rowToObj(r){
     valorMensal:r.valor_mensal!=null?r.valor_mensal:"",
     fim:r.data_fim, proxima:r.proxima_sessao, whatsapp:r.whatsapp, drive:r.drive, dor:r.dor,
     prioridades:r.prioridades, notas:r.notas, atas:r.atas||[], deliverables:r.deliverables||{},
-    onboarding:r.onboarding||{}, qualificacao:r.qualificacao||{}, contatos:r.contatos||[], documentos:r.documentos||[],
+    onboarding:r.onboarding||{}, qualificacao:r.qualificacao||{}, contatos:r.contatos||[], documentos:r.documentos||[], interacoes:r.interacoes||[],
     createdAt:r.created_at, updatedAt:r.updated_at
   };
 }
@@ -1330,6 +1344,8 @@ function openModal(c){
 
   renderQualificacao();
   renderContatos();
+  renderInteracoes();
+  if($("#intDate")) $("#intDate").value=todayISO();
   renderOnboarding();
   renderDeliverables();
   renderAtas();
@@ -1390,7 +1406,7 @@ function newCompany(){
     fase:"venda", etapaVenda:"lead", etapa:"diagnostico", dataProposta:"",
     status:"Lead", plano:"", valorMensal:"", sessoes:"", inicio:"", fim:"", proxima:"", whatsapp:"", drive:"",
     dor:"", prioridades:"", notas:"", atas:[], deliverables:d, onboarding:emptyOnboarding(),
-    qualificacao:emptyQualificacao(), contatos:[], documentos:[], createdAt:new Date().toISOString() };
+    qualificacao:emptyQualificacao(), contatos:[], documentos:[], interacoes:[], createdAt:new Date().toISOString() };
 }
 function emptyQualificacao(){ return { crit:new Array(ICP_CRITERIA.length).fill(false), planoSugerido:"", motivo:"" }; }
 function normalizeCompany(c){
@@ -1461,6 +1477,15 @@ function buildAtaText(a){
   if(a.plano&&a.plano.length){ L.push("Checklist de plano de ação"); a.plano.forEach(g=>{ L.push(g.pessoa); (g.itens||[]).forEach(it=>L.push(`☐ ${it}`)); }); L.push(""); }
   if(a.proximos&&a.proximos.length){ L.push("Próximos passos"); a.proximos.forEach(t=>L.push(`☐ ${t}`)); L.push(""); }
   return L.join("\n").trim();
+}
+const INT_ICON={"Ligação":"📞","WhatsApp":"💬","E-mail":"✉️","Reunião":"👥","Visita":"📍","Mensagem":"💬","Outro":"•"};
+function renderInteracoes(){
+  const box=$("#interacoesList"); if(!box) return;
+  const arr=editing.interacoes||[];
+  if(!arr.length){ box.innerHTML=`<div class="empty">Nenhuma interação registrada ainda.</div>`; return; }
+  const idx=arr.map((it,i)=>({it,i})).sort((a,b)=>(b.it.data||"").localeCompare(a.it.data||""));
+  box.innerHTML=idx.map(({it,i})=>`<div class="ata"><div class="d">${INT_ICON[it.tipo]||"•"} ${esc(it.tipo||"Interação")} · ${fmtDate(it.data)||"sem data"}</div>${esc(it.texto)}<button class="del intdel" data-i="${i}" title="Remover">✕</button></div>`).join("");
+  box.querySelectorAll(".intdel").forEach(b=>b.addEventListener("click",()=>{ editing.interacoes.splice(+b.dataset.i,1); renderInteracoes(); }));
 }
 function renderAtas(){
   const box=$("#atasList");
@@ -1819,6 +1844,16 @@ $("#btnAddAta").addEventListener("click",()=>{
   const t=$("#ataText").value.trim(); if(!t){ toast("Escreva a anotação da ata","err"); return; }
   editing.atas=editing.atas||[]; editing.atas.unshift({data:$("#ataDate").value||todayISO(),texto:t});
   $("#ataText").value=""; renderAtas();
+});
+
+$("#btnAddInt").addEventListener("click",()=>{
+  if(!editing) return;
+  const t=$("#intTexto").value.trim(); if(!t){ toast("Descreva a interação","err"); return; }
+  editing.interacoes=editing.interacoes||[];
+  editing.interacoes.unshift({data:$("#intDate").value||todayISO(), tipo:$("#intTipo").value||"Outro", texto:t});
+  if(editing.fase==="venda") editing.ultimoContato=todayISO();
+  $("#intTexto").value=""; renderInteracoes();
+  toast(editing.fase==="venda"?"Interação registrada · follow-up reprogramado 👊":"Interação registrada","ok");
 });
 
 $("#btnSave").addEventListener("click",async()=>{

@@ -55,6 +55,7 @@ create table if not exists public.mr_companies (
   onboarding          jsonb default '{}'::jsonb,              -- dados cadastrais + checklist pós-fechamento (POP 02)
   qualificacao        jsonb default '{}'::jsonb,              -- ICP (POP 01): {crit:[bool], planoSugerido, motivo}
   contatos            jsonb default '[]'::jsonb,              -- até 5 [{nome, email}] p/ vincular reuniões do Tactiq
+  interacoes          jsonb default '[]'::jsonb,              -- [{data, tipo, texto}] log de contatos/atendimentos
 
   created_at          timestamptz default now(),
   updated_at          timestamptz default now()
