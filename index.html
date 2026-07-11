@@ -1751,11 +1751,18 @@ function applyFaseLayout(fase){
     badge.textContent = lead ? "Oportunidade" : "Cliente";
     badge.style.cssText = "font-size:11px;font-weight:800;padding:3px 10px;border-radius:999px;letter-spacing:.3px;white-space:nowrap;"+(lead?"background:#fdf2df;color:#a86a12":"background:#e7f6ee;color:#0f7a45");
   }
-  // Progresso (entregáveis do Método) e Onboarding só fazem sentido depois de fechar
-  const tabProg=$('#mtabs .mtab[data-mtab="progresso"]'); if(tabProg) tabProg.style.display = lead?"none":"";
+  // Abas que só fazem sentido depois que vira cliente
+  const abasCliente=["time","atas","progresso","docs"];
+  abasCliente.forEach(t=>{ const b=$(`#mtabs .mtab[data-mtab="${t}"]`); if(b) b.style.display = lead?"none":""; });
   const onb=$("#onbSection"); if(onb) onb.style.display = lead?"none":"";
-  // se a aba ativa sumiu (Progresso) ao virar oportunidade, volta pro Cadastro
-  if(lead){ const act=$('#mtabs .mtab.active'); if(act && act.dataset.mtab==="progresso") setModalTab("cadastro"); }
+  // Campos de contrato/entrega — some enquanto é oportunidade
+  ["f_valor","f_sessoes","f_inicio","f_fim","f_proxima","f_whatsapp","f_drive"].forEach(id=>{
+    const el=$("#"+id); if(el){ const f=el.closest(".field"); if(f) f.style.display = lead?"none":""; }
+  });
+  // Relatório de progresso não faz sentido pra oportunidade
+  const bRep=$("#btnReport"); if(bRep) bRep.style.display = lead?"none":"";
+  // se a aba ativa sumiu ao virar oportunidade, volta pro Cadastro
+  if(lead){ const act=$('#mtabs .mtab.active'); if(act && abasCliente.includes(act.dataset.mtab)) setModalTab("cadastro"); }
 }
 
 function collectForm(){
