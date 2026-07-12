@@ -1497,7 +1497,7 @@ function ataActionItems(ata){
   if(Array.isArray(ata.plano)) ata.plano.forEach(g=>(g.itens||[]).forEach(it=>{ const d=String(it).trim(); if(d) out.push({descricao:d, responsavel:g.pessoa||"você"}); }));
   if(Array.isArray(ata.proximos)) ata.proximos.forEach(it=>{ const d=String(it).trim(); if(d) out.push({descricao:d, responsavel:"você"}); });
   if(!out.length && ata.acoes){
-    String(ata.acoes).split(/\r?\n/).map(s=>s.replace(/^[\s•\-•–]*\d*[\.\)]?\s*/,"").trim()).filter(s=>s.length>2)
+    String(ata.acoes).split(/\r?\n/).map(s=>s.replace(/^[\s•*\-–]+/,"").replace(/^\d+\W?\s*/,"").trim()).filter(s=>s.length>2)
       .forEach(d=>out.push({descricao:d, responsavel:"você"}));
   }
   return out;
