@@ -2051,6 +2051,7 @@ function nextTouch(c){
   if(!next) return { esfriou:true };
   return { date:next, due:daysUntil(next) };
 }
+let hojeView="tudo";
 function renderHoje(){
   const box=$("#hoje"); if(!box) return;
   const today=todayISO();
@@ -2154,6 +2155,25 @@ function renderHoje(){
   }).join("");
   const finPanel = parcAlert.length ? panel(`💳 Parcelas a cobrar <span style="font-weight:400;color:var(--muted2);font-size:12px">${parcAlert.length}</span>`, finBody) : "";
 
+  // barra de blocos: mostra um bloco por vez (ou tudo)
+  const _hvBtns=[["tudo","Tudo"],["acoes","Ações"],["followups","Follow-ups"],["sessoes","Sessões"],["cobrancas","Cobranças"],["alertas","Alertas"]];
+  const hvBar=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px">${_hvBtns.map(([k,l])=>`<button class="btn sm ghost hoje-view${hojeView===k?" active":""}" data-hv="${k}">${l}</button>`).join("")}</div>`;
+  const emptyPanel=(title,msg)=>panel(title,`<div class="empty" style="margin:8px 0">${msg}</div>`);
+  let corpo;
+  if(hojeView==="tudo"){
+    corpo=`<div class="hoje-cols">
+      <div>${followupPanel}${acoesPanel}</div>
+      <div>${sessoesPanel}${alertasPanel}${finPanel}${porClientePanel}</div>
+    </div>`;
+  } else {
+    let sel="";
+    if(hojeView==="acoes") sel=acoesPanel+porClientePanel;
+    else if(hojeView==="followups") sel=followupPanel;
+    else if(hojeView==="sessoes") sel=sessoesPanel;
+    else if(hojeView==="cobrancas") sel=finPanel||emptyPanel(`💳 Parcelas a cobrar`,"Nenhuma parcela vencida ou vencendo esta semana. 👍");
+    else if(hojeView==="alertas") sel=alertasPanel||emptyPanel(`🔔 Precisam de atenção`,"Nada precisando de atenção agora. 👍");
+    corpo=`<div style="max-width:760px">${sel}</div>`;
+  }
   const html=`<div style="max-width:1280px">
     <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:8px">
       <div style="font-size:22px;font-weight:800">${saudacao()}, Ana 👋</div>
@@ -2166,10 +2186,8 @@ function renderHoje(){
       ${chip(abertas.length,"ações abertas","var(--txt)")}
       ${chip(parcVencidas,"parcelas vencidas",parcVencidas?"#c0392f":"var(--txt)")}
     </div>
-    <div class="hoje-cols">
-      <div>${followupPanel}${acoesPanel}</div>
-      <div>${sessoesPanel}${alertasPanel}${finPanel}${porClientePanel}</div>
-    </div>
+    ${hvBar}
+    ${corpo}
   </div>`;
   box.innerHTML=html;
   renderAcPorCli();
@@ -2189,8 +2207,9 @@ function renderHoje(){
     try{ await Store.addAcao({descricao:desc, company_id:$("#acCli").value||null, prazo:$("#acPrazo").value||null}); renderHoje(); refreshBadges(); }
     catch(e){ toast("Erro ao salvar: "+(e.message||e),"err"); }
   };
-  $("#acAdd").addEventListener("click",addFn);
-  $("#acDesc").addEventListener("keydown",e=>{ if(e.key==="Enter") addFn(); });
+  const acAddEl=$("#acAdd"); if(acAddEl) acAddEl.addEventListener("click",addFn);
+  const acDescEl=$("#acDesc"); if(acDescEl) acDescEl.addEventListener("keydown",e=>{ if(e.key==="Enter") addFn(); });
+  box.querySelectorAll(".hoje-view").forEach(b=>b.addEventListener("click",()=>{ hojeView=b.dataset.hv; renderHoje(); }));
   box.querySelectorAll(".sess-go,.alert-go,.fin-go").forEach(el=>el.addEventListener("click",()=>{ const c=coById(el.dataset.id); if(c) openModal(c); }));
   box.querySelectorAll(".fu-open").forEach(el=>el.addEventListener("click",()=>{ const c=coById(el.dataset.id); if(c) openModal(c); }));
   box.querySelectorAll(".fu-done").forEach(el=>el.addEventListener("click",async e=>{
