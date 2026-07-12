@@ -2139,6 +2139,21 @@ function renderHoje(){
   }).join("") : `<div class="empty" style="margin:8px 0">Nenhum follow-up de venda pendente. Envie propostas no funil de Vendas.</div>`;
   const followupPanel = panel(`📨 Follow-ups de vendas <span style="font-weight:400;color:var(--muted2);font-size:12px">${fups.length}</span>`, fupBody);
 
+  // PARCELAS — vencidas ou vencendo esta semana
+  const parcAlert=(Store.pagamentos||[]).filter(p=>p.status!=="pago" && p.vencimento && daysUntil(p.vencimento)<=7)
+    .sort((a,b)=>(a.vencimento||"").localeCompare(b.vencimento||""));
+  const parcVencidas=parcAlert.filter(p=>p.vencimento<today).length;
+  const finBody = parcAlert.map(p=>{
+    const d=daysUntil(p.vencimento); let tag,bg;
+    if(d<0){ tag=`vencida há ${-d}d`; bg="background:#fdeaea;color:#c0392f"; }
+    else if(d===0){ tag="vence hoje"; bg="background:#fdf2df;color:#a86a12"; }
+    else { tag=`vence em ${d}d`; bg="background:var(--panel2);color:var(--muted)"; }
+    return `<div class="hrow fin-go" data-id="${p.company_id||""}" style="cursor:pointer;align-items:center;gap:10px">
+      <span style="flex:1;min-width:0;font-size:14px"><b>${esc(coNome(p.company_id))}</b> · ${brl(Number(p.valor||0))}<div style="font-size:12px;color:var(--muted)">venc. ${fmtDate(p.vencimento)}${p.competencia?" · "+esc(p.competencia):""}</div></span>
+      <span style="font-size:11px;padding:3px 9px;border-radius:99px;white-space:nowrap;${bg}">${tag}</span></div>`;
+  }).join("");
+  const finPanel = parcAlert.length ? panel(`💳 Parcelas a cobrar <span style="font-weight:400;color:var(--muted2);font-size:12px">${parcAlert.length}</span>`, finBody) : "";
+
   const html=`<div style="max-width:1280px">
     <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:8px">
       <div style="font-size:22px;font-weight:800">${saudacao()}, Ana 👋</div>
@@ -2149,10 +2164,11 @@ function renderHoje(){
       ${chip(fupPend,"follow-ups a fazer",fupPend?"#c0392f":"var(--txt)")}
       ${chip(atrasadas.length,"ações atrasadas",atrasadas.length?"#c0392f":"var(--txt)")}
       ${chip(abertas.length,"ações abertas","var(--txt)")}
+      ${chip(parcVencidas,"parcelas vencidas",parcVencidas?"#c0392f":"var(--txt)")}
     </div>
     <div class="hoje-cols">
       <div>${followupPanel}${acoesPanel}</div>
-      <div>${sessoesPanel}${alertasPanel}${porClientePanel}</div>
+      <div>${sessoesPanel}${alertasPanel}${finPanel}${porClientePanel}</div>
     </div>
   </div>`;
   box.innerHTML=html;
@@ -2175,7 +2191,7 @@ function renderHoje(){
   };
   $("#acAdd").addEventListener("click",addFn);
   $("#acDesc").addEventListener("keydown",e=>{ if(e.key==="Enter") addFn(); });
-  box.querySelectorAll(".sess-go,.alert-go").forEach(el=>el.addEventListener("click",()=>{ const c=coById(el.dataset.id); if(c) openModal(c); }));
+  box.querySelectorAll(".sess-go,.alert-go,.fin-go").forEach(el=>el.addEventListener("click",()=>{ const c=coById(el.dataset.id); if(c) openModal(c); }));
   box.querySelectorAll(".fu-open").forEach(el=>el.addEventListener("click",()=>{ const c=coById(el.dataset.id); if(c) openModal(c); }));
   box.querySelectorAll(".fu-done").forEach(el=>el.addEventListener("click",async e=>{
     e.stopPropagation();
