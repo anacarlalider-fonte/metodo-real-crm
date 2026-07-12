@@ -230,6 +230,13 @@
   .hcard{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:6px 14px;margin-bottom:6px}
   .hrow{display:flex;align-items:center;gap:12px;padding:12px 2px;border-bottom:1px solid var(--line)}
   .hrow:last-child{border-bottom:none}
+  .click{cursor:pointer}
+  .utag{display:inline-block;font-size:11px;padding:3px 9px;border-radius:99px;white-space:nowrap}
+  .utag.late{background:#fdeaea;color:#c0392f}
+  .utag.today{background:#fdf2df;color:#a86a12}
+  .utag.soon{background:var(--panel2);color:var(--muted)}
+  .hinput{padding:9px 11px;background:var(--bg);border:1px solid var(--line2);border-radius:8px;color:var(--txt)}
+  .pcount{font-weight:400;color:var(--muted2);font-size:12px}
   .acrow{display:flex;align-items:center;gap:11px;padding:13px 2px;border-bottom:1px solid var(--line)}
   .acrow:last-child{border-bottom:none}
   .acgrp{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;padding:22px 0 6px;color:var(--muted2)}
@@ -2080,7 +2087,7 @@ function renderHoje(){
 
   // PRÓXIMAS SESSÕES
   const sessoesBody = sessoes.length
-    ? sessoes.map(s=>`<div class="hrow ${s.companyId?'sess-go':''}" ${s.companyId?`data-id="${s.companyId}"`:''} style="${s.companyId?'cursor:pointer':''}">
+    ? sessoes.map(s=>`<div class="hrow${s.companyId?" click sess-go":""}" ${s.companyId?`data-id="${s.companyId}"`:''}>
         <span style="font-weight:700;color:var(--brand);width:64px;line-height:1.25">${s.dateISO===today?"hoje":fmtDiaMes(s.dateISO)}${s.hora?`<br><span style="font-weight:400;color:var(--muted2);font-size:11px">${s.hora}</span>`:""}</span>
         <span style="flex:1;font-size:14px">${esc(s.nome)}${s.google?` <span style="font-size:10px;color:var(--muted2);border:1px solid var(--line2);border-radius:5px;padding:0 5px;vertical-align:middle">Google</span>`:""}</span>
         <span style="font-size:12px;color:var(--muted2)">${s.companyId?"abrir →":""}</span></div>`).join("")
@@ -2091,15 +2098,15 @@ function renderHoje(){
   const alertas=[];
   onbParado.forEach(c=>{ const o=c.onboarding||{}; const done=(o.steps||[]).filter(Boolean).length; alertas.push({c,ic:"⚠️",txt:`onboarding parado (${done} de ${ONB_STEPS.length})`,act:"retomar"}); });
   const alertasPanel = alertas.length ? panel("🔔 Precisam de atenção",
-      alertas.slice(0,8).map(a=>`<div class="hrow alert-go" data-id="${a.c.id}" style="cursor:pointer">
+      alertas.slice(0,8).map(a=>`<div class="hrow click alert-go" data-id="${a.c.id}">
         <span style="flex:1;font-size:13px">${a.ic} <b>${esc(a.c.nome)}</b> · ${a.txt}</span>
         <span style="font-size:12px;color:var(--brand)">${a.act} →</span></div>`).join("")) : "";
 
   // AÇÕES
   let acoesBody=`<div class="acadd" style="display:flex;gap:6px;flex-wrap:wrap;padding:12px 0 14px;border-bottom:1px solid var(--line)">
-        <input id="acDesc" placeholder="Nova ação…" style="flex:1;min-width:140px;padding:9px 11px;background:var(--bg);border:1px solid var(--line2);border-radius:8px;color:var(--txt)" />
-        <select id="acCli" style="padding:9px 11px;background:var(--bg);border:1px solid var(--line2);border-radius:8px;color:var(--txt)"><option value="">— cliente —</option>${cliOpts}</select>
-        <input id="acPrazo" type="date" style="padding:9px 11px;background:var(--bg);border:1px solid var(--line2);border-radius:8px;color:var(--txt)" />
+        <input id="acDesc" class="hinput" placeholder="Nova ação…" style="flex:1;min-width:140px" />
+        <select id="acCli" class="hinput"><option value="">— cliente —</option>${cliOpts}</select>
+        <input id="acPrazo" type="date" class="hinput" />
         <button class="btn sm primary" id="acAdd">Adicionar</button>
       </div>`;
   if(!abertas.length && !feitasRecentes.length) acoesBody+=`<div class="empty" style="margin:12px 0">Nenhuma ação pendente. 🎉</div>`;
@@ -2109,7 +2116,7 @@ function renderHoje(){
   acoesBody+=acaoGrupo("Sem prazo",semPrazo);
   acoesBody+=acaoGrupo("Mais pra frente",depois);
   if(feitasRecentes.length) acoesBody+=`<div class="acsep"></div><div class="acdone">`+acaoGrupo("✓ Concluídas recentemente",feitasRecentes,"var(--muted2)")+`</div>`;
-  const acoesPanel = panel(`✅ Ações pendentes <span style="font-weight:400;color:var(--muted2);font-size:12px">${abertas.length}</span>`, acoesBody);
+  const acoesPanel = panel(`✅ Ações pendentes <span class="pcount">${abertas.length}</span>`, acoesBody);
 
   // AÇÕES POR CLIENTE
   const periodSel=`<select id="acPeriodo" style="padding:6px 10px;background:var(--bg);border:1px solid var(--line2);border-radius:8px;color:var(--txt);font-size:12px">
@@ -2122,38 +2129,38 @@ function renderHoje(){
     .sort((a,b)=>((a.t.esfriou?-999:(a.t.due==null?999:a.t.due))-(b.t.esfriou?-999:(b.t.due==null?999:b.t.due))));
   const fupPend=fups.filter(x=>x.t.esfriou || (x.t.due!=null && x.t.due<=0)).length;
   const fupBody = fups.length ? fups.map(x=>{
-    const c=x.c,t=x.t; let tag,bg;
-    if(t.esfriou){ tag="esfriou · última tentativa"; bg="background:#fdeaea;color:#c0392f"; }
-    else if(t.due<0){ tag=`toque atrasado`; bg="background:#fdeaea;color:#c0392f"; }
-    else if(t.due===0){ tag="tocar hoje"; bg="background:#fdf2df;color:#a86a12"; }
-    else { tag=`toque em ${t.due}d`; bg="background:var(--panel2);color:var(--muted)"; }
+    const c=x.c,t=x.t; let tag,cls;
+    if(t.esfriou){ tag="esfriou · última tentativa"; cls="late"; }
+    else if(t.due<0){ tag=`toque atrasado`; cls="late"; }
+    else if(t.due===0){ tag="tocar hoje"; cls="today"; }
+    else { tag=`toque em ${t.due}d`; cls="soon"; }
     const since=c.dataProposta?-(daysUntil(c.dataProposta)):null;
     const sub=(t.manual?`follow-up marcado p/ ${fmtDiaMes(t.date)}`:(since!=null?`proposta há ${since}d`:"follow-up"))+(c.ultimoContato?` · último contato ${fmtDiaMes(c.ultimoContato)}`:"");
-    return `<div class="hrow" style="align-items:center;gap:10px">
-      <div class="fu-open" data-id="${c.id}" style="flex:1;min-width:0;cursor:pointer">
+    return `<div class="hrow">
+      <div class="fu-open click" data-id="${c.id}" style="flex:1;min-width:0">
         <div style="font-size:14px;font-weight:500">${esc(c.nome)||"(lead)"}</div>
         <div style="font-size:12px;color:var(--muted)">${sub}</div>
       </div>
-      <span style="font-size:11px;padding:3px 9px;border-radius:99px;white-space:nowrap;${bg}">${tag}</span>
+      <span class="utag ${cls}">${tag}</span>
       <button class="fu-done btn sm" data-id="${c.id}" style="white-space:nowrap">✓ contatei</button>
     </div>`;
   }).join("") : `<div class="empty" style="margin:8px 0">Nenhum follow-up de venda pendente. Envie propostas no funil de Vendas.</div>`;
-  const followupPanel = panel(`📨 Follow-ups de vendas <span style="font-weight:400;color:var(--muted2);font-size:12px">${fups.length}</span>`, fupBody);
+  const followupPanel = panel(`📨 Follow-ups de vendas <span class="pcount">${fups.length}</span>`, fupBody);
 
   // PARCELAS — vencidas ou vencendo esta semana
   const parcAlert=(Store.pagamentos||[]).filter(p=>p.status!=="pago" && p.vencimento && daysUntil(p.vencimento)<=7)
     .sort((a,b)=>(a.vencimento||"").localeCompare(b.vencimento||""));
   const parcVencidas=parcAlert.filter(p=>p.vencimento<today).length;
   const finBody = parcAlert.map(p=>{
-    const d=daysUntil(p.vencimento); let tag,bg;
-    if(d<0){ tag=`vencida há ${-d}d`; bg="background:#fdeaea;color:#c0392f"; }
-    else if(d===0){ tag="vence hoje"; bg="background:#fdf2df;color:#a86a12"; }
-    else { tag=`vence em ${d}d`; bg="background:var(--panel2);color:var(--muted)"; }
-    return `<div class="hrow fin-go" data-id="${p.company_id||""}" style="cursor:pointer;align-items:center;gap:10px">
+    const d=daysUntil(p.vencimento); let tag,cls;
+    if(d<0){ tag=`vencida há ${-d}d`; cls="late"; }
+    else if(d===0){ tag="vence hoje"; cls="today"; }
+    else { tag=`vence em ${d}d`; cls="soon"; }
+    return `<div class="hrow click fin-go" data-id="${p.company_id||""}">
       <span style="flex:1;min-width:0;font-size:14px"><b>${esc(coNome(p.company_id))}</b> · ${brl(Number(p.valor||0))}<div style="font-size:12px;color:var(--muted)">venc. ${fmtDate(p.vencimento)}${p.competencia?" · "+esc(p.competencia):""}</div></span>
-      <span style="font-size:11px;padding:3px 9px;border-radius:99px;white-space:nowrap;${bg}">${tag}</span></div>`;
+      <span class="utag ${cls}">${tag}</span></div>`;
   }).join("");
-  const finPanel = parcAlert.length ? panel(`💳 Parcelas a cobrar <span style="font-weight:400;color:var(--muted2);font-size:12px">${parcAlert.length}</span>`, finBody) : "";
+  const finPanel = parcAlert.length ? panel(`💳 Parcelas a cobrar <span class="pcount">${parcAlert.length}</span>`, finBody) : "";
 
   // PRIORIDADES DO DIA — junta o urgente de todos os blocos, em ordem
   const prio=[];
@@ -2164,11 +2171,11 @@ function renderHoje(){
   deHoje.forEach(a=>prio.push({u:4,ic:"🟡",txt:`Hoje: ${a.descricao}`+(a.company_id?` · ${coNome(a.company_id)}`:""),cid:a.company_id||null}));
   prio.sort((a,b)=>a.u-b.u);
   const prioBody = prio.length
-    ? prio.slice(0,7).map(p=>`<div class="hrow ${p.cid?"prio-go":""}" ${p.cid?`data-id="${p.cid}"`:""} style="${p.cid?"cursor:pointer;":""}align-items:center;gap:10px">
+    ? prio.slice(0,7).map(p=>`<div class="hrow${p.cid?" click prio-go":""}" ${p.cid?`data-id="${p.cid}"`:""}>
         <span style="flex:1;font-size:14px">${p.ic} ${esc(p.txt)}</span>${p.cid?`<span style="font-size:12px;color:var(--brand)">abrir →</span>`:""}</div>`).join("")
       + (prio.length>7?`<div style="font-size:12px;color:var(--muted2);padding:8px 2px 2px">+ ${prio.length-7} outra(s) — veja nos blocos abaixo</div>`:"")
     : `<div class="empty" style="margin:8px 0">Nada urgente agora. Você está em dia! ✅</div>`;
-  const prioPanel = panel(`🎯 Prioridades de hoje <span style="font-weight:400;color:var(--muted2);font-size:12px">${prio.length}</span>`, prioBody);
+  const prioPanel = panel(`🎯 Prioridades de hoje <span class="pcount">${prio.length}</span>`, prioBody);
 
   // barra de blocos: mostra um bloco por vez (ou tudo)
   const _hvBtns=[["tudo","Tudo"],["acoes","Ações"],["followups","Follow-ups"],["sessoes","Sessões"],["cobrancas","Cobranças"],["alertas","Alertas"]];
@@ -2207,35 +2214,33 @@ function renderHoje(){
   </div>`;
   box.innerHTML=html;
   renderAcPorCli();
-  const selP=$("#acPeriodo"); if(selP) selP.addEventListener("change",renderAcPorCli);
-
-  // listeners
-  box.querySelectorAll(".ac-check").forEach(el=>el.addEventListener("click",async()=>{
-    const a=Store.acoes.find(x=>x.id===el.dataset.id); if(!a) return;
-    try{ await Store.toggleAcao(a.id, a.status!=="feito"); renderHoje(); refreshBadges(); }catch(e){ toast("Erro: "+(e.message||e),"err"); }
-  }));
-  box.querySelectorAll(".ac-del").forEach(el=>el.addEventListener("click",async()=>{
-    if(!confirm("Remover esta ação?")) return;
-    try{ await Store.removeAcao(el.dataset.id); renderHoje(); refreshBadges(); }catch(e){ toast("Erro: "+(e.message||e),"err"); }
-  }));
-  const addFn=async()=>{
-    const desc=$("#acDesc").value.trim(); if(!desc){ toast("Escreva a ação","err"); return; }
-    try{ await Store.addAcao({descricao:desc, company_id:$("#acCli").value||null, prazo:$("#acPrazo").value||null}); renderHoje(); refreshBadges(); }
-    catch(e){ toast("Erro ao salvar: "+(e.message||e),"err"); }
-  };
-  const acAddEl=$("#acAdd"); if(acAddEl) acAddEl.addEventListener("click",addFn);
-  const acDescEl=$("#acDesc"); if(acDescEl) acDescEl.addEventListener("keydown",e=>{ if(e.key==="Enter") addFn(); });
-  box.querySelectorAll(".hoje-view").forEach(b=>b.addEventListener("click",()=>{ hojeView=b.dataset.hv; renderHoje(); }));
-  box.querySelectorAll(".sess-go,.alert-go,.fin-go,.prio-go").forEach(el=>el.addEventListener("click",()=>{ const c=coById(el.dataset.id); if(c) openModal(c); }));
-  box.querySelectorAll(".fu-open").forEach(el=>el.addEventListener("click",()=>{ const c=coById(el.dataset.id); if(c) openModal(c); }));
-  box.querySelectorAll(".fu-done").forEach(el=>el.addEventListener("click",async e=>{
-    e.stopPropagation();
-    const c=coById(el.dataset.id); if(!c) return;
-    c.ultimoContato=today; c.proximoFollowup="";
-    try{ await Store.save(c); toast("Follow-up registrado 👊","ok"); renderHoje(); refreshBadges(); }
-    catch(err){ toast("Erro: "+(err.message||err),"err"); }
-  }));
 }
+
+/* Hoje — eventos por DELEGAÇÃO (anexados uma vez; sobrevivem aos re-renders) */
+async function hojeAddAcao(){
+  const dEl=$("#acDesc"); if(!dEl) return;
+  const desc=dEl.value.trim(); if(!desc){ toast("Escreva a ação","err"); return; }
+  try{ await Store.addAcao({descricao:desc, company_id:$("#acCli").value||null, prazo:$("#acPrazo").value||null}); renderHoje(); refreshBadges(); }
+  catch(e){ toast("Erro ao salvar: "+(e.message||e),"err"); }
+}
+(function initHojeEvents(){
+  const box=$("#hoje"); if(!box) return;
+  box.addEventListener("click",async(e)=>{
+    const fd=e.target.closest(".fu-done");
+    if(fd){ e.stopPropagation(); const c=coById(fd.dataset.id); if(c){ c.ultimoContato=todayISO(); c.proximoFollowup=""; try{ await Store.save(c); toast("Follow-up registrado 👊","ok"); renderHoje(); refreshBadges(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } } return; }
+    const ck=e.target.closest(".ac-check");
+    if(ck){ const a=Store.acoes.find(x=>x.id===ck.dataset.id); if(a){ try{ await Store.toggleAcao(a.id, a.status!=="feito"); renderHoje(); refreshBadges(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } } return; }
+    const dl=e.target.closest(".ac-del");
+    if(dl){ if(!confirm("Remover esta ação?")) return; try{ await Store.removeAcao(dl.dataset.id); renderHoje(); refreshBadges(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } return; }
+    if(e.target.closest("#acAdd")){ hojeAddAcao(); return; }
+    const hv=e.target.closest(".hoje-view");
+    if(hv){ hojeView=hv.dataset.hv; renderHoje(); return; }
+    const go=e.target.closest(".sess-go,.alert-go,.fin-go,.prio-go,.fu-open");
+    if(go){ const c=coById(go.dataset.id); if(c) openModal(c); return; }
+  });
+  box.addEventListener("keydown",(e)=>{ if(e.key==="Enter" && e.target.id==="acDesc") hojeAddAcao(); });
+  box.addEventListener("change",(e)=>{ if(e.target.id==="acPeriodo") renderAcPorCli(); });
+})();
 
 function renderActive(){
   if(activeView==="hoje") renderHoje();
