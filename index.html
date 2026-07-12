@@ -243,6 +243,18 @@
   .acsep{height:1px;background:var(--line2);margin:26px 0 2px;border-radius:0}
   .acdone{opacity:.72}
   .acdone .acgrp{padding-top:12px}
+  /* Cards 5W2H do plano de ação */
+  .plac{border:1px solid var(--line2);border-radius:10px;margin:8px 0;background:var(--bg2);overflow:hidden}
+  .plac-head{display:flex;align-items:center;gap:9px;padding:11px 12px}
+  .plac.open{border-color:var(--brand)}
+  .plac-form{padding:2px 12px 14px;border-top:1px solid var(--line)}
+  .plac-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;margin-top:12px}
+  .plac-grid label{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.3px}
+  .plac-grid label.fw{grid-column:1 / -1}
+  .plac-grid .hinput{font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--txt)}
+  .plac-pill{font-size:11px;padding:2px 8px;border-radius:7px;white-space:nowrap}
+  .tri-bar{display:flex;height:8px;border-radius:99px;overflow:hidden;background:var(--panel2);margin:4px 0 2px}
+  .tri-leg{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:6px}
   .hchip{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
   .hchip .n{font-size:26px;font-weight:800;line-height:1}
   .hchip .l{font-size:12px;color:var(--muted);margin-top:5px}
@@ -702,6 +714,15 @@
         <div id="rotinaBox"></div>
         <button class="btn sm ghost" id="btnAddRotina" type="button" style="margin-top:8px">+ Item de rotina</button>
 
+        <div class="sec-title">✅ Plano de ação <span class="pcount">5W2H + tríade do tempo</span></div>
+        <div class="contatos-hint">Ações do <b>cliente</b> no formato <b>5W2H</b> (o quê · quem · quando · onde · porquê · como · quanto) e classificadas na <b>tríade do tempo</b> (Importante / Urgente / Circunstancial). Clique numa ação p/ abrir os detalhes. As que você passa do seu Hoje (→👤) caem aqui — não poluem o seu Hoje.</div>
+        <div id="planoAcoesBox"></div>
+        <div class="acadd" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+          <input id="plAcDesc" class="hinput" placeholder="Nova ação (o quê)…" style="flex:1;min-width:140px" />
+          <input id="plAcPrazo" type="date" class="hinput" />
+          <button class="btn sm primary" id="plAcAdd" type="button">Adicionar</button>
+        </div>
+
         <div class="sec-title">💭 Diagnóstico da Visão</div>
         <div class="contatos-hint">As 3 perguntas de profundidade — preencha na sessão de visão.</div>
         <div class="formgrid">
@@ -1014,6 +1035,7 @@ const Store = {
     if(this.mode!=="cloud"||!this.user) throw new Error("disponível só no modo nuvem");
     const row={ user_id:this.user.id, company_id:a.company_id||null, descricao:a.descricao,
       responsavel:a.responsavel||"você", prazo:a.prazo||null, status:a.status||"aberto",
+      dono:a.dono==="cliente"?"cliente":"ana",
       origem:a.origem||"manual", origem_ref:a.origem_ref||null };
     const { data, error } = await this.sb.from("mr_acoes").insert(row).select().single();
     if(error) throw error;
@@ -1460,6 +1482,7 @@ function openModal(c){
   renderQualificacao();
   renderContatos();
   renderPlano();
+  renderPlanoAcoes();
   renderInteracoes();
   if($("#intDate")) $("#intDate").value=todayISO();
   renderOnboarding();
@@ -1900,6 +1923,109 @@ function collectPlano(){
   };
 }
 
+/* Tarefas do cliente = plano de ação 5W2H (mr_acoes dono=cliente) — vivem no Plano, fora do Hoje */
+const TRIADE={
+  importante:{lbl:"Importante",ic:"🟢",cor:"#0f7a45",bg:"background:#e7f6ee;color:#0f7a45"},
+  urgente:{lbl:"Urgente",ic:"🔴",cor:"#c0392f",bg:"background:#fdeaea;color:#c0392f"},
+  circunstancial:{lbl:"Circunstancial",ic:"⚪",cor:"#8a8f98",bg:"background:var(--panel2);color:var(--muted)"}
+};
+function planoAcaoLi(a){
+  const st=a.status||"aberto"; const done=st==="feito";
+  const tri=TRIADE[a.triade];
+  let prazoPill="";
+  if(a.prazo){ const du=daysUntil(a.prazo); let bg="background:var(--panel2);color:var(--muted)",txt=fmtDiaMes(a.prazo);
+    if(done){bg="background:#e7f6ee;color:#0f7a45";}
+    else if(du<0){bg="background:#fdeaea;color:#c0392f";txt="venceu "+fmtDiaMes(a.prazo);}
+    else if(du===0){bg="background:#fdf2df;color:#a86a12";txt="hoje";}
+    prazoPill=`<span class="plac-pill" style="${bg}">${txt}</span>`; }
+  const triBadge = tri
+    ? `<span class="pla-open plac-pill" data-id="${a.id}" title="Tríade do tempo — clique p/ editar" style="cursor:pointer;${tri.bg}">${tri.ic} ${tri.lbl}</span>`
+    : `<span class="pla-open plac-pill" data-id="${a.id}" title="Classificar na tríade" style="cursor:pointer;border:1px dashed var(--line2);color:var(--muted2)">tríade?</span>`;
+  const stLbl = done?"Concluído":st==="andamento"?"Fazendo":"A fazer";
+  const inp=(k,val,ph,type)=>`<input class="pla-f hinput" data-id="${a.id}" data-k="${k}" ${type?`type="${type}"`:""} value="${esc(val||"")}" placeholder="${esc(ph)}" />`;
+  const ta=(k,val,ph)=>`<textarea class="pla-f hinput" data-id="${a.id}" data-k="${k}" placeholder="${esc(ph)}" style="min-height:44px;resize:vertical">${esc(val||"")}</textarea>`;
+  const triSel=`<select class="pla-f hinput" data-id="${a.id}" data-k="triade">
+      <option value="">— tríade —</option>
+      <option value="importante" ${a.triade==="importante"?"selected":""}>🟢 Importante</option>
+      <option value="urgente" ${a.triade==="urgente"?"selected":""}>🔴 Urgente</option>
+      <option value="circunstancial" ${a.triade==="circunstancial"?"selected":""}>⚪ Circunstancial</option></select>`;
+  const stSel=`<select class="pla-f hinput" data-id="${a.id}" data-k="status">
+      <option value="aberto" ${st==="aberto"?"selected":""}>A fazer</option>
+      <option value="andamento" ${st==="andamento"?"selected":""}>Fazendo</option>
+      <option value="feito" ${st==="feito"?"selected":""}>Concluído</option></select>`;
+  return `<div class="plac" data-id="${a.id}">
+    <div class="plac-head">
+      <span class="pla-check" data-id="${a.id}" title="Concluir / reabrir" style="cursor:pointer;font-size:18px;color:${done?'var(--brand)':'var(--muted2)'}">${done?"☑":"☐"}</span>
+      <div class="pla-open" data-id="${a.id}" style="flex:1;min-width:0;cursor:pointer">
+        <div style="font-size:14px;${done?'color:var(--muted2);text-decoration:line-through':''}">${esc(a.descricao)||"<i style='color:var(--muted2)'>(sem descrição — clique p/ preencher)</i>"}</div>
+        <div style="font-size:11.5px;color:var(--muted)">${esc(a.responsavel||"")}${a.meta?" · 🎯 "+esc(a.meta):""} · ${stLbl}</div>
+      </div>
+      ${triBadge}${prazoPill}
+      ${!done?`<span class="pla-tome" data-id="${a.id}" title="Trazer pro seu Hoje" style="cursor:pointer;color:var(--muted2);font-size:13px">←👩</span>`:""}
+      <span class="pla-del" data-id="${a.id}" title="Remover" style="cursor:pointer;color:var(--muted2);font-size:13px">✕</span>
+    </div>
+    <div class="plac-form hidden" data-form="${a.id}">
+      <div class="plac-grid">
+        <label class="fw">O quê · ação (What)${inp("descricao",a.descricao,"a medida / ação")}</label>
+        <label>Quem · dono (Who)${inp("responsavel",a.responsavel,"responsável")}</label>
+        <label>Quando (When)${inp("prazo",a.prazo,"","date")}</label>
+        <label>Onde (Where)${inp("onde",a.onde,"local / canal")}</label>
+        <label>Quanto · R$/recurso (How much)${inp("quanto",a.quanto,"custo ou recurso")}</label>
+        <label>Tríade do tempo${triSel}</label>
+        <label>Status${stSel}</label>
+        <label class="fw">Porquê · razão (Why)${ta("porque",a.porque,"por que essa ação importa")}</label>
+        <label class="fw">Como · procedimento (How)${ta("como",a.como,"passo a passo")}</label>
+        <label class="fw">Meta / objetivo que essa ação move${inp("meta",a.meta,"ex.: dobrar faturamento até dez")}</label>
+      </div>
+    </div>
+  </div>`;
+}
+function triadePainel(list){
+  const ab=list.filter(a=>a.status!=="feito");
+  const c={importante:0,urgente:0,circunstancial:0,sem:0};
+  ab.forEach(a=>{ c[a.triade]!==undefined?c[a.triade]++:c.sem++; });
+  const tot=ab.length; if(!tot) return "";
+  const seg=(k)=>c[k]?`<div style="width:${(c[k]/tot*100).toFixed(1)}%;background:${TRIADE[k].cor}"></div>`:"";
+  const dica = c.circunstancial>c.importante
+    ? `⚠️ Muita energia em <b>Circunstancial</b>. O método pede o oposto: maximizar o <b>Importante</b> (o que não é urgente mas gera resultado).`
+    : c.importante>=Math.max(c.urgente,c.circunstancial)
+      ? `✅ Foco no <b>Importante</b> — é aqui que o resultado nasce. Mantenha.`
+      : `A meta é migrar ações pro <b>Importante</b> antes de virarem <b>Urgente</b>.`;
+  return `<div style="margin:2px 0 14px;padding:12px 14px;border:1px solid var(--line2);border-radius:10px;background:var(--bg2)">
+    <div style="font-size:12px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px">Tríade do tempo · ${tot} ação(ões) abertas</div>
+    <div class="tri-bar">${seg("importante")}${seg("urgente")}${seg("circunstancial")}${c.sem?`<div style="width:${(c.sem/tot*100).toFixed(1)}%;background:var(--line2)"></div>`:""}</div>
+    <div class="tri-leg">
+      <span>🟢 Importante <b>${c.importante}</b></span>
+      <span>🔴 Urgente <b>${c.urgente}</b></span>
+      <span>⚪ Circunstancial <b>${c.circunstancial}</b></span>
+      ${c.sem?`<span style="color:var(--muted2)">◻︎ sem classe <b>${c.sem}</b></span>`:""}
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-top:8px">${dica}</div>
+  </div>`;
+}
+function renderPlanoAcoes(){
+  const box=$("#planoAcoesBox"); if(!box) return;
+  const add=$("#plAcDesc")?$("#plAcDesc").closest(".acadd"):null;
+  if(Store.mode!=="cloud"||!Store.user){ box.innerHTML=`<div class="contatos-hint">Disponível no modo nuvem (faça login).</div>`; if(add) add.style.display="none"; return; }
+  if(!editing||!editing.id){ box.innerHTML=`<div class="contatos-hint">Salve o cliente primeiro para lançar tarefas com prazo.</div>`; if(add) add.style.display="none"; return; }
+  if(add) add.style.display="flex";
+  const list=(Store.acoes||[]).filter(a=>a.company_id===editing.id && (a.dono||"ana")==="cliente");
+  const rank={urgente:0,importante:1,circunstancial:2,undefined:3,null:3};
+  const abertas=list.filter(a=>a.status!=="feito").sort((a,b)=> (a.prazo||"9999").localeCompare(b.prazo||"9999") || (rank[a.triade]??3)-(rank[b.triade]??3));
+  const feitas=list.filter(a=>a.status==="feito").slice(0,6);
+  if(!list.length){ box.innerHTML=`<div class="empty" style="margin:8px 0">Nenhuma ação ainda. Adicione abaixo, ou passe uma do seu Hoje com “→👤”. Cada ação abre no formato <b>5W2H</b>.</div>`; return; }
+  box.innerHTML=triadePainel(list)+abertas.map(planoAcaoLi).join("")+(feitas.length?`<div class="acsep"></div><div class="acdone">`+feitas.map(planoAcaoLi).join("")+`</div>`:"");
+}
+async function planoAddAcao(){
+  const dEl=$("#plAcDesc"); if(!dEl) return;
+  const desc=dEl.value.trim(); if(!desc){ toast("Escreva a ação","err"); return; }
+  if(!editing||!editing.id){ toast("Salve o cliente primeiro","err"); return; }
+  try{ await Store.addAcao({company_id:editing.id, descricao:desc, prazo:($("#plAcPrazo")&&$("#plAcPrazo").value)||null, dono:"cliente", responsavel:editing.nome||"cliente"});
+    dEl.value=""; if($("#plAcPrazo")) $("#plAcPrazo").value=""; renderPlanoAcoes(); refreshBadges();
+    const box=$("#planoAcoesBox"); const first=box&&box.querySelector(".plac .plac-form"); if(first){ first.classList.remove("hidden"); first.closest(".plac").classList.add("open"); } }
+  catch(e){ toast("Erro ao salvar: "+(e.message||e),"err"); }
+}
+
 /* Documentos do cliente (links) */
 function docRow(d){
   const row=document.createElement("div"); row.className="docrow";
@@ -2021,6 +2147,33 @@ $("#btnAddContato").addEventListener("click",()=>{
 $("#btnAddDoc").addEventListener("click",()=>$("#docsBox").appendChild(docRow({})));
 $("#btnAddFoco").addEventListener("click",()=>planoRow($("#focosBox"),{}));
 $("#btnAddRotina").addEventListener("click",()=>planoRow($("#rotinaBox"),{}));
+/* Plano de ação 5W2H (mr_acoes dono=cliente) */
+(function initPlanoAcoesEvents(){
+  const add=$("#plAcAdd"); if(add) add.addEventListener("click",planoAddAcao);
+  const desc=$("#plAcDesc"); if(desc) desc.addEventListener("keydown",e=>{ if(e.key==="Enter") planoAddAcao(); });
+  const box=$("#planoAcoesBox"); if(!box) return;
+  box.addEventListener("click",async(e)=>{
+    const ck=e.target.closest(".pla-check");
+    if(ck){ const a=Store.acoes.find(x=>x.id===ck.dataset.id); if(a){ try{ await Store.toggleAcao(a.id,a.status!=="feito"); renderPlanoAcoes(); refreshBadges(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } } return; }
+    const tm=e.target.closest(".pla-tome");
+    if(tm){ const a=Store.acoes.find(x=>x.id===tm.dataset.id); if(a){ try{ await Store.updateAcao(a.id,{dono:"ana"}); toast("Voltou pro seu Hoje 👩","ok"); renderPlanoAcoes(); refreshBadges(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } } return; }
+    const dl=e.target.closest(".pla-del");
+    if(dl){ if(!confirm("Remover esta ação?")) return; try{ await Store.removeAcao(dl.dataset.id); renderPlanoAcoes(); refreshBadges(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } return; }
+    const op=e.target.closest(".pla-open");
+    if(op){ const card=box.querySelector(`.plac[data-id="${op.dataset.id}"]`); const form=card&&card.querySelector(".plac-form"); if(form){ const show=form.classList.contains("hidden"); form.classList.toggle("hidden",!show); card.classList.toggle("open",show); } return; }
+  });
+  // salva cada campo 5W2H ao mudar (blur/change). status e tríade re-renderizam (badges + painel).
+  box.addEventListener("change",async(e)=>{
+    const f=e.target.closest(".pla-f"); if(!f) return;
+    const id=f.dataset.id, k=f.dataset.k; let v=f.value; if(typeof v==="string") v=v.trim();
+    const patch={}; patch[k]= v==="" ? null : v;
+    try{ await Store.updateAcao(id,patch);
+      if(k==="status"||k==="triade"||k==="prazo"){ renderPlanoAcoes(); refreshBadges();
+        const card=$("#planoAcoesBox")&&$("#planoAcoesBox").querySelector(`.plac[data-id="${id}"] .plac-form`);
+        if(card){ card.classList.remove("hidden"); card.closest(".plac").classList.add("open"); } }
+    }catch(err){ toast("Erro ao salvar: "+(err.message||err),"err"); }
+  });
+})();
 $$("#mtabs .mtab").forEach(t=>t.addEventListener("click",()=>{
   setModalTab(t.dataset.mtab);
   if(t.dataset.mtab==="docs") renderDocsDrive();
@@ -2082,7 +2235,7 @@ function renderAcPorCli(){
   const box=$("#acPorCli"); if(!box) return;
   const dias=+(($("#acPeriodo")&&$("#acPeriodo").value)||30);
   const cut= dias>0 ? isoMinusDays(dias) : null;
-  const acoes=(Store.acoes||[]).filter(a=>a.company_id && (!cut || (a.created_at||"").slice(0,10)>=cut));
+  const acoes=(Store.acoes||[]).filter(a=>a.company_id && (a.dono||"ana")!=="cliente" && (!cut || (a.created_at||"").slice(0,10)>=cut));
   const map={};
   acoes.forEach(a=>{ map[a.company_id]=map[a.company_id]||{t:0,f:0}; map[a.company_id].t++; if(a.status==="feito")map[a.company_id].f++; });
   const rows=Object.entries(map).map(([id,v])=>({nome:coNome(id),t:v.t,f:v.f})).sort((a,b)=>b.t-a.t);
@@ -2110,6 +2263,7 @@ function acaoLi(a){
       <div style="font-size:12px;color:var(--muted)">${cli?esc(cli)+" · ":""}${esc(resp)}</div>
     </div>
     ${pill?`<span style="font-size:11px;padding:2px 8px;border-radius:7px;white-space:nowrap;${pillBg}">${pill}</span>`:""}
+    ${a.company_id&&a.status!=="feito"?`<span class="ac-tocli" data-id="${a.id}" title="Passar pro plano do cliente (sai do seu Hoje)" style="cursor:pointer;color:var(--muted2);font-size:13px;margin-left:4px">→👤</span>`:""}
     <span class="ac-del" data-id="${a.id}" title="Remover" style="cursor:pointer;color:var(--muted2);font-size:13px;margin-left:4px">✕</span>
   </div>`;
 }
@@ -2132,7 +2286,7 @@ let hojeView="tudo";
 function renderHoje(){
   const box=$("#hoje"); if(!box) return;
   const today=todayISO();
-  const acoes=Store.acoes||[];
+  const acoes=(Store.acoes||[]).filter(a=>(a.dono||"ana")!=="cliente"); // Hoje = só as tarefas da Ana
   const abertas=acoes.filter(a=>a.status!=="feito");
   const atrasadas=abertas.filter(a=>a.prazo && a.prazo<today);
   const deHoje=abertas.filter(a=>a.prazo===today);
@@ -2300,6 +2454,8 @@ async function hojeAddAcao(){
     if(fd){ e.stopPropagation(); const c=coById(fd.dataset.id); if(c){ c.ultimoContato=todayISO(); c.proximoFollowup=""; try{ await Store.save(c); toast("Follow-up registrado 👊","ok"); renderHoje(); refreshBadges(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } } return; }
     const ck=e.target.closest(".ac-check");
     if(ck){ const a=Store.acoes.find(x=>x.id===ck.dataset.id); if(a){ try{ await Store.toggleAcao(a.id, a.status!=="feito"); renderHoje(); refreshBadges(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } } return; }
+    const tc=e.target.closest(".ac-tocli");
+    if(tc){ const a=Store.acoes.find(x=>x.id===tc.dataset.id); if(a){ try{ await Store.updateAcao(a.id,{dono:"cliente"}); toast("Passou pro plano de "+coNome(a.company_id)+" 👤","ok"); renderHoje(); refreshBadges(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } } return; }
     const dl=e.target.closest(".ac-del");
     if(dl){ if(!confirm("Remover esta ação?")) return; try{ await Store.removeAcao(dl.dataset.id); renderHoje(); refreshBadges(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } return; }
     if(e.target.closest("#acAdd")){ hojeAddAcao(); return; }
@@ -2337,7 +2493,7 @@ function refreshBadges(){
   const sales=Store.cache.filter(c=>c.fase==="venda" && c.etapaVenda!=="perdido").length;
   const entrega=Store.cache.filter(c=>c.fase==="entrega").length;
   const t=todayISO();
-  const pendAc=(Store.acoes||[]).filter(a=>a.status!=="feito" && a.prazo && a.prazo<=t).length;
+  const pendAc=(Store.acoes||[]).filter(a=>(a.dono||"ana")!=="cliente" && a.status!=="feito" && a.prazo && a.prazo<=t).length;
   if($("#badgeHoje")) $("#badgeHoje").textContent=pendAc;
   if($("#badgeSales")) $("#badgeSales").textContent=sales;
   if($("#badgeBoard")) $("#badgeBoard").textContent=entrega;
