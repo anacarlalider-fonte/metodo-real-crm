@@ -891,14 +891,17 @@ const Store = {
   async assignInbox(item, companyId){
     const c=this.cache.find(x=>x.id===companyId);
     if(!c) throw new Error("cliente não encontrado");
-    c.atas=c.atas||[];
-    c.atas.unshift({
+    const ata={
       data:item.data||todayISO(), titulo:item.titulo||"Reunião",
       texto:composeTactiqTexto(item), resumo:item.resumo||"", acoes:item.acoes||"",
       emails:item.emails||[], fonte:"tactiq", criado:new Date().toISOString()
-    });
+    };
+    let nTasks=0;
+    try{ const items=ataActionItems(ata); for(const it of items){ await this.addAcao({company_id:c.id, descricao:it.descricao, responsavel:it.responsavel, origem:"reuniao", origem_ref:ata.criado}); } nTasks=items.length; if(nTasks) ata.tarefasGeradas=true; }catch(e){}
+    c.atas=c.atas||[]; c.atas.unshift(ata);
     await this.save(c);
     await this.resolveInbox(item.id);
+    return nTasks;
   },
   /* --- ações / tarefas (só nuvem) --- */
   async loadAcoes(){
@@ -1489,6 +1492,24 @@ function renderInteracoes(){
   box.innerHTML=idx.map(({it,i})=>`<div class="ata"><div class="d">${INT_ICON[it.tipo]||"•"} ${esc(it.tipo||"Interação")} · ${fmtDate(it.data)||"sem data"}</div>${esc(it.texto)}<button class="del intdel" data-i="${i}" title="Remover">✕</button></div>`).join("");
   box.querySelectorAll(".intdel").forEach(b=>b.addEventListener("click",()=>{ editing.interacoes.splice(+b.dataset.i,1); renderInteracoes(); }));
 }
+function ataActionItems(ata){
+  const out=[];
+  if(Array.isArray(ata.plano)) ata.plano.forEach(g=>(g.itens||[]).forEach(it=>{ const d=String(it).trim(); if(d) out.push({descricao:d, responsavel:g.pessoa||"você"}); }));
+  if(Array.isArray(ata.proximos)) ata.proximos.forEach(it=>{ const d=String(it).trim(); if(d) out.push({descricao:d, responsavel:"você"}); });
+  if(!out.length && ata.acoes){
+    String(ata.acoes).split(/\r?\n/).map(s=>s.replace(/^[\s•\-•–]*\d*[\.\)]?\s*/,"").trim()).filter(s=>s.length>2)
+      .forEach(d=>out.push({descricao:d, responsavel:"você"}));
+  }
+  return out;
+}
+async function gerarTarefasDaAta(ata, companyId){
+  const items=ataActionItems(ata);
+  if(!items.length){ toast("Essa ata não tem próximos passos pra virar tarefa","err"); return 0; }
+  for(const it of items){
+    await Store.addAcao({ company_id:companyId, descricao:it.descricao, responsavel:it.responsavel, origem:"reuniao", origem_ref:ata.criado||ata.data||null });
+  }
+  return items.length;
+}
 function renderAtas(){
   const box=$("#atasList");
   if(!editing.atas||!editing.atas.length){ box.innerHTML=`<div class="empty">Nenhuma ata registrada ainda</div>`; return; }
@@ -1524,12 +1545,25 @@ function renderAtas(){
     } else {
       body=linkifyAta(a.texto||"");
     }
+    const nItems=ataActionItems(a).length;
+    const tarefasBtn = a.tarefasGeradas
+      ? `<div class="ata-meta" style="margin-top:6px;color:var(--ok)">✓ ${nItems||""} tarefa(s) geradas no Hoje</div>`
+      : (nItems?`<div style="margin-top:8px"><button class="btn sm primary ata-tasks" data-i="${i}">➕ Gerar ${nItems} tarefa(s) dos próximos passos</button></div>`:"");
     return `<div class="ata${tactiq?' ata-tactiq':''}">
-      <div class="d">${fmtDate(a.data)||"Sem data"}${badge}${title}</div>${body}
+      <div class="d">${fmtDate(a.data)||"Sem data"}${badge}${title}</div>${body}${tarefasBtn}
       <button class="del" data-i="${i}" title="Remover">✕</button></div>`;
   }).join("");
   box.querySelectorAll(".del").forEach(b=>b.addEventListener("click",()=>{
     editing.atas.splice(+b.dataset.i,1); renderAtas();
+  }));
+  box.querySelectorAll(".ata-tasks").forEach(b=>b.addEventListener("click",async()=>{
+    const i=+b.dataset.i; const a=editing.atas[i]; if(!a) return;
+    b.disabled=true;
+    try{
+      const n=await gerarTarefasDaAta(a, editing.id);
+      if(n>0){ a.tarefasGeradas=true; await Store.save(editing); renderAtas(); refreshBadges(); toast(`${n} tarefa(s) criada(s) no seu Hoje ✅`,"ok"); }
+      else b.disabled=false;
+    }catch(e){ b.disabled=false; toast("Erro: "+(e.message||e),"err"); }
   }));
   box.querySelectorAll(".ata-cli").forEach(b=>b.addEventListener("click",async()=>{
     const a=editing.atas[+b.dataset.i]; if(!a) return; const txt=buildAtaText(a);
@@ -2466,7 +2500,7 @@ function renderInboxList(){
   box.querySelectorAll(".inbox-link").forEach(btn=>btn.addEventListener("click",async()=>{
     const item=items.find(x=>x.id===btn.dataset.id);
     const cid=btn.closest(".inbox-item").querySelector(".inbox-sel").value;
-    try{ await Store.assignInbox(item,cid); toast("Ata vinculada ao cliente","ok"); renderInboxList(); renderInboxBanner(); renderActive(); }
+    try{ const n=await Store.assignInbox(item,cid); toast(n?`Ata vinculada · ${n} tarefa(s) criada(s) ✅`:"Ata vinculada ao cliente","ok"); renderInboxList(); renderInboxBanner(); renderActive(); }
     catch(e){ toast("Erro ao vincular: "+(e.message||e),"err"); }
   }));
   box.querySelectorAll(".inbox-drop").forEach(btn=>btn.addEventListener("click",async()=>{
