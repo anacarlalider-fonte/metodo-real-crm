@@ -529,6 +529,11 @@
    <!-- ===== CLIENTES (LISTA) VIEW ===== -->
    <div id="view-list" class="wrap hidden">
      <div class="card tablecard">
+       <div style="display:flex;gap:6px;flex-wrap:wrap;padding:4px 4px 12px">
+         <button class="btn sm ghost cli-filtro" data-clif="ativos">Ativos</button>
+         <button class="btn sm ghost cli-filtro" data-clif="inativos">Inativos</button>
+         <button class="btn sm ghost cli-filtro" data-clif="todos">Todos</button>
+       </div>
        <div class="tablewrap">
          <table class="dtable">
            <thead><tr>
@@ -2332,6 +2337,7 @@ async function addParcelaAvulsa(){
 $$(".finfilter").forEach(b=>b.addEventListener("click",()=>{ finFilter=b.dataset.finf; renderFinanceiro(); }));
 if($("#btnGerarParcelas")) $("#btnGerarParcelas").addEventListener("click",gerarParcelas);
 if($("#btnAddParcela")) $("#btnAddParcela").addEventListener("click",addParcelaAvulsa);
+$$(".cli-filtro").forEach(b=>b.addEventListener("click",()=>{ clientesFiltro=b.dataset.clif; renderList(); }));
 
 /* =========================================================================
    RENDER — Clientes (tabela)
@@ -2342,11 +2348,22 @@ function currentStage(c){
     ? (SALES_STAGES.find(s=>s.id===c.etapaVenda)||SALES_STAGES[0])
     : (DELIVERY_STAGES.find(s=>s.id===c.etapa)||DELIVERY_STAGES[0]);
 }
+let clientesFiltro="ativos";
+function clienteAtivoFiltro(c){
+  if(clientesFiltro==="ativos") return c.status!=="Encerrado";
+  if(clientesFiltro==="inativos") return c.status==="Encerrado";
+  return true;
+}
 function renderList(){
-  const data=Store.cache.filter(c=>c.fase==="entrega" && matchFilter(c))
+  $$(".cli-filtro").forEach(b=>b.classList.toggle("active", b.dataset.clif===clientesFiltro));
+  const data=Store.cache.filter(c=>c.fase==="entrega" && matchFilter(c) && clienteAtivoFiltro(c))
     .sort((a,b)=>(a.nome||"").localeCompare(b.nome||"","pt-BR"));
   const body=$("#listBody");
-  if(!data.length){ body.innerHTML=`<tr><td colspan="6"><div class="empty" style="margin:8px">Nenhum cliente ainda. Os leads em negociação ficam no funil de <b>Vendas</b> — viram clientes quando fecham.</div></td></tr>`; return; }
+  if(!data.length){
+    const msg = clientesFiltro==="inativos" ? "Nenhum cliente inativo (encerrado)." :
+      "Nenhum cliente ainda. Os leads em negociação ficam no funil de <b>Vendas</b> — viram clientes quando fecham.";
+    body.innerHTML=`<tr><td colspan="6"><div class="empty" style="margin:8px">${msg}</div></td></tr>`; return;
+  }
   const rows=data.map(c=>{
     const valor=plval(c);
     const permuta=valor<=0 && c.notas && /permuta/i.test(c.notas);
