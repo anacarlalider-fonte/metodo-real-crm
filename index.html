@@ -612,7 +612,7 @@
 
           <div class="field"><label>Data de início</label><input id="f_inicio" type="date" /></div>
           <div class="field"><label>Data fim de contrato</label><input id="f_fim" type="date" /></div>
-          <div class="field"><label>Próxima sessão</label><input id="f_proxima" type="date" /></div>
+          <div class="field"><label>Data de vencimento</label><input id="f_datavenc" type="date" /></div>
           <div class="field"><label>WhatsApp do grupo (link)</label><input id="f_whatsapp" placeholder="https://chat.whatsapp.com/…" /></div>
           <div class="field full"><label>Drive do cliente (link)</label><input id="f_drive" placeholder="https://drive.google.com/…" /></div>
 
@@ -1011,7 +1011,7 @@ function objToRow(o,userId){
     fase:o.fase||"entrega", etapa_venda:o.etapaVenda||null, data_proposta:o.dataProposta||null, ultimo_contato:o.ultimoContato||null, proximo_followup:o.proximoFollowup||null,
     valor_mensal:o.valorMensal!==""&&o.valorMensal!=null?Number(o.valorMensal):null,
     sessoes_realizadas:Number(o.sessoes||0), data_inicio:o.inicio||null, data_fim:o.fim||null,
-    proxima_sessao:o.proxima||null, whatsapp:o.whatsapp, drive:o.drive, dor:o.dor,
+    proxima_sessao:o.proxima||null, data_vencimento:o.dataVenc||null, whatsapp:o.whatsapp, drive:o.drive, dor:o.dor,
     prioridades:o.prioridades, notas:o.notas, atas:o.atas||[], deliverables:o.deliverables||{},
     onboarding:o.onboarding||{}, qualificacao:o.qualificacao||{}, contatos:o.contatos||[], documentos:o.documentos||[], interacoes:o.interacoes||[],
     created_at:o.createdAt||new Date().toISOString(), updated_at:o.updatedAt||new Date().toISOString()
@@ -1023,7 +1023,7 @@ function rowToObj(r){
     etapa:r.etapa, status:r.status, plano:r.plano, sessoes:r.sessoes_realizadas, inicio:r.data_inicio,
     fase:r.fase||"entrega", etapaVenda:r.etapa_venda||"lead", dataProposta:r.data_proposta||"", ultimoContato:r.ultimo_contato||"", proximoFollowup:r.proximo_followup||"",
     valorMensal:r.valor_mensal!=null?r.valor_mensal:"",
-    fim:r.data_fim, proxima:r.proxima_sessao, whatsapp:r.whatsapp, drive:r.drive, dor:r.dor,
+    fim:r.data_fim, proxima:r.proxima_sessao, dataVenc:r.data_vencimento||"", whatsapp:r.whatsapp, drive:r.drive, dor:r.dor,
     prioridades:r.prioridades, notas:r.notas, atas:r.atas||[], deliverables:r.deliverables||{},
     onboarding:r.onboarding||{}, qualificacao:r.qualificacao||{}, contatos:r.contatos||[], documentos:r.documentos||[], interacoes:r.interacoes||[],
     createdAt:r.created_at, updatedAt:r.updated_at
@@ -1334,7 +1334,7 @@ function openModal(c){
   $("#f_cidade").value=editing.cidade||""; $("#f_decisor").value=editing.decisor||"";
   $("#f_faturamento").value=editing.faturamento||""; $("#f_sessoes").value=editing.sessoes||"";
   $("#f_inicio").value=editing.inicio||""; $("#f_fim").value=editing.fim||"";
-  $("#f_proxima").value=editing.proxima||""; $("#f_whatsapp").value=editing.whatsapp||"";
+  $("#f_datavenc").value=editing.dataVenc||""; $("#f_whatsapp").value=editing.whatsapp||"";
   $("#f_drive").value=editing.drive||""; $("#f_dor").value=editing.dor||"";
   $("#f_prioridades").value=editing.prioridades||""; $("#f_notas").value=editing.notas||"";
 
@@ -1817,7 +1817,7 @@ function applyFaseLayout(fase){
   abasCliente.forEach(t=>{ const b=$(`#mtabs .mtab[data-mtab="${t}"]`); if(b) b.style.display = lead?"none":""; });
   const onb=$("#onbSection"); if(onb) onb.style.display = lead?"none":"";
   // Campos de contrato/entrega — some enquanto é oportunidade
-  ["f_valor","f_sessoes","f_inicio","f_fim","f_proxima","f_whatsapp","f_drive"].forEach(id=>{
+  ["f_valor","f_sessoes","f_inicio","f_fim","f_datavenc","f_whatsapp","f_drive"].forEach(id=>{
     const el=$("#"+id); if(el){ const f=el.closest(".field"); if(f) f.style.display = lead?"none":""; }
   });
   // Próximo follow-up é coisa de oportunidade (some no cliente)
@@ -1841,7 +1841,7 @@ function collectForm(){
       editing.fase="entrega"; editing.etapa="diagnostico"; editing.status="Ativo"; if(!editing.inicio) editing.inicio=todayISO();
     }
   } else editing.etapa=$("#f_etapa").value;
-  editing.inicio=$("#f_inicio").value; editing.fim=$("#f_fim").value; editing.proxima=$("#f_proxima").value;
+  editing.inicio=$("#f_inicio").value; editing.fim=$("#f_fim").value; editing.dataVenc=$("#f_datavenc").value;
   editing.whatsapp=$("#f_whatsapp").value.trim(); editing.drive=$("#f_drive").value.trim();
   editing.dor=$("#f_dor").value.trim(); editing.prioridades=$("#f_prioridades").value.trim();
   editing.notas=$("#f_notas").value.trim();
@@ -2164,7 +2164,7 @@ function renderList(){
   const rows=data.map(c=>{
     const valor=plval(c);
     const permuta=valor<=0 && c.notas && /permuta/i.test(c.notas);
-    const venc=(c.onboarding&&c.onboarding.vencimento)||"";
+    const venc=c.dataVenc?fmtDate(c.dataVenc):((c.onboarding&&c.onboarding.vencimento)||"");
     return `<tr data-id="${c.id}">
       <td><div class="cname">${esc(c.nome)||"(sem nome)"}</div><div class="csub">${esc(c.setor||"—")}</div></td>
       <td>${esc(c.decisor||"—")}</td>
