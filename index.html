@@ -460,6 +460,10 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         Clientes
       </button>
+      <button class="modlink" data-view="financ" data-title="Financeiro · contratos e parcelas">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>
+        Financeiro <span class="badge" id="badgeFinanc">0</span>
+      </button>
       <button class="modlink" data-view="agenda" data-title="Agenda de sessões">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
         Agenda <span class="badge" id="badgeAgenda">0</span>
@@ -537,6 +541,30 @@
      </div>
    </div>
 
+   <!-- ===== FINANCEIRO VIEW ===== -->
+   <div id="view-financ" class="wrap hidden">
+     <div class="dash-sec">Resumo financeiro</div>
+     <div class="kpis" id="finKpis"></div>
+     <div class="card tablecard">
+       <div style="display:flex;gap:6px;flex-wrap:wrap;padding:4px 4px 12px">
+         <button class="btn sm ghost finfilter" data-finf="abertas">Em aberto</button>
+         <button class="btn sm ghost finfilter" data-finf="vencidas">Vencidas</button>
+         <button class="btn sm ghost finfilter" data-finf="mes">Este mês</button>
+         <button class="btn sm ghost finfilter" data-finf="pagas">Pagas</button>
+         <button class="btn sm ghost finfilter" data-finf="todas">Todas</button>
+       </div>
+       <div class="tablewrap">
+         <table class="dtable">
+           <thead><tr>
+             <th>Cliente</th><th>Competência</th><th>Vencimento</th>
+             <th>Valor</th><th>Status</th><th></th>
+           </tr></thead>
+           <tbody id="finBody"></tbody>
+         </table>
+       </div>
+     </div>
+   </div>
+
    <!-- ===== AGENDA VIEW ===== -->
    <div id="view-agenda" class="wrap hidden">
      <div id="agenda"></div>
@@ -591,6 +619,7 @@
         <button class="mtab" type="button" data-mtab="atas">📝 Atas de reuniões</button>
         <button class="mtab" type="button" data-mtab="progresso">📊 Progresso</button>
         <button class="mtab" type="button" data-mtab="docs">📎 Documentos</button>
+        <button class="mtab" type="button" data-mtab="financeiro">💳 Financeiro</button>
       </div>
 
       <!-- ABA: CADASTRO -->
@@ -678,6 +707,24 @@
         <div class="contatos-hint">Anexe links de documentos do cliente (contrato, proposta, materiais no Drive, planilhas…). Cole o link e dê um nome.</div>
         <div id="docsBox"></div>
         <button class="btn sm ghost" id="btnAddDoc" type="button" style="margin-top:8px">+ Adicionar documento</button>
+      </div>
+
+      <!-- ABA: FINANCEIRO -->
+      <div class="mpanel hidden" data-mpanel="financeiro">
+        <div class="sec-title">💳 Parcelas do contrato</div>
+        <div class="contatos-hint">Cada parcela tem competência, vencimento e valor. Marque como paga quando o cliente pagar. Tudo aparece também no menu <b>Financeiro</b>.</div>
+        <div id="fichaParcelas"></div>
+
+        <div class="sec-title">⚙️ Gerar parcelas do contrato</div>
+        <div class="formgrid">
+          <div class="field"><label>Qtd. de parcelas</label><input id="ger_qtd" type="number" min="1" step="1" placeholder="ex.: 6" /></div>
+          <div class="field"><label>Valor por parcela (R$)</label><input id="ger_valor" type="number" min="0" step="100" placeholder="ex.: 8000" /></div>
+          <div class="field"><label>1º vencimento</label><input id="ger_venc" type="date" /></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+          <button class="btn sm" id="btnGerarParcelas" type="button">Gerar parcelas mensais</button>
+          <button class="btn sm ghost" id="btnAddParcela" type="button">+ Parcela avulsa</button>
+        </div>
       </div>
     </div>
     <div class="modal-foot">
@@ -1355,6 +1402,10 @@ function openModal(c){
   renderDeliverables();
   renderAtas();
   renderDocumentos();
+  renderFichaParcelas();
+  if($("#ger_venc")) $("#ger_venc").value="";
+  if($("#ger_qtd")) $("#ger_qtd").value="";
+  if($("#ger_valor")) $("#ger_valor").value=editing.valorMensal||"";
   renderProgressoResumo();
   setModalTab("cadastro");
   applyFaseLayout(editing.fase);
@@ -1813,7 +1864,7 @@ function applyFaseLayout(fase){
     badge.style.cssText = "font-size:11px;font-weight:800;padding:3px 10px;border-radius:999px;letter-spacing:.3px;white-space:nowrap;"+(lead?"background:#fdf2df;color:#a86a12":"background:#e7f6ee;color:#0f7a45");
   }
   // Abas que só fazem sentido depois que vira cliente
-  const abasCliente=["time","atas","progresso","docs"];
+  const abasCliente=["time","atas","progresso","docs","financeiro"];
   abasCliente.forEach(t=>{ const b=$(`#mtabs .mtab[data-mtab="${t}"]`); if(b) b.style.display = lead?"none":""; });
   const onb=$("#onbSection"); if(onb) onb.style.display = lead?"none":"";
   // Campos de contrato/entrega — some enquanto é oportunidade
@@ -1911,7 +1962,7 @@ $("#searchInput").addEventListener("input",e=>{ filter=e.target.value.trim().toL
 
 /* ---------- Sidebar navigation ---------- */
 let activeView="hoje";
-const VIEWS=["hoje","sales","metas","board","list","agenda","dash","metodo"];
+const VIEWS=["hoje","sales","metas","board","list","financ","agenda","dash","metodo"];
 function setView(v){
   activeView=v;
   $$(".modlink").forEach(x=>x.classList.toggle("active",x.dataset.view===v));
@@ -2121,6 +2172,7 @@ function renderActive(){
   else if(activeView==="metas") renderMetas();
   else if(activeView==="board") renderBoard();
   else if(activeView==="list") renderList();
+  else if(activeView==="financ") renderFinanceiro();
   else if(activeView==="agenda") renderAgenda();
   else if(activeView==="dash") renderDash();
   else if(activeView==="metodo") renderMetodo();
@@ -2145,7 +2197,141 @@ function refreshBadges(){
   if($("#badgeBoard")) $("#badgeBoard").textContent=entrega;
   const pend=Store.cache.filter(c=>c.proxima && c.status!=="Encerrado").length;
   if($("#badgeAgenda")) $("#badgeAgenda").textContent=pend;
+  const venc=(Store.pagamentos||[]).filter(p=>p.status!=="pago" && p.vencimento && p.vencimento<t).length;
+  if($("#badgeFinanc")) $("#badgeFinanc").textContent=venc;
 }
+
+/* =========================================================================
+   FINANCEIRO — parcelas (mr_pagamentos)
+   ========================================================================= */
+const _MESF=["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+const _MESA=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+function mesNome(ym){ if(!ym) return ""; const [y,m]=ym.split("-"); return `${_MESF[+m-1]||""}/${y}`; }
+function compLabel(iso){ const [y,m]=iso.split("-"); return `${_MESA[+m-1]||""}/${y}`; }
+function addMonthsISO(iso,n){ const [y,m,d]=iso.split("-").map(Number); const dt=new Date(Date.UTC(y,m-1,d)); dt.setUTCMonth(dt.getUTCMonth()+n); return dt.toISOString().slice(0,10); }
+function parcelaStatus(p){
+  if(p.status==="pago") return {label:"Paga", bg:"#173a2a", col:"#7ee2ad"};
+  if(p.vencimento && p.vencimento<todayISO()) return {label:"Vencida", bg:"#5a2222", col:"#ffb4b4"};
+  return {label:"A vencer", bg:"var(--panel2)", col:"var(--muted)"};
+}
+let finFilter="abertas";
+function finList(){
+  const t=todayISO(), mes=t.slice(0,7);
+  let arr=(Store.pagamentos||[]).slice();
+  if(finFilter==="abertas") arr=arr.filter(p=>p.status!=="pago");
+  else if(finFilter==="vencidas") arr=arr.filter(p=>p.status!=="pago" && p.vencimento && p.vencimento<t);
+  else if(finFilter==="mes") arr=arr.filter(p=>(p.vencimento||"").slice(0,7)===mes);
+  else if(finFilter==="pagas") arr=arr.filter(p=>p.status==="pago");
+  return arr.sort((a,b)=>(a.vencimento||"").localeCompare(b.vencimento||""));
+}
+function renderFinanceiro(){
+  const t=todayISO(), mes=t.slice(0,7);
+  const all=Store.pagamentos||[];
+  const sum=a=>a.reduce((s,p)=>s+Number(p.valor||0),0);
+  const aReceberMes=sum(all.filter(p=>p.status!=="pago" && (p.vencimento||"").slice(0,7)===mes));
+  const vencido=sum(all.filter(p=>p.status!=="pago" && p.vencimento && p.vencimento<t));
+  const recebidoMes=sum(all.filter(p=>p.status==="pago" && (p.pago_em||p.vencimento||"").slice(0,7)===mes));
+  const aberto=sum(all.filter(p=>p.status!=="pago"));
+  const k=$("#finKpis");
+  if(k) k.innerHTML =
+    kpi("A receber no mês", brl(aReceberMes), "vencendo em "+mesNome(mes), "var(--brand)")+
+    kpi("Vencido", brl(vencido), "parcelas em atraso", vencido>0?"#e0574f":"var(--green)")+
+    kpi("Recebido no mês", brl(recebidoMes), "baixas do mês", "var(--green)")+
+    kpi("Total em aberto", brl(aberto), "a receber no total", "var(--muted)");
+  $$(".finfilter").forEach(b=>b.classList.toggle("active", b.dataset.finf===finFilter));
+  const body=$("#finBody"); if(!body) return;
+  const arr=finList();
+  if(!arr.length){ body.innerHTML=`<tr><td colspan="6"><div class="empty" style="margin:8px">Nenhuma parcela aqui. Cadastre na aba <b>Financeiro</b> da ficha do cliente.</div></td></tr>`; return; }
+  body.innerHTML=arr.map(p=>{
+    const st=parcelaStatus(p); const paga=p.status==="pago";
+    const act = paga?`<button class="btn sm ghost fin-reabrir" data-id="${p.id}">Reabrir</button>`:`<button class="btn sm fin-pagar" data-id="${p.id}">✓ Paga</button>`;
+    return `<tr>
+      <td><a href="#" class="fin-cli" data-cli="${p.company_id||""}"><b>${esc(coNome(p.company_id))}</b></a></td>
+      <td>${esc(p.competencia||"—")}</td>
+      <td>${p.vencimento?fmtDate(p.vencimento):"—"}</td>
+      <td><b>${brl(Number(p.valor||0))}</b></td>
+      <td><span class="statuschip" style="background:${st.bg};color:${st.col}">${st.label}</span>${paga&&p.pago_em?` <span class="csub">${fmtDate(p.pago_em)}</span>`:""}</td>
+      <td style="text-align:right;white-space:nowrap">${act} <button class="btn sm ghost fin-del" data-id="${p.id}" title="Excluir">✕</button></td>
+    </tr>`;
+  }).join("");
+  body.querySelectorAll(".fin-pagar").forEach(b=>b.addEventListener("click",()=>marcarPaga(b.dataset.id)));
+  body.querySelectorAll(".fin-reabrir").forEach(b=>b.addEventListener("click",()=>reabrirParcela(b.dataset.id)));
+  body.querySelectorAll(".fin-del").forEach(b=>b.addEventListener("click",()=>excluirParcela(b.dataset.id)));
+  body.querySelectorAll(".fin-cli").forEach(a=>a.addEventListener("click",e=>{ e.preventDefault(); const c=coById(a.dataset.cli); if(c) openModal(c); }));
+}
+function renderFichaParcelas(){
+  const box=$("#fichaParcelas"); if(!box) return;
+  if(!editing){ box.innerHTML=""; return; }
+  const arr=(Store.pagamentos||[]).filter(p=>p.company_id===editing.id).sort((a,b)=>(a.vencimento||"").localeCompare(b.vencimento||""));
+  if(!arr.length){ box.innerHTML=`<div class="empty">Nenhuma parcela cadastrada. Use "Gerar parcelas" abaixo.</div>`; return; }
+  const total=arr.reduce((s,p)=>s+Number(p.valor||0),0);
+  const pago=arr.filter(p=>p.status==="pago").reduce((s,p)=>s+Number(p.valor||0),0);
+  box.innerHTML=`<div class="csub" style="margin-bottom:8px">${arr.length} parcela(s) · total ${brl(total)} · recebido ${brl(pago)}</div>`+
+    arr.map(p=>{
+      const st=parcelaStatus(p); const paga=p.status==="pago";
+      const act = paga?`<button class="btn sm ghost fp-reabrir" data-id="${p.id}">Reabrir</button>`:`<button class="btn sm fp-pagar" data-id="${p.id}">✓ Paga</button>`;
+      return `<div class="ata" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div style="flex:1;min-width:140px"><b>${esc(p.competencia||"—")}</b> · venc. ${p.vencimento?fmtDate(p.vencimento):"—"} · ${brl(Number(p.valor||0))}</div>
+        <span class="statuschip" style="background:${st.bg};color:${st.col}">${st.label}${paga&&p.pago_em?" · "+fmtDate(p.pago_em):""}</span>
+        ${act}
+        <button class="btn sm ghost fp-del" data-id="${p.id}" title="Excluir">✕</button>
+      </div>`;
+    }).join("");
+  box.querySelectorAll(".fp-pagar").forEach(b=>b.addEventListener("click",()=>marcarPaga(b.dataset.id)));
+  box.querySelectorAll(".fp-reabrir").forEach(b=>b.addEventListener("click",()=>reabrirParcela(b.dataset.id)));
+  box.querySelectorAll(".fp-del").forEach(b=>b.addEventListener("click",()=>excluirParcela(b.dataset.id)));
+}
+async function afterParcelaChange(){
+  refreshBadges();
+  if(activeView==="financ") renderFinanceiro();
+  renderFichaParcelas();
+}
+async function marcarPaga(id){
+  try{ await Store.updatePagamento(id,{status:"pago",pago_em:todayISO()}); await afterParcelaChange(); toast("Parcela baixada ✅","ok"); }
+  catch(e){ toast("Erro: "+(e.message||e),"err"); }
+}
+async function reabrirParcela(id){
+  try{ await Store.updatePagamento(id,{status:"pendente",pago_em:null}); await afterParcelaChange(); toast("Parcela reaberta","ok"); }
+  catch(e){ toast("Erro: "+(e.message||e),"err"); }
+}
+async function excluirParcela(id){
+  if(!confirm("Excluir esta parcela?")) return;
+  try{ await Store.removePagamento(id); await afterParcelaChange(); toast("Parcela excluída","ok"); }
+  catch(e){ toast("Erro: "+(e.message||e),"err"); }
+}
+async function gerarParcelas(){
+  if(!editing||!editing.id){ toast("Salve o cliente primeiro","err"); return; }
+  const qtd=parseInt($("#ger_qtd").value,10);
+  const valor=Number($("#ger_valor").value);
+  const venc=$("#ger_venc").value;
+  if(!qtd||qtd<1){ toast("Informe a quantidade de parcelas","err"); return; }
+  if(!venc){ toast("Informe o 1º vencimento","err"); return; }
+  if(!(valor>0)){ toast("Informe o valor da parcela","err"); return; }
+  const jaTem=(Store.pagamentos||[]).filter(p=>p.company_id===editing.id).length;
+  if(jaTem && !confirm(`Este cliente já tem ${jaTem} parcela(s). Gerar mais ${qtd}?`)) return;
+  try{
+    for(let i=0;i<qtd;i++){
+      const v=addMonthsISO(venc,i);
+      await Store.addPagamento({company_id:editing.id, competencia:compLabel(v), valor, vencimento:v, status:"pendente"});
+    }
+    await afterParcelaChange();
+    toast(`${qtd} parcela(s) gerada(s) ✅`,"ok");
+  }catch(e){ toast("Erro ao gerar: "+(e.message||e),"err"); }
+}
+async function addParcelaAvulsa(){
+  if(!editing||!editing.id){ toast("Salve o cliente primeiro","err"); return; }
+  const valor=Number($("#ger_valor").value);
+  const venc=$("#ger_venc").value;
+  if(!venc||!(valor>0)){ toast("Preencha valor e 1º vencimento","err"); return; }
+  try{
+    await Store.addPagamento({company_id:editing.id, competencia:compLabel(venc), valor, vencimento:venc, status:"pendente"});
+    await afterParcelaChange();
+    toast("Parcela adicionada ✅","ok");
+  }catch(e){ toast("Erro: "+(e.message||e),"err"); }
+}
+$$(".finfilter").forEach(b=>b.addEventListener("click",()=>{ finFilter=b.dataset.finf; renderFinanceiro(); }));
+if($("#btnGerarParcelas")) $("#btnGerarParcelas").addEventListener("click",gerarParcelas);
+if($("#btnAddParcela")) $("#btnAddParcela").addEventListener("click",addParcelaAvulsa);
 
 /* =========================================================================
    RENDER — Clientes (tabela)
@@ -2165,13 +2351,15 @@ function renderList(){
     const valor=plval(c);
     const permuta=valor<=0 && c.notas && /permuta/i.test(c.notas);
     const venc=c.dataVenc?fmtDate(c.dataVenc):((c.onboarding&&c.onboarding.vencimento)||"");
+    const contratoVencido = c.fim && c.fim<todayISO() && c.status!=="Encerrado";
+    const alerta = contratoVencido?` <span class="statuschip" style="background:#5a2222;color:#ffb4b4" title="A data de fim do contrato já passou">⚠ contrato vencido</span>`:"";
     return `<tr data-id="${c.id}">
       <td><div class="cname">${esc(c.nome)||"(sem nome)"}</div><div class="csub">${esc(c.setor||"—")}</div></td>
       <td>${esc(c.decisor||"—")}</td>
       <td>${esc(c.cidade||"—")}</td>
       <td>${valor>0?`<b>${brl(valor)}</b>`:(permuta?`<span class="csub">Permuta</span>`:"—")}</td>
       <td>${venc?esc(venc):"<span class=\"csub\">—</span>"}</td>
-      <td><span class="statuschip" style="background:var(--panel2);color:var(--muted)">${esc(c.status||"—")}</span></td>
+      <td><span class="statuschip" style="background:var(--panel2);color:var(--muted)">${esc(c.status||"—")}</span>${alerta}</td>
     </tr>`;
   }).join("");
   const total=data.reduce((s,c)=>s+plval(c),0);
