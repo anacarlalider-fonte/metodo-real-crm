@@ -2155,6 +2155,21 @@ function renderHoje(){
   }).join("");
   const finPanel = parcAlert.length ? panel(`💳 Parcelas a cobrar <span style="font-weight:400;color:var(--muted2);font-size:12px">${parcAlert.length}</span>`, finBody) : "";
 
+  // PRIORIDADES DO DIA — junta o urgente de todos os blocos, em ordem
+  const prio=[];
+  atrasadas.forEach(a=>prio.push({u:0,ic:"🔴",txt:`Atrasada: ${a.descricao}`+(a.company_id?` · ${coNome(a.company_id)}`:""),cid:a.company_id||null}));
+  parcAlert.filter(p=>p.vencimento<today).forEach(p=>prio.push({u:1,ic:"💸",txt:`Cobrar ${coNome(p.company_id)} — ${brl(Number(p.valor||0))} (venceu ${fmtDate(p.vencimento)})`,cid:p.company_id||null}));
+  fups.filter(x=>x.t.esfriou||(x.t.due!=null&&x.t.due<=0)).forEach(x=>prio.push({u:2,ic:"📨",txt:`Follow-up: ${x.c.nome||"lead"}`+(x.t.esfriou?" (esfriando!)":""),cid:x.c.id}));
+  sessoes.filter(s=>s.dateISO===today).forEach(s=>prio.push({u:3,ic:"📅",txt:`Sessão hoje${s.hora?" "+s.hora:""}: ${s.nome}`,cid:s.companyId||null}));
+  deHoje.forEach(a=>prio.push({u:4,ic:"🟡",txt:`Hoje: ${a.descricao}`+(a.company_id?` · ${coNome(a.company_id)}`:""),cid:a.company_id||null}));
+  prio.sort((a,b)=>a.u-b.u);
+  const prioBody = prio.length
+    ? prio.slice(0,7).map(p=>`<div class="hrow ${p.cid?"prio-go":""}" ${p.cid?`data-id="${p.cid}"`:""} style="${p.cid?"cursor:pointer;":""}align-items:center;gap:10px">
+        <span style="flex:1;font-size:14px">${p.ic} ${esc(p.txt)}</span>${p.cid?`<span style="font-size:12px;color:var(--brand)">abrir →</span>`:""}</div>`).join("")
+      + (prio.length>7?`<div style="font-size:12px;color:var(--muted2);padding:8px 2px 2px">+ ${prio.length-7} outra(s) — veja nos blocos abaixo</div>`:"")
+    : `<div class="empty" style="margin:8px 0">Nada urgente agora. Você está em dia! ✅</div>`;
+  const prioPanel = panel(`🎯 Prioridades de hoje <span style="font-weight:400;color:var(--muted2);font-size:12px">${prio.length}</span>`, prioBody);
+
   // barra de blocos: mostra um bloco por vez (ou tudo)
   const _hvBtns=[["tudo","Tudo"],["acoes","Ações"],["followups","Follow-ups"],["sessoes","Sessões"],["cobrancas","Cobranças"],["alertas","Alertas"]];
   const hvBar=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px">${_hvBtns.map(([k,l])=>`<button class="btn sm ghost hoje-view${hojeView===k?" active":""}" data-hv="${k}">${l}</button>`).join("")}</div>`;
@@ -2179,6 +2194,7 @@ function renderHoje(){
       <div style="font-size:22px;font-weight:800">${saudacao()}, Ana 👋</div>
       <div style="font-size:13px;color:var(--muted)">${new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"})}</div>
     </div>
+    <div style="max-width:760px;margin-bottom:20px">${prioPanel}</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:22px;max-width:760px">
       ${chip(sessoes.filter(s=>s.dateISO===today).length,"sessões hoje","var(--brand)")}
       ${chip(fupPend,"follow-ups a fazer",fupPend?"#c0392f":"var(--txt)")}
@@ -2210,7 +2226,7 @@ function renderHoje(){
   const acAddEl=$("#acAdd"); if(acAddEl) acAddEl.addEventListener("click",addFn);
   const acDescEl=$("#acDesc"); if(acDescEl) acDescEl.addEventListener("keydown",e=>{ if(e.key==="Enter") addFn(); });
   box.querySelectorAll(".hoje-view").forEach(b=>b.addEventListener("click",()=>{ hojeView=b.dataset.hv; renderHoje(); }));
-  box.querySelectorAll(".sess-go,.alert-go,.fin-go").forEach(el=>el.addEventListener("click",()=>{ const c=coById(el.dataset.id); if(c) openModal(c); }));
+  box.querySelectorAll(".sess-go,.alert-go,.fin-go,.prio-go").forEach(el=>el.addEventListener("click",()=>{ const c=coById(el.dataset.id); if(c) openModal(c); }));
   box.querySelectorAll(".fu-open").forEach(el=>el.addEventListener("click",()=>{ const c=coById(el.dataset.id); if(c) openModal(c); }));
   box.querySelectorAll(".fu-done").forEach(el=>el.addEventListener("click",async e=>{
     e.stopPropagation();
