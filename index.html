@@ -17,6 +17,15 @@
     --danger:#e0574f; --ok:#1f9d54;
     --radius:14px; --radius-s:10px;
     --shadow:0 8px 24px rgba(23,33,51,.08);
+    /* Tokens semânticos — Status (fg + -bg pro fundo do badge) */
+    --status-backlog:#5b6270;      --status-backlog-bg:#eef0f3;
+    --status-andamento:#1c62c9;    --status-andamento-bg:#eaf2fd;
+    --status-concluido:#0f7a45;    --status-concluido-bg:#e5f6ec;
+    --status-atrasado:#c0392f;     --status-atrasado-bg:#fdeaea;
+    /* Tokens semânticos — Tríade (badge sólido: cor de fundo + texto claro) */
+    --triade-importante:#1f9d54;   --triade-importante-bg:#e5f6ec;
+    --triade-urgente:#c0392f;      --triade-urgente-bg:#fdeaea;
+    --triade-circunstancial:#8a94a2; --triade-circunstancial-bg:#eef0f3;
   }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%}
@@ -256,6 +265,110 @@
   table.plt td.c-ck,table.plt td.c-rm{text-align:center;padding:5px 4px}
   .tri-bar{display:flex;height:8px;border-radius:99px;overflow:hidden;background:var(--panel2);margin:4px 0 2px}
   .tri-leg{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:6px}
+  /* Tela Plano de Acao: grade estilo planilha */
+  .plgrid-wrap{overflow-x:auto;border:1px solid var(--line2);border-radius:10px;background:var(--bg)}
+  table.plgrid{border-collapse:collapse;width:max-content;min-width:100%;font-size:13px}
+  table.plgrid th,table.plgrid td{border:1px solid var(--line2);padding:0;vertical-align:middle}
+  table.plgrid th{background:var(--bg2);color:var(--muted2);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;text-align:left;white-space:nowrap;padding:9px 9px;position:sticky;top:0;z-index:2}
+  table.plgrid td .pla-f{width:100%;border:none;background:transparent;padding:9px 9px;color:var(--txt);font-size:13px;border-radius:0}
+  table.plgrid td .pla-f:focus{outline:2px solid var(--brand);outline-offset:-2px;background:var(--bg)}
+  table.plgrid td.st-cell .pla-f,table.plgrid td.tri-cell .pla-f{font-weight:600;cursor:pointer}
+  table.plgrid tr.done td{opacity:.6}
+  table.plgrid td.c-ck,table.plgrid td.c-rm{text-align:center;padding:6px 6px}
+  .plkpi{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .plkpi .k{flex:1;min-width:120px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .plkpi .k .n{font-size:24px;font-weight:800;line-height:1}
+  .plkpi .k .l{font-size:11.5px;color:var(--muted);margin-top:4px}
+  /* Plano de Acao — layout agrupado por meta */
+  .plhd{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .plhd h2{font-size:22px;font-weight:800;margin:0}
+  .plhd .sub{font-size:13px;color:var(--muted);margin-top:3px;max-width:560px}
+  .plcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:12px;margin-bottom:16px}
+  .plcard{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:13px 16px}
+  .plcard .top{display:flex;align-items:center;gap:7px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted2)}
+  .plcard .big{font-size:26px;font-weight:800;line-height:1;margin-top:8px;display:flex;align-items:baseline}
+  .plcard .pct{font-size:12px;color:var(--muted2);font-weight:600;margin-left:8px}
+  .plbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+  .plsearch{flex:1;min-width:200px}
+  .plgrp{margin-bottom:6px}
+  .plgh{display:flex;align-items:center;gap:7px;padding:14px 6px 8px;cursor:pointer;font-weight:700;font-size:14.5px;user-select:none}
+  .plgh .cnt{font-size:12px;color:var(--muted2);font-weight:500}
+  .plgh .chev{display:inline-block;transition:transform .15s;color:var(--muted2);font-size:12px}
+  .plgh.collapsed .chev{transform:rotate(-90deg)}
+  .plr{display:grid;grid-template-columns:50px minmax(120px,2fr) minmax(90px,1fr) 122px 78px 124px;align-items:center;gap:10px;padding:11px 12px;border:1px solid var(--line);border-left:3px solid var(--line2);border-radius:10px;margin:7px 0;background:var(--bg2)}
+  .plr:hover{background:var(--bg);border-color:var(--line2)}
+  .plr.open{background:var(--bg);border-color:var(--brand)}
+  .plr .code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;color:var(--muted2)}
+  .plr .ttl{font-size:14px;font-weight:500;cursor:pointer;min-width:0}
+  .plr .ttl-main{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .plr .ttl .sub2{font-size:11.5px;color:var(--muted2);font-weight:400;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .plr .proj{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .plr .dono{display:flex;align-items:center;gap:7px;font-size:13px;white-space:nowrap;overflow:hidden}
+  .plr .prz{font-size:13px}
+  .av{width:24px;height:24px;border-radius:50%;background:var(--brand);color:#fff;font-size:9.5px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none}
+  .pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap}
+  .pill .dot{width:7px;height:7px;border-radius:50%;flex:none}
+  .plr-edit{border:1px solid var(--brand);border-top:none;border-radius:0 0 10px 10px;margin:-6px 0 8px;padding:12px 14px;background:var(--bg2)}
+  .plr-edit .plac-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+  .plr-edit label{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.3px}
+  .plr-edit label.fw{grid-column:1 / -1}
+  .plr-edit .hinput{font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--txt)}
+  @media(max-width:720px){ .plr{grid-template-columns:44px minmax(0,1fr) 110px;} .plr .proj,.plr .prz{display:none} .plr-edit .plac-grid{grid-template-columns:1fr} }
+  /* Badges reutilizáveis (tokens semânticos) */
+  .badge-status{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 10px 3px 8px;border-radius:999px;white-space:nowrap}
+  .badge-status .dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+  .badge-triade{display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:2px 9px;border-radius:6px;white-space:nowrap;letter-spacing:.2px}
+  /* Barra segmentada da Tríade */
+  .plseg{display:flex;height:10px;border-radius:999px;overflow:hidden;background:var(--panel2)}
+  .plseg > span{display:block}
+  /* Tabs de visualização */
+  .pltabs{display:inline-flex;gap:2px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px}
+  .pltab{border:none;background:transparent;color:var(--muted);font-size:13px;font-weight:600;padding:6px 14px;border-radius:7px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+  .pltab.active{background:var(--panel);color:var(--txt);box-shadow:0 1px 2px rgba(23,33,51,.06)}
+  /* Chips de filtro multi */
+  .plchip{border:1px solid var(--line2);background:var(--panel);color:var(--muted);font-size:12px;font-weight:600;padding:5px 11px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;user-select:none}
+  .plchip .dot{width:7px;height:7px;border-radius:50%;flex:none}
+  .plchip.on{border-color:transparent;color:#fff}
+  .plchip.on.ghost{color:var(--txt)}
+  .plfrow{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+  .plfsep{width:1px;height:20px;background:var(--line2);margin:0 2px}
+  .plmini{font-size:12px;color:var(--txt);background:var(--panel);border:1px solid var(--line2);border-radius:8px;padding:6px 9px}
+  /* Kanban */
+  .plkan{display:grid;grid-template-columns:repeat(4,minmax(200px,1fr));gap:12px;align-items:start}
+  .plkcol{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:10px;min-height:80px}
+  .plkcol.drag-over{outline:2px dashed var(--brand);outline-offset:-4px}
+  .plkhead{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;padding:2px 4px 10px;color:var(--txt)}
+  .plkhead .cnt{margin-left:auto;font-size:11px;color:var(--muted2);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:1px 8px}
+  .plkcard{background:var(--panel);border:1px solid var(--line2);border-left:3px solid var(--kc,var(--line2));border-radius:9px;padding:10px;margin-bottom:8px;cursor:pointer}
+  .plkcard:hover{border-color:var(--brand)}
+  .plkcard .t{font-size:13px;font-weight:600;margin-bottom:6px}
+  .plkcard .m{font-size:11px;color:var(--muted2);margin-bottom:8px}
+  .plkcard .ft{display:flex;align-items:center;gap:7px;justify-content:space-between}
+  @media(max-width:860px){ .plkan{grid-template-columns:1fr 1fr} }
+  @media(max-width:560px){ .plkan{grid-template-columns:1fr} }
+  /* Timeline */
+  .pltl{position:relative;margin-left:8px;padding-left:22px;border-left:2px solid var(--line2)}
+  .pltl-mes{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--muted2);margin:18px 0 8px}
+  .pltl-item{position:relative;margin:0 0 8px}
+  .pltl-item::before{content:"";position:absolute;left:-29px;top:14px;width:10px;height:10px;border-radius:50%;background:var(--kc,var(--brand));border:2px solid var(--panel)}
+  /* Drawer lateral */
+  .drawer-ov{position:fixed;inset:0;background:rgba(23,33,51,.34);z-index:60;opacity:0;transition:opacity .18s}
+  .drawer-ov.show{opacity:1}
+  .drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,94vw);background:var(--panel);border-left:1px solid var(--line2);box-shadow:-12px 0 32px rgba(23,33,51,.14);z-index:61;transform:translateX(100%);transition:transform .2s;display:flex;flex-direction:column}
+  .drawer.show{transform:translateX(0)}
+  .drawer-hd{padding:16px 18px 12px;border-bottom:1px solid var(--line)}
+  .drawer-tabs{display:flex;gap:2px;padding:0 12px;border-bottom:1px solid var(--line);overflow-x:auto}
+  .drawer-tab{border:none;background:transparent;color:var(--muted);font-size:13px;font-weight:600;padding:11px 12px;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+  .drawer-tab.active{color:var(--txt);border-bottom-color:var(--brand)}
+  .drawer-bd{padding:16px 18px;overflow-y:auto;flex:1}
+  .drawer-bd .plac-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 14px}
+  .drawer-bd label{display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.3px}
+  .drawer-bd label.fw{grid-column:1 / -1}
+  .drawer-bd .hinput{font-size:13.5px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--txt)}
+  .drawer-empty{color:var(--muted2);font-size:13px;text-align:center;padding:40px 10px}
+  /* FAB */
+  .fab{position:fixed;right:26px;bottom:26px;z-index:55;background:linear-gradient(135deg,var(--brand),var(--brand-d));color:#1a1205;border:none;border-radius:999px;padding:14px 20px;font-weight:800;font-size:14px;cursor:pointer;box-shadow:0 8px 22px rgba(232,133,43,.4);display:inline-flex;align-items:center;gap:8px}
+  .fab:hover{transform:translateY(-1px)}
   .hchip{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
   .hchip .n{font-size:26px;font-weight:800;line-height:1}
   .hchip .l{font-size:12px;color:var(--muted);margin-top:5px}
@@ -480,6 +593,10 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         Clientes
       </button>
+      <button class="modlink" data-view="plano" data-title="Plano de Ação">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Plano de Ação
+      </button>
       <button class="modlink" data-view="financ" data-title="Financeiro · contratos e parcelas">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>
         Financeiro <span class="badge" id="badgeFinanc">0</span>
@@ -564,6 +681,14 @@
          </table>
        </div>
      </div>
+   </div>
+
+   <!-- ===== PLANO DE AÇÃO (5W2H) VIEW ===== -->
+   <div id="view-plano" class="wrap hidden">
+     <div id="planoView"></div>
+     <button class="fab" id="planoFab" type="button">＋ Nova ação</button>
+     <div class="drawer-ov" id="planoDrawerOv"></div>
+     <aside class="drawer" id="planoDrawer" aria-hidden="true"></aside>
    </div>
 
    <!-- ===== FINANCEIRO VIEW ===== -->
@@ -1924,27 +2049,33 @@ function collectPlano(){
   };
 }
 
-/* Tarefas do cliente = plano de ação 5W2H (mr_acoes dono=cliente) — vivem no Plano, fora do Hoje */
+/* Plano de ação 5W2H (mr_acoes dono=cliente) — tela própria + dentro da ficha */
 const TRIADE={
-  importante:{lbl:"Importante",ic:"🟢",cor:"#0f7a45",bg:"background:#e7f6ee;color:#0f7a45"},
-  urgente:{lbl:"Urgente",ic:"🔴",cor:"#c0392f",bg:"background:#fdeaea;color:#c0392f"},
-  circunstancial:{lbl:"Circunstancial",ic:"⚪",cor:"#8a8f98",bg:"background:var(--panel2);color:var(--muted)"}
+  importante:{lbl:"Importante",ic:"🟢",cor:"#0f7a45",cellbg:"#e7f6ee",bg:"background:#e7f6ee;color:#0f7a45"},
+  urgente:{lbl:"Urgente",ic:"🔴",cor:"#c0392f",cellbg:"#fdeaea",bg:"background:#fdeaea;color:#c0392f"},
+  circunstancial:{lbl:"Circunstancial",ic:"⚪",cor:"#8a8f98",cellbg:"#f0f1f3",bg:"background:var(--panel2);color:var(--muted)"}
 };
-function planoAcaoRow(a){
+const ACST={ aberto:{lbl:"A fazer",cellbg:"#eef0f2"}, andamento:{lbl:"Fazendo",cellbg:"#fff3d6"}, feito:{lbl:"Concluído",cellbg:"#dcf5e6"} };
+function planoAcaoRow(a, opts){
+  opts=opts||{};
   const st=a.status||"aberto"; const done=st==="feito";
   const atrasada=!done && a.prazo && a.prazo<todayISO();
   const inp=(k,ph,w,type)=>`<input class="pla-f" data-id="${a.id}" data-k="${k}" ${type?`type="${type}"`:""} value="${esc(a[k]||"")}" placeholder="${esc(ph||"")}" style="min-width:${w}px${k==="prazo"&&atrasada?";color:#c0392f;font-weight:600":""}" />`;
+  const stBg = atrasada ? "#fdeaea" : (ACST[st]?ACST[st].cellbg:"transparent");
   const stSel=`<select class="pla-f" data-id="${a.id}" data-k="status" style="min-width:104px">
       <option value="aberto" ${st==="aberto"?"selected":""}>A fazer</option>
       <option value="andamento" ${st==="andamento"?"selected":""}>Fazendo</option>
       <option value="feito" ${st==="feito"?"selected":""}>Concluído</option></select>`;
+  const tri=TRIADE[a.triade];
   const triSel=`<select class="pla-f" data-id="${a.id}" data-k="triade" style="min-width:132px">
       <option value="">—</option>
       <option value="importante" ${a.triade==="importante"?"selected":""}>🟢 Importante</option>
       <option value="urgente" ${a.triade==="urgente"?"selected":""}>🔴 Urgente</option>
       <option value="circunstancial" ${a.triade==="circunstancial"?"selected":""}>⚪ Circunstancial</option></select>`;
+  const cliCell = opts.cliente ? `<td style="min-width:120px;padding:9px;font-weight:600;white-space:nowrap">${esc(coNome(a.company_id))}</td>` : "";
   return `<tr class="${done?'done':''}" data-id="${a.id}">
     <td class="c-ck"><span class="pla-check" data-id="${a.id}" title="Concluir / reabrir" style="cursor:pointer;font-size:17px;color:${done?'var(--brand)':'var(--muted2)'}">${done?"☑":"☐"}</span></td>
+    ${cliCell}
     <td>${inp("meta","meta",130)}</td>
     <td>${inp("projeto","projeto/reunião",120)}</td>
     <td>${inp("descricao","a ação",190)}</td>
@@ -1954,13 +2085,269 @@ function planoAcaoRow(a){
     <td>${inp("porque","razão",150)}</td>
     <td>${inp("como","procedimento",150)}</td>
     <td>${inp("quanto","R$/recurso",95)}</td>
-    <td>${stSel}</td>
-    <td>${triSel}</td>
+    <td class="st-cell" style="background:${stBg}">${stSel}</td>
+    <td class="tri-cell" style="background:${tri?tri.cellbg:'transparent'}">${triSel}</td>
     <td class="c-rm">
       ${!done?`<span class="pla-tome" data-id="${a.id}" title="Trazer pro seu Hoje" style="cursor:pointer;color:var(--muted2);font-size:13px">←👩</span> `:""}
       <span class="pla-del" data-id="${a.id}" title="Remover" style="cursor:pointer;color:var(--muted2);font-size:13px">✕</span>
     </td>
   </tr>`;
+}
+/* ============ Plano de Ação 5W2H — tela do menu (Tabela/Kanban/Timeline + Drawer) ============ */
+let planoTab="tabela", plDrawerId=null, plDrawerTab="detalhes", plNewMode=false;
+let plF={busca:"",status:new Set(),triade:new Set(),meta:"",projeto:"",dono:"",de:"",ate:""};
+const planoGruposFechados=new Set();
+function planoStatus(a){
+  const st=a.status||"aberto";
+  if(st==="feito") return {key:"concluido",lbl:"Concluído"};
+  if(a.prazo && a.prazo<todayISO()) return {key:"atrasado",lbl:"Atrasado"};
+  if(st==="andamento") return {key:"andamento",lbl:"Em andamento"};
+  return {key:"backlog",lbl:"Backlog"};
+}
+function iniciais(nome){ const p=String(nome||"").trim().split(/\s+/); if(!p[0]) return "—"; return ((p[0][0]||"")+(p.length>1?p[p.length-1][0]:"")).toUpperCase(); }
+/* Componentes de badge (via tokens semânticos) */
+function statusBadge(a){ const s=planoStatus(a); return `<span class="badge-status" style="color:var(--status-${s.key});background:var(--status-${s.key}-bg)"><span class="dot"></span>${s.lbl}</span>`; }
+function triadeBadge(t){ if(!t||!TRIADE[t]) return `<span class="badge-triade" style="color:var(--muted2);background:var(--panel2)">— tríade</span>`; return `<span class="badge-triade" style="color:#fff;background:var(--triade-${t})">${TRIADE[t].lbl}</span>`; }
+function planoFiltrar(all){
+  let l=all.slice();
+  const q=plF.busca.trim().toLowerCase();
+  if(q) l=l.filter(a=>[a.descricao,a.meta,a.projeto,a.responsavel,a.onde,coNome(a.company_id)].some(x=>String(x||"").toLowerCase().includes(q)));
+  if(plF.status.size) l=l.filter(a=>plF.status.has(planoStatus(a).key));
+  if(plF.triade.size) l=l.filter(a=>plF.triade.has(a.triade||""));
+  if(plF.meta) l=l.filter(a=>((a.meta&&a.meta.trim())||"Sem meta")===plF.meta);
+  if(plF.projeto) l=l.filter(a=>((a.projeto&&a.projeto.trim())||"Sem projeto")===plF.projeto);
+  if(plF.dono) l=l.filter(a=>(a.responsavel||"")===plF.dono);
+  if(plF.de) l=l.filter(a=>a.prazo && a.prazo>=plF.de);
+  if(plF.ate) l=l.filter(a=>a.prazo && a.prazo<=plF.ate);
+  return l;
+}
+function planoRowCard(a, code){
+  const s=planoStatus(a); const late=s.key==="atrasado";
+  return `<div class="plr pla-open" data-id="${a.id}" style="border-left-color:var(--status-${s.key})">
+      <div class="code">${code||""}</div>
+      <div class="ttl"><div class="ttl-main">${esc(a.descricao)||"(sem título)"}</div><div class="sub2">${esc(coNome(a.company_id))}</div></div>
+      <div class="proj">${esc(a.projeto||"—")}</div>
+      <div class="dono"><span class="av">${iniciais(a.responsavel)}</span>${esc(a.responsavel||"—")}</div>
+      <div class="prz" style="${late?"color:var(--status-atrasado);font-weight:600":"color:var(--muted)"}">${a.prazo?fmtDiaMes(a.prazo):"—"}</div>
+      <div>${statusBadge(a)}</div>
+    </div>`;
+}
+function renderPlanoTabela(list){
+  const groups={};
+  list.forEach(a=>{ const m=(a.meta&&a.meta.trim())||"Sem meta"; (groups[m]=groups[m]||[]).push(a); });
+  const metas=Object.keys(groups).sort((a,b)=> a==="Sem meta"?1:b==="Sem meta"?-1:a.localeCompare(b));
+  const rank={urgente:0,importante:1,circunstancial:2};
+  const srt=arr=>arr.sort((a,b)=> ((a.status==="feito")-(b.status==="feito")) || (a.prazo||"9999").localeCompare(b.prazo||"9999") || ((rank[a.triade]??3)-(rank[b.triade]??3)));
+  return metas.map(m=>{
+    const closed=planoGruposFechados.has(m); const arr=srt(groups[m]);
+    return `<div class="plgrp">
+      <div class="plgh${closed?" collapsed":""}" data-meta="${esc(m)}"><span class="chev">▾</span> 🎯 ${esc(m)} <span class="cnt">· ${arr.length} ${arr.length===1?"ação":"ações"}</span></div>
+      <div class="plgb" ${closed?'style="display:none"':""}>${arr.map(a=>planoRowCard(a,window._plCode[a.id])).join("")}</div>
+    </div>`;
+  }).join("");
+}
+function renderPlanoKanban(list){
+  const cols=[["backlog","Backlog"],["andamento","Em andamento"],["atrasado","Atrasado"],["concluido","Concluído"]];
+  const byCol={backlog:[],andamento:[],atrasado:[],concluido:[]};
+  list.forEach(a=>byCol[planoStatus(a).key].push(a));
+  return `<div class="plkan">${cols.map(([k,lbl])=>`
+    <div class="plkcol" data-kcol="${k}">
+      <div class="plkhead"><span class="dot" style="width:8px;height:8px;border-radius:50%;background:var(--status-${k})"></span>${lbl}<span class="cnt">${byCol[k].length}</span></div>
+      ${byCol[k].map(a=>{ const s=planoStatus(a); return `<div class="plkcard pla-open" draggable="true" data-id="${a.id}" style="--kc:var(--status-${k})">
+        <div class="t">${esc(a.descricao)||"(sem título)"}</div>
+        <div class="m">${esc(coNome(a.company_id))}${a.meta?" · "+esc(a.meta):""}</div>
+        <div class="ft"><span class="av">${iniciais(a.responsavel)}</span>${triadeBadge(a.triade)}<span style="font-size:11px;margin-left:auto;color:${s.key==="atrasado"?"var(--status-atrasado)":"var(--muted2)"}">${a.prazo?fmtDiaMes(a.prazo):""}</span></div>
+      </div>`; }).join("")||`<div style="font-size:12px;color:var(--muted2);padding:6px 4px">—</div>`}
+    </div>`).join("")}</div>`;
+}
+function renderPlanoTimeline(list){
+  const meses=["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+  const withD=list.filter(a=>a.prazo).sort((a,b)=>a.prazo.localeCompare(b.prazo));
+  const noD=list.filter(a=>!a.prazo);
+  const item=a=>{ const s=planoStatus(a); return `<div class="pltl-item pla-open" data-id="${a.id}" style="--kc:var(--status-${s.key})">
+      <div class="plr" style="border-left-color:var(--status-${s.key});grid-template-columns:64px minmax(120px,2fr) 130px 120px 120px;cursor:pointer">
+        <div class="prz" style="${s.key==="atrasado"?"color:var(--status-atrasado);font-weight:600":"color:var(--muted)"}">${fmtDiaMes(a.prazo)}</div>
+        <div class="ttl"><div class="ttl-main">${esc(a.descricao)||"(sem título)"}</div><div class="sub2">${esc(coNome(a.company_id))}${a.meta?" · "+esc(a.meta):""}</div></div>
+        <div class="dono"><span class="av">${iniciais(a.responsavel)}</span>${esc(a.responsavel||"—")}</div>
+        <div>${triadeBadge(a.triade)}</div>
+        <div>${statusBadge(a)}</div>
+      </div></div>`; };
+  let html=`<div class="pltl">`, cur="";
+  withD.forEach(a=>{ const mk=a.prazo.slice(0,7); if(mk!==cur){ cur=mk; const [y,m]=a.prazo.split("-"); html+=`<div class="pltl-mes">${meses[+m-1]} ${y}</div>`; } html+=item(a); });
+  html+=`</div>`;
+  if(noD.length) html+=`<div class="pltl-mes" style="margin-top:20px">Sem data</div><div style="margin-left:8px">${noD.map(a=>`<div class="plr pla-open" data-id="${a.id}" style="border-left-color:var(--status-${planoStatus(a).key})"><div class="code">${window._plCode[a.id]||""}</div><div class="ttl"><div class="ttl-main">${esc(a.descricao)||"(sem título)"}</div><div class="sub2">${esc(coNome(a.company_id))}</div></div><div class="proj">${esc(a.projeto||"—")}</div><div class="dono"><span class="av">${iniciais(a.responsavel)}</span>${esc(a.responsavel||"—")}</div><div class="prz" style="color:var(--muted2)">—</div><div>${statusBadge(a)}</div></div>`).join("")}</div>`;
+  return html;
+}
+function renderPlanoView(){
+  const box=$("#planoView"); if(!box) return;
+  if(Store.mode!=="cloud"||!Store.user){ box.innerHTML=`<div class="empty" style="margin:20px 0">Disponível no modo nuvem (faça login).</div>`; return; }
+  const all=(Store.acoes||[]).filter(a=>(a.dono||"ana")==="cliente");
+  window._plCode={}; [...all].sort((a,b)=>String(a.created_at||"").localeCompare(String(b.created_at||""))).forEach((a,i)=>window._plCode[a.id]="A-"+String(i+1).padStart(3,"0"));
+  const B={total:all.length,concluido:0,andamento:0,atrasado:0,backlog:0};
+  all.forEach(a=>B[planoStatus(a).key]++);
+  const pct=n=>all.length?Math.round(n/all.length*100)+"%":"0%";
+  const kc=(ic,lbl,key,cor)=>`<div class="plcard"><div class="top">${ic} ${lbl}</div><div class="big" style="${cor?`color:${cor}`:''}">${B[key]}${key!=="total"?`<span class="pct">${pct(B[key])}</span>`:""}</div></div>`;
+  const tri={importante:0,urgente:0,circunstancial:0,sem:0};
+  all.filter(a=>a.status!=="feito").forEach(a=>{ tri[a.triade]!==undefined?tri[a.triade]++:tri.sem++; });
+  const triTot=tri.importante+tri.urgente+tri.circunstancial+tri.sem;
+  const seg=(k,c)=>tri[k]?`<span style="width:${(tri[k]/triTot*100).toFixed(1)}%;background:${c}"></span>`:"";
+  const triCard=`<div class="plcard"><div class="top">◑ Tríade (abertas)</div>
+    <div class="plseg" style="margin-top:11px">${triTot?`${seg("importante","var(--triade-importante)")}${seg("urgente","var(--triade-urgente)")}${seg("circunstancial","var(--triade-circunstancial)")}${tri.sem?`<span style="width:${(tri.sem/triTot*100).toFixed(1)}%;background:var(--line2)"></span>`:""}`:""}</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:8px"><span>🟢 ${tri.importante}</span><span>🔴 ${tri.urgente}</span><span>⚪ ${tri.circunstancial}</span></div></div>`;
+  const cards=`<div class="plcards">
+    ${kc("○","Total","total","")}
+    ${kc("✓","Concluídas","concluido","var(--status-concluido)")}
+    ${kc("◐","Em andamento","andamento","var(--status-andamento)")}
+    ${kc("⚠","Atrasadas","atrasado",B.atrasado?"var(--status-atrasado)":"")}
+    ${triCard}
+  </div>`;
+  const list=planoFiltrar(all);
+  const metas=[...new Set(all.map(a=>(a.meta&&a.meta.trim())||"Sem meta"))].sort();
+  const projs=[...new Set(all.map(a=>(a.projeto&&a.projeto.trim())||"Sem projeto"))].sort();
+  const donos=[...new Set(all.map(a=>a.responsavel).filter(Boolean))].sort();
+  const stChip=(k,lbl)=>`<span class="plchip ${plF.status.has(k)?'on':''}" data-fstatus="${k}" style="${plF.status.has(k)?`background:var(--status-${k})`:''}"><span class="dot" style="background:var(--status-${k})"></span>${lbl}</span>`;
+  const triChip=(k,lbl)=>`<span class="plchip ${plF.triade.has(k)?'on':''}" data-ftriade="${k}" style="${plF.triade.has(k)?`background:var(--triade-${k})`:''}"><span class="dot" style="background:var(--triade-${k})"></span>${lbl}</span>`;
+  const sel=(id,val,opts,ph)=>`<select id="${id}" class="plmini"><option value="">${ph}</option>${opts.map(o=>`<option ${val===o?"selected":""}>${esc(o)}</option>`).join("")}</select>`;
+  const temFiltro = plF.busca||plF.status.size||plF.triade.size||plF.meta||plF.projeto||plF.dono||plF.de||plF.ate;
+  const filterBar=`<div class="plbar" style="flex-direction:column;align-items:stretch;gap:10px">
+    <div class="plsearch"><input id="plvBusca" class="hinput" style="width:100%" placeholder="Buscar ação, meta, projeto, dono…" value="${esc(plF.busca)}" /></div>
+    <div class="plfrow">
+      ${stChip("backlog","Backlog")}${stChip("andamento","Em andamento")}${stChip("atrasado","Atrasado")}${stChip("concluido","Concluído")}
+      <span class="plfsep"></span>
+      ${triChip("importante","Importante")}${triChip("urgente","Urgente")}${triChip("circunstancial","Circunstancial")}
+      <span class="plfsep"></span>
+      ${sel("plvFMeta",plF.meta,metas,"Meta")}${sel("plvFProj",plF.projeto,projs,"Projeto")}${sel("plvFDono",plF.dono,donos,"Dono")}
+      <label class="plmini" style="display:inline-flex;gap:5px;align-items:center">de <input type="date" id="plvFDe" value="${plF.de}" style="border:none;background:transparent;color:var(--txt);font:inherit"></label>
+      <label class="plmini" style="display:inline-flex;gap:5px;align-items:center">até <input type="date" id="plvFAte" value="${plF.ate}" style="border:none;background:transparent;color:var(--txt);font:inherit"></label>
+      ${temFiltro?`<button class="btn sm ghost" id="plvFLimpar" type="button">Limpar filtros</button>`:""}
+    </div>
+  </div>`;
+  const tabs=`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+    <div class="pltabs">
+      <button class="pltab ${planoTab==="tabela"?"active":""}" data-pltab="tabela">☰ Tabela</button>
+      <button class="pltab ${planoTab==="kanban"?"active":""}" data-pltab="kanban">▦ Kanban</button>
+      <button class="pltab ${planoTab==="timeline"?"active":""}" data-pltab="timeline">⧗ Timeline</button>
+    </div>
+    <span style="font-size:12px;color:var(--muted2)">${list.length} de ${all.length} ações</span>
+  </div>`;
+  let content;
+  if(!all.length) content=`<div class="empty" style="margin:30px 0;text-align:center">Nenhuma ação ainda. Clique em <b>＋ Nova ação</b> ou use o “→👤” no Hoje.</div>`;
+  else if(!list.length) content=`<div class="empty" style="margin:30px 0;text-align:center">Nenhuma ação com esses filtros.</div>`;
+  else if(planoTab==="kanban") content=renderPlanoKanban(list);
+  else if(planoTab==="timeline") content=renderPlanoTimeline(list);
+  else content=renderPlanoTabela(list);
+  box.innerHTML=`
+    <div class="plhd">
+      <div><h2>Plano de Ação 5W2H</h2><div class="sub">Ações dos clientes ligadas às metas — filtre por status, tríade, meta, projeto, dono ou data. Clique numa ação p/ abrir o 5W2H.</div></div>
+      <div style="display:flex;gap:8px"><button class="btn sm ghost" id="plvExport" type="button">↓ Exportar</button></div>
+    </div>
+    ${cards}${filterBar}${tabs}${content}`;
+  const s=$("#plvBusca"); if(s && plF.busca){ s.focus(); s.setSelectionRange(s.value.length,s.value.length); }
+}
+/* ---- Drawer lateral ---- */
+function drawerShow(){ const dr=$("#planoDrawer"),ov=$("#planoDrawerOv"); if(!dr) return; renderDrawer(); ov.classList.add("show"); dr.classList.add("show"); dr.setAttribute("aria-hidden","false"); }
+function closeDrawer(){ const dr=$("#planoDrawer"),ov=$("#planoDrawerOv"); if(dr){ dr.classList.remove("show"); dr.setAttribute("aria-hidden","true"); } if(ov) ov.classList.remove("show"); plDrawerId=null; plNewMode=false; }
+function openDrawer(id){ plNewMode=false; plDrawerId=id; plDrawerTab="detalhes"; drawerShow(); }
+function openNova(){ plNewMode=true; plDrawerId=null; plDrawerTab="detalhes"; drawerShow(); }
+function renderDrawer(){
+  const dr=$("#planoDrawer"); if(!dr) return;
+  if(plNewMode){
+    const clientes=[...Store.cache].filter(c=>c.fase==="entrega").sort((a,b)=>(a.nome||"").localeCompare(b.nome||""));
+    dr.innerHTML=`
+      <div class="drawer-hd"><div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:17px;font-weight:700">Nova ação</div>
+        <button class="btn sm ghost" id="drawerClose" type="button">✕</button></div></div>
+      <div class="drawer-bd"><div class="plac-grid">
+        <label class="fw">Cliente<select id="nw_cli" class="hinput"><option value="">— selecione —</option>${clientes.map(c=>`<option value="${c.id}">${esc(c.nome)}</option>`).join("")}</select></label>
+        <label class="fw">O quê · ação<input id="nw_desc" class="hinput" placeholder="a ação" /></label>
+        <label>Meta<input id="nw_meta" class="hinput" placeholder="objetivo maior" /></label>
+        <label>Projeto<input id="nw_projeto" class="hinput" placeholder="agrupador tático" /></label>
+        <label>Quem · dono<input id="nw_responsavel" class="hinput" placeholder="responsável" /></label>
+        <label>Quando<input id="nw_prazo" type="date" class="hinput" /></label>
+        <label>Onde<input id="nw_onde" class="hinput" placeholder="local / área" /></label>
+        <label>Quanto (R$)<input id="nw_quanto" class="hinput" placeholder="custo" /></label>
+        <label>Tríade<select id="nw_triade" class="hinput"><option value="">—</option><option value="importante">Importante</option><option value="urgente">Urgente</option><option value="circunstancial">Circunstancial</option></select></label>
+        <label>Status<select id="nw_status" class="hinput"><option value="aberto">Backlog</option><option value="andamento">Em andamento</option><option value="feito">Concluído</option></select></label>
+        <label class="fw">Porquê<textarea id="nw_porque" class="hinput" style="min-height:70px;resize:vertical" placeholder="justificativa"></textarea></label>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px">
+        <button class="btn sm ghost" id="drawerCancel" type="button">Cancelar</button>
+        <button class="btn sm primary" id="drawerCriar" type="button">Criar ação</button>
+      </div></div>`;
+    return;
+  }
+  const a=(Store.acoes||[]).find(x=>x.id===plDrawerId); if(!a){ closeDrawer(); return; }
+  const tabsList=[["detalhes","Detalhes"],["como","Como"],["historico","Histórico"],["comentarios","Comentários"],["anexos","Anexos"],["vinculos","Vínculos"]];
+  const inp=(k,lbl,ph,type)=>`<label>${lbl}<input class="pla-f hinput" data-id="${a.id}" data-k="${k}" ${type?`type="${type}"`:""} value="${esc(a[k]||"")}" placeholder="${esc(ph||"")}" /></label>`;
+  const ta=(k,lbl,ph,h)=>`<label class="fw">${lbl}<textarea class="pla-f hinput" data-id="${a.id}" data-k="${k}" placeholder="${esc(ph||"")}" style="min-height:${h||90}px;resize:vertical">${esc(a[k]||"")}</textarea></label>`;
+  const stv=a.status||"aberto";
+  const triSel=`<label>Tríade<select class="pla-f hinput" data-id="${a.id}" data-k="triade"><option value="">—</option>
+      <option value="importante" ${a.triade==="importante"?"selected":""}>Importante</option>
+      <option value="urgente" ${a.triade==="urgente"?"selected":""}>Urgente</option>
+      <option value="circunstancial" ${a.triade==="circunstancial"?"selected":""}>Circunstancial</option></select></label>`;
+  const stSel=`<label>Status<select class="pla-f hinput" data-id="${a.id}" data-k="status">
+      <option value="aberto" ${stv==="aberto"?"selected":""}>Backlog</option>
+      <option value="andamento" ${stv==="andamento"?"selected":""}>Em andamento</option>
+      <option value="feito" ${stv==="feito"?"selected":""}>Concluído</option></select></label>`;
+  let body;
+  if(plDrawerTab==="detalhes") body=`<div class="plac-grid">
+      ${inp("descricao","O quê · ação","a ação")}
+      ${inp("meta","Meta","objetivo maior")}
+      ${inp("projeto","Projeto","agrupador tático")}
+      ${inp("responsavel","Quem · dono","responsável")}
+      ${inp("prazo","Quando","","date")}
+      ${inp("onde","Onde","local / área")}
+      ${inp("quanto","Quanto (R$)","custo")}
+      ${triSel}${stSel}
+      ${ta("porque","Porquê · justificativa","por que essa ação importa",70)}
+    </div>
+    <div style="display:flex;justify-content:space-between;gap:10px;margin-top:16px">
+      <button class="btn sm ghost pla-tome" data-id="${a.id}" type="button">← Trazer pro meu Hoje</button>
+      <button class="btn sm ghost pla-del" data-id="${a.id}" type="button" style="color:var(--status-atrasado)">Remover ação</button>
+    </div>`;
+  else if(plDrawerTab==="como") body=`<div class="plac-grid">${ta("como","Como · passo a passo (procedimento)","descreva etapa por etapa como executar",180)}</div>`;
+  else { const lbl=tabsList.find(t=>t[0]===plDrawerTab)[1]; const desc={historico:"log de alterações de cada campo",comentarios:"comentários da equipe na ação",anexos:"upload de arquivos (docs, prints)",vinculos:"vincular a um cliente/negócio do CRM"}[plDrawerTab];
+    body=`<div class="drawer-empty">🔒 <b>${lbl}</b><br><br>Entra na <b>fase 2</b> (precisa de backend novo).<br>Aqui vai ter: ${desc}.</div>`; }
+  dr.innerHTML=`
+    <div class="drawer-hd">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+        <div style="min-width:0">
+          <div style="font-size:11px;color:var(--muted2);font-family:ui-monospace,monospace">${(window._plCode&&window._plCode[a.id])||""} · ${esc(coNome(a.company_id))}</div>
+          <div style="font-size:17px;font-weight:700;margin-top:3px;word-break:break-word">${esc(a.descricao)||"(sem título)"}</div>
+        </div>
+        <button class="btn sm ghost" id="drawerClose" type="button" style="flex:none">✕</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;align-items:center">${statusBadge(a)}${triadeBadge(a.triade)}</div>
+    </div>
+    <div class="drawer-tabs">${tabsList.map(([k,l])=>`<button class="drawer-tab ${plDrawerTab===k?"active":""}" data-drtab="${k}">${l}</button>`).join("")}</div>
+    <div class="drawer-bd">${body}</div>`;
+}
+async function criarNova(){
+  const cid=$("#nw_cli")&&$("#nw_cli").value;
+  if(!cid){ toast("Escolha o cliente","err"); return; }
+  const desc=($("#nw_desc")&&$("#nw_desc").value.trim())||""; if(!desc){ toast("Escreva a ação","err"); return; }
+  const g=id=>{ const e=$("#"+id); return e?(e.value||"").trim():""; };
+  try{ const novo=await Store.addAcao({company_id:cid, descricao:desc, meta:g("nw_meta")||null, projeto:g("nw_projeto")||null,
+      responsavel:g("nw_responsavel")||coNome(cid), prazo:g("nw_prazo")||null, onde:g("nw_onde")||null, quanto:g("nw_quanto")||null,
+      triade:g("nw_triade")||null, status:g("nw_status")||"aberto", porque:g("nw_porque")||null, dono:"cliente"});
+    plNewMode=false; plDrawerId=novo&&novo.id||null; plDrawerTab="detalhes"; renderPlanoView(); refreshBadges();
+    if(plDrawerId) renderDrawer(); else closeDrawer(); }
+  catch(e){ toast("Erro ao salvar: "+(e.message||e),"err"); }
+}
+function planoExportCSV(){
+  const all=planoFiltrar((Store.acoes||[]).filter(a=>(a.dono||"ana")==="cliente"));
+  const H=["Cliente","Meta","Projeto","Acao","Quando","Onde","Quem","Porque","Como","Quanto","Status","Triade"];
+  const q=v=>`"${String(v==null?"":v).replace(/"/g,'""')}"`;
+  const rows=all.map(a=>[coNome(a.company_id),a.meta,a.projeto,a.descricao,a.prazo,a.onde,a.responsavel,a.porque,a.como,a.quanto,planoStatus(a).lbl,a.triade&&TRIADE[a.triade]?TRIADE[a.triade].lbl:""].map(q).join(","));
+  const csv=[H.join(","),...rows].join("\r\n");
+  const blob=new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob); const el=document.createElement("a");
+  el.href=url; el.download="plano-de-acao-5w2h.csv"; el.click(); URL.revokeObjectURL(url);
+}
+function planoRerender(){
+  if(editing && editing.id && $("#overlay") && $("#overlay").classList.contains("open")) renderPlanoAcoes();
+  if($("#view-plano") && !$("#view-plano").classList.contains("hidden")) renderPlanoView();
+  if(plDrawerId && $("#planoDrawer") && $("#planoDrawer").classList.contains("show")) renderDrawer();
 }
 function triadePainel(list){
   const ab=list.filter(a=>a.status!=="feito");
@@ -2115,7 +2502,8 @@ $("#btnCancel").addEventListener("click",closeModal);
 $("#overlay").addEventListener("click",e=>{ if(e.target===$("#overlay")) closeModal(); });
 document.addEventListener("keydown",e=>{
   if(e.key!=="Escape") return;
-  if($("#reportOverlay").classList.contains("open")) closeReport();
+  if($("#planoDrawer") && $("#planoDrawer").classList.contains("show")) closeDrawer();
+  else if($("#reportOverlay").classList.contains("open")) closeReport();
   else if($("#inboxOverlay").classList.contains("open")) closeInbox();
   else if($("#overlay").classList.contains("open")) closeModal();
 });
@@ -2129,28 +2517,66 @@ $("#btnAddContato").addEventListener("click",()=>{
 $("#btnAddDoc").addEventListener("click",()=>$("#docsBox").appendChild(docRow({})));
 $("#btnAddFoco").addEventListener("click",()=>planoRow($("#focosBox"),{}));
 $("#btnAddRotina").addEventListener("click",()=>planoRow($("#rotinaBox"),{}));
-/* Plano de ação 5W2H (mr_acoes dono=cliente) */
+/* Plano de ação 5W2H (mr_acoes dono=cliente) — ficha (#planoAcoesBox) + tela do menu (#planoView) */
 (function initPlanoAcoesEvents(){
   const add=$("#plAcAdd"); if(add) add.addEventListener("click",planoAddAcao);
-  const desc=$("#plAcDesc"); if(desc) desc.addEventListener("keydown",e=>{ if(e.key==="Enter") planoAddAcao(); });
-  const box=$("#planoAcoesBox"); if(!box) return;
-  box.addEventListener("click",async(e)=>{
-    const ck=e.target.closest(".pla-check");
-    if(ck){ const a=Store.acoes.find(x=>x.id===ck.dataset.id); if(a){ try{ await Store.toggleAcao(a.id,a.status!=="feito"); renderPlanoAcoes(); refreshBadges(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } } return; }
+  const descF=$("#plAcDesc"); if(descF) descF.addEventListener("keydown",e=>{ if(e.key==="Enter") planoAddAcao(); });
+  async function onClick(e){
+    // --- tela do menu: header/tabs/filtros ---
+    if(e.target.closest("#plvExport")){ planoExportCSV(); return; }
+    if(e.target.closest("#plvFLimpar")){ plF={busca:"",status:new Set(),triade:new Set(),meta:"",projeto:"",dono:"",de:"",ate:""}; renderPlanoView(); return; }
+    const tab=e.target.closest(".pltab"); if(tab){ planoTab=tab.dataset.pltab; renderPlanoView(); return; }
+    const sc=e.target.closest("[data-fstatus]"); if(sc){ const k=sc.dataset.fstatus; plF.status.has(k)?plF.status.delete(k):plF.status.add(k); renderPlanoView(); return; }
+    const tc=e.target.closest("[data-ftriade]"); if(tc){ const k=tc.dataset.ftriade; plF.triade.has(k)?plF.triade.delete(k):plF.triade.add(k); renderPlanoView(); return; }
+    const gh=e.target.closest(".plgh");
+    if(gh){ const m=gh.dataset.meta; const closed=!planoGruposFechados.has(m);
+      if(closed) planoGruposFechados.add(m); else planoGruposFechados.delete(m);
+      gh.classList.toggle("collapsed",closed); const body=gh.parentElement.querySelector(".plgb"); if(body) body.style.display=closed?"none":""; return; }
+    // --- drawer ---
+    if(e.target.closest("#drawerClose")||e.target.closest("#drawerCancel")){ closeDrawer(); return; }
+    if(e.target.closest("#drawerCriar")){ criarNova(); return; }
+    const drt=e.target.closest(".drawer-tab"); if(drt){ plDrawerTab=drt.dataset.drtab; renderDrawer(); return; }
+    // --- ações (tome/del/check) ---
     const tm=e.target.closest(".pla-tome");
-    if(tm){ const a=Store.acoes.find(x=>x.id===tm.dataset.id); if(a){ try{ await Store.updateAcao(a.id,{dono:"ana"}); toast("Voltou pro seu Hoje 👩","ok"); renderPlanoAcoes(); refreshBadges(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } } return; }
+    if(tm){ const a=Store.acoes.find(x=>x.id===tm.dataset.id); if(a){ try{ await Store.updateAcao(a.id,{dono:"ana"}); toast("Voltou pro seu Hoje 👩","ok"); closeDrawer(); planoRerender(); refreshBadges(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } } return; }
     const dl=e.target.closest(".pla-del");
-    if(dl){ if(!confirm("Remover esta ação?")) return; try{ await Store.removeAcao(dl.dataset.id); renderPlanoAcoes(); refreshBadges(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } return; }
-  });
-  // salva cada campo 5W2H ao mudar (blur/change). status/tríade/prazo re-renderizam (ordem + painel).
-  box.addEventListener("change",async(e)=>{
+    if(dl){ if(!confirm("Remover esta ação?")) return; try{ await Store.removeAcao(dl.dataset.id); closeDrawer(); planoRerender(); refreshBadges(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } return; }
+    const ck=e.target.closest(".pla-check");
+    if(ck){ const a=Store.acoes.find(x=>x.id===ck.dataset.id); if(a){ try{ await Store.toggleAcao(a.id,a.status!=="feito"); planoRerender(); refreshBadges(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } } return; }
+    // --- abrir ação no drawer ---
+    const op=e.target.closest(".pla-open");
+    if(op && op.dataset.id){ openDrawer(op.dataset.id); return; }
+  }
+  async function onChange(e){
+    if(e.target.id==="plvFMeta"){ plF.meta=e.target.value; renderPlanoView(); return; }
+    if(e.target.id==="plvFProj"){ plF.projeto=e.target.value; renderPlanoView(); return; }
+    if(e.target.id==="plvFDono"){ plF.dono=e.target.value; renderPlanoView(); return; }
+    if(e.target.id==="plvFDe"){ plF.de=e.target.value; renderPlanoView(); return; }
+    if(e.target.id==="plvFAte"){ plF.ate=e.target.value; renderPlanoView(); return; }
     const f=e.target.closest(".pla-f"); if(!f) return;
     const id=f.dataset.id, k=f.dataset.k; let v=f.value; if(typeof v==="string") v=v.trim();
     const patch={}; patch[k]= v==="" ? null : v;
     try{ await Store.updateAcao(id,patch);
-      if(k==="status"||k==="triade"||k==="prazo"){ renderPlanoAcoes(); refreshBadges(); }
+      if(k==="status"||k==="triade"||k==="prazo"){ planoRerender(); refreshBadges(); }
     }catch(err){ toast("Erro ao salvar: "+(err.message||err),"err"); }
-  });
+  }
+  function onInput(e){ if(e.target.id==="plvBusca"){ plF.busca=e.target.value; renderPlanoView(); } }
+  ["#planoAcoesBox","#planoView","#planoDrawer"].forEach(sel=>{ const b=$(sel); if(b){ b.addEventListener("click",onClick); b.addEventListener("change",onChange); b.addEventListener("input",onInput); } });
+  // FAB + overlay do drawer
+  const fab=$("#planoFab"); if(fab) fab.addEventListener("click",openNova);
+  const ov=$("#planoDrawerOv"); if(ov) ov.addEventListener("click",closeDrawer);
+  // Kanban drag-drop (delegado no #planoView)
+  const pv=$("#planoView");
+  if(pv){
+    pv.addEventListener("dragstart",e=>{ const c=e.target.closest(".plkcard"); if(c){ e.dataTransfer.setData("text/plain",c.dataset.id); e.dataTransfer.effectAllowed="move"; } });
+    pv.addEventListener("dragover",e=>{ const col=e.target.closest(".plkcol"); if(col && col.dataset.kcol!=="atrasado"){ e.preventDefault(); col.classList.add("drag-over"); } });
+    pv.addEventListener("dragleave",e=>{ const col=e.target.closest(".plkcol"); if(col) col.classList.remove("drag-over"); });
+    pv.addEventListener("drop",async e=>{ const col=e.target.closest(".plkcol"); if(!col) return; col.classList.remove("drag-over");
+      const kc=col.dataset.kcol; if(kc==="atrasado") return; e.preventDefault();
+      const id=e.dataTransfer.getData("text/plain"); if(!id) return;
+      const map={backlog:"aberto",andamento:"andamento",concluido:"feito"}; const st=map[kc]; if(!st) return;
+      try{ await Store.updateAcao(id,{status:st}); planoRerender(); refreshBadges(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } });
+  }
 })();
 $$("#mtabs .mtab").forEach(t=>t.addEventListener("click",()=>{
   setModalTab(t.dataset.mtab);
@@ -2190,7 +2616,7 @@ $("#searchInput").addEventListener("input",e=>{ filter=e.target.value.trim().toL
 
 /* ---------- Sidebar navigation ---------- */
 let activeView="hoje";
-const VIEWS=["hoje","sales","metas","board","list","financ","agenda","dash","metodo"];
+const VIEWS=["hoje","sales","metas","board","list","plano","financ","agenda","dash","metodo"];
 function setView(v){
   activeView=v;
   $$(".modlink").forEach(x=>x.classList.toggle("active",x.dataset.view===v));
@@ -2452,6 +2878,7 @@ function renderActive(){
   else if(activeView==="metas") renderMetas();
   else if(activeView==="board") renderBoard();
   else if(activeView==="list") renderList();
+  else if(activeView==="plano") renderPlanoView();
   else if(activeView==="financ") renderFinanceiro();
   else if(activeView==="agenda") renderAgenda();
   else if(activeView==="dash") renderDash();
