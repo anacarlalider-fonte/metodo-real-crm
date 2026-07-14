@@ -448,6 +448,8 @@
   table.ltable tbody tr{cursor:pointer}
   table.ltable tbody tr:hover{background:var(--bg2)}
   table.ltable tbody tr:last-child td{border-bottom:none}
+  .trilha-bar{height:5px;border-radius:99px;background:var(--panel2);overflow:hidden;margin-top:5px}
+  .trilha-bar>div{height:100%;border-radius:99px}
   .pill-stage{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;white-space:nowrap}
   .pill-stage .dot{width:8px;height:8px;border-radius:50%;flex:none}
   .ltags{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
@@ -676,6 +678,10 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><path d="M12 22.08V12"/></svg>
         Produção <span class="badge" id="badgeProducao">0</span>
       </button>
+      <button class="modlink" data-view="trilha" data-title="Trilha do Método">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>
+        Trilha <span class="badge" id="badgeTrilha">0</span>
+      </button>
       <button class="modlink" data-view="list" data-title="Clientes">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         Clientes
@@ -758,22 +764,12 @@
 
    <!-- ===== CLIENTES (LISTA) VIEW ===== -->
    <div id="view-list" class="wrap hidden">
-     <div class="card tablecard">
-       <div style="display:flex;gap:6px;flex-wrap:wrap;padding:4px 4px 12px">
-         <button class="btn sm ghost cli-filtro" data-clif="ativos">Ativos</button>
-         <button class="btn sm ghost cli-filtro" data-clif="inativos">Inativos</button>
-         <button class="btn sm ghost cli-filtro" data-clif="todos">Todos</button>
-       </div>
-       <div class="tablewrap">
-         <table class="dtable">
-           <thead><tr>
-             <th>Cliente</th><th>Decisor</th><th>Cidade</th>
-             <th>Valor mensal</th><th>Vencimento</th><th>Status</th>
-           </tr></thead>
-           <tbody id="listBody"></tbody>
-         </table>
-       </div>
-     </div>
+     <div id="clientesView"></div>
+   </div>
+
+   <!-- ===== TRILHA DO MÉTODO VIEW ===== -->
+   <div id="view-trilha" class="wrap hidden">
+     <div id="trilhaView"></div>
    </div>
 
    <!-- ===== PRODUÇÃO (ENTREGÁVEIS) VIEW ===== -->
@@ -2859,7 +2855,7 @@ $("#searchInput").addEventListener("input",e=>{ filter=e.target.value.trim().toL
 
 /* ---------- Sidebar navigation ---------- */
 let activeView="hoje";
-const VIEWS=["hoje","sales","metas","board","producao","list","plano","financ","agenda","reunioes","dash","metodo"];
+const VIEWS=["hoje","sales","metas","board","producao","trilha","list","plano","financ","agenda","reunioes","dash","metodo"];
 function setView(v){
   activeView=v;
   $$(".modlink").forEach(x=>x.classList.toggle("active",x.dataset.view===v));
@@ -2933,6 +2929,29 @@ let hojeView="tudo", hojeAllTasks=false;
 function prepKey(s){ return (s.dateISO||"")+"|"+(s.hora||"")+"|"+(s.companyId||s.nome||""); }
 function prepGet(k){ try{ return JSON.parse(localStorage.getItem("mr_prep")||"{}")[k]===true; }catch(e){ return false; } }
 function prepSet(k,v){ try{ const m=JSON.parse(localStorage.getItem("mr_prep")||"{}"); if(v) m[k]=true; else delete m[k]; localStorage.setItem("mr_prep",JSON.stringify(m)); }catch(e){} }
+/* Capture rápido — linguagem natural: "amanhã ligar pro pablo #pegbank !urgente" */
+function parseCapture(text){
+  let t=" "+text.trim()+" "; let company_id=null, prazo=null, prio=null;
+  const hash=t.match(/#(\S+)/);
+  if(hash){ const q=hash[1].toLowerCase(); const c=(Store.cache||[]).find(x=>(x.nome||"").toLowerCase().includes(q)); if(c) company_id=c.id; t=t.replace(hash[0]," "); }
+  const bang=t.match(/!(\S+)/); if(bang){ prio=bang[1].toLowerCase(); t=t.replace(bang[0]," "); }
+  const today=todayISO(); const low=t.toLowerCase(); let m;
+  if(/depois de amanh/.test(low)){ prazo=addDays(today,2); t=t.replace(/depois de amanh[ãa]?\w*/i," "); }
+  else if(/amanh/.test(low)){ prazo=addDays(today,1); t=t.replace(/amanh[ãa]?\w*/i," "); }
+  else if(/\bhoje\b/.test(low)){ prazo=today; t=t.replace(/\bhoje\b/i," "); }
+  else if((m=low.match(/em (\d+)\s*dias?/))){ prazo=addDays(today,+m[1]); t=t.replace(/em \d+\s*dias?/i," "); }
+  else if((m=t.match(/(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/))){ const y=m[3]?(m[3].length===2?"20"+m[3]:m[3]):today.slice(0,4); prazo=`${y}-${String(m[2]).padStart(2,"0")}-${String(m[1]).padStart(2,"0")}`; t=t.replace(m[0]," "); }
+  if((prio==="urgente"||prio==="urg"||prio==="alta") && !prazo) prazo=today;
+  return {descricao:t.replace(/\bpro\b|\bpra\b|\bpara o\b|\bpara a\b/gi," ").replace(/\s+/g," ").trim(), company_id, prazo, prio};
+}
+async function hojeCapture(){
+  const el=$("#capDesc"); if(!el) return; const raw=el.value.trim(); if(!raw) return;
+  const p=parseCapture(raw); if(!p.descricao){ toast("Escreva a tarefa","err"); return; }
+  try{ await Store.addAcao({descricao:p.descricao, company_id:p.company_id||null, prazo:p.prazo||null}); el.value="";
+    const bits=[]; if(p.company_id) bits.push("👤 "+coNome(p.company_id)); if(p.prazo) bits.push("📅 "+fmtDiaMes(p.prazo)); if(p.prio) bits.push("!"+p.prio);
+    toast("Adicionada"+(bits.length?" · "+bits.join(" · "):"")+" ✅","ok"); renderHoje(); refreshBadges();
+  }catch(e){ toast("Erro: "+(e.message||e),"err"); }
+}
 function renderHoje(){
   const box=$("#hoje"); if(!box) return;
   const today=todayISO();
@@ -3116,6 +3135,7 @@ function renderHoje(){
         ${tp.acId?`<button class="btn sm primary ac-check" data-id="${tp.acId}" type="button">✓ Fiz</button>`:""}
         ${tp.fuId?`<button class="btn sm primary fu-done" data-id="${tp.fuId}" type="button">✓ Contatei</button>`:""}
         ${tp.acId?`<button class="btn sm ghost ac-snooze" data-id="${tp.acId}" type="button">Adiar 1 dia</button>`:""}
+        ${tp.acId&&tp.cid?`<button class="btn sm ghost ac-deleg" data-id="${tp.acId}" type="button">Delegar ao cliente</button>`:""}
         ${tp.cid?`<button class="btn sm ghost prio-go" data-id="${tp.cid}" type="button">Abrir →</button>`:""}
       </div>
     </div>` : "";
@@ -3130,8 +3150,9 @@ function renderHoje(){
         </div>`; }).join("")}
     </div>` : "";
   box.innerHTML=`<div style="max-width:1180px">
-      <div style="margin-bottom:20px"><div style="font-size:23px;font-weight:800">${saudacao()}, Ana 👋</div>
+      <div style="margin-bottom:14px"><div style="font-size:23px;font-weight:800">${saudacao()}, Ana 👋</div>
         <div style="font-size:13.5px;color:var(--muted);margin-top:3px">Aqui está o que precisa da sua atenção hoje.</div></div>
+      <div style="margin-bottom:18px"><input id="capDesc" class="hinput" style="width:100%;padding:12px 14px;font-size:14px" placeholder='⚡ Capture rápido — ex.: "amanhã ligar pro Pablo #PegBank !urgente"' /></div>
       ${kpis}
       ${agoraCard}
       <div class="h2col">${tarefasCard}${leadsCard}</div>
@@ -3155,6 +3176,8 @@ async function hojeAddAcao(){
     if(ck){ const a=Store.acoes.find(x=>x.id===ck.dataset.id); if(a){ try{ await Store.toggleAcao(a.id, a.status!=="feito"); renderHoje(); refreshBadges(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } } return; }
     const sn=e.target.closest(".ac-snooze");
     if(sn){ const a=Store.acoes.find(x=>x.id===sn.dataset.id); if(a){ try{ await Store.updateAcao(a.id,{prazo:addDays(todayISO(),1)}); toast("Adiada pra amanhã ⏰","ok"); renderHoje(); refreshBadges(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } } return; }
+    const dg=e.target.closest(".ac-deleg");
+    if(dg){ const a=Store.acoes.find(x=>x.id===dg.dataset.id); if(a){ try{ await Store.updateAcao(a.id,{dono:"cliente"}); toast("Delegada ao plano de "+coNome(a.company_id)+" 👤","ok"); renderHoje(); refreshBadges(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } } return; }
     const pp=e.target.closest(".sess-prep");
     if(pp){ const k=decodeURIComponent(pp.dataset.k); prepSet(k,!prepGet(k)); renderHoje(); return; }
     const tc=e.target.closest(".ac-tocli");
@@ -3169,7 +3192,7 @@ async function hojeAddAcao(){
     const go=e.target.closest(".sess-go,.alert-go,.fin-go,.prio-go,.fu-open");
     if(go){ const c=coById(go.dataset.id); if(c) openModal(c); return; }
   });
-  box.addEventListener("keydown",(e)=>{ if(e.key==="Enter" && e.target.id==="acDesc") hojeAddAcao(); });
+  box.addEventListener("keydown",(e)=>{ if(e.key!=="Enter") return; if(e.target.id==="acDesc") hojeAddAcao(); else if(e.target.id==="capDesc") hojeCapture(); });
   box.addEventListener("change",(e)=>{ if(e.target.id==="acPeriodo") renderAcPorCli(); });
 })();
 
@@ -3481,12 +3504,45 @@ function renderReunioes(){
     const cad=e.target.closest(".reu-cad"); if(cad){ const c=coById(cad.dataset.id); if(!c) return; c.cadencia=cad.value||null; try{ await Store.save(c); renderReunioes(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } }
   });
 })();
+/* ============ TRILHA DO MÉTODO — matriz de pilares por cliente ============ */
+function renderTrilha(){
+  const box=$("#trilhaView"); if(!box) return;
+  const ativos=Store.cache.filter(c=>c.fase==="entrega" && c.status!=="Encerrado");
+  if(!ativos.length){ box.innerHTML=`<div class="empty" style="margin:20px 0">Nenhum cliente ativo. Os clientes em entrega aparecem aqui com o progresso do Método.</div>`; return; }
+  const media=Math.round(ativos.reduce((s,c)=>s+progressOf(c).pct,0)/ativos.length);
+  const emRisco=ativos.filter(c=>progressOf(c).pct<30).length;
+  const cols=PILLARS;
+  const kpi=(lbl,n,cor)=>`<div class="plcard"><div class="top">${lbl}</div><div class="big"${cor?` style="color:${cor}"`:""}>${n}</div></div>`;
+  const cards=`<div class="plcards">
+      ${kpi("Média geral",media+"%","var(--brand)")}
+      ${kpi("Clientes ativos",ativos.length,"")}
+      ${kpi("Em risco (<30%)",emRisco,emRisco?"var(--status-atrasado)":"")}
+    </div>`;
+  const cor=p=>p>=67?"var(--status-concluido)":p>=34?"#a86a12":"var(--status-atrasado)";
+  const cell=(c,p)=>{ const pr=pillarProgress(c,p.key); return `<td style="min-width:92px"><div style="font-weight:700;font-size:13px;color:${cor(pr.pct)}">${pr.pct}%</div><div style="font-size:10.5px;color:var(--muted2)">${pr.done}/${pr.total}</div><div class="trilha-bar"><div style="width:${pr.pct}%;background:${cor(pr.pct)}"></div></div></td>`; };
+  const rows=[...ativos].sort((a,b)=>progressOf(a).pct-progressOf(b).pct).map(c=>{ const g=progressOf(c); const pl=PLANS[c.plano||""];
+    return `<tr class="trilha-open" data-id="${c.id}">
+        <td style="min-width:150px"><div class="cname">${esc(c.nome)||"(sem nome)"}</div><div class="csub">${pl&&pl.nome?esc(pl.nome.split(" — ")[0]):"—"} · ${g.done}/${g.total} entregues</div></td>
+        ${cols.map(p=>cell(c,p)).join("")}
+        <td style="min-width:78px"><div style="font-weight:800;font-size:15px;color:var(--brand)">${g.pct}%</div><div class="trilha-bar"><div style="width:${g.pct}%;background:var(--brand)"></div></div></td>
+      </tr>`; }).join("");
+  const th=cols.map(p=>`<th>${p.nome.replace(/^\S+\s/,"")}</th>`).join("");
+  box.innerHTML=`
+    <div class="plhd"><div><h2>Trilha do Método</h2><div class="sub">Entrega dos pilares por cliente — clique num cliente pra abrir a ficha</div></div></div>
+    ${cards}
+    <div class="ltable-wrap"><table class="ltable"><thead><tr><th>Cliente</th>${th}<th>Geral</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  const bd=$("#badgeTrilha"); if(bd) bd.textContent=emRisco;
+}
+(function initTrilhaEvents(){ const box=$("#trilhaView"); if(!box) return;
+  box.addEventListener("click",e=>{ const r=e.target.closest(".trilha-open"); if(r){ const c=coById(r.dataset.id); if(c) openModal(c); } });
+})();
 function renderActive(){
   if(activeView==="hoje") renderHoje();
   else if(activeView==="sales") renderSales();
   else if(activeView==="metas") renderMetas();
   else if(activeView==="board") renderBoard();
   else if(activeView==="producao") renderProducao();
+  else if(activeView==="trilha") renderTrilha();
   else if(activeView==="list") renderList();
   else if(activeView==="plano") renderPlanoView();
   else if(activeView==="financ") renderFinanceiro();
@@ -3650,7 +3706,6 @@ async function addParcelaAvulsa(){
 $$(".finfilter").forEach(b=>b.addEventListener("click",()=>{ finFilter=b.dataset.finf; renderFinanceiro(); }));
 if($("#btnGerarParcelas")) $("#btnGerarParcelas").addEventListener("click",gerarParcelas);
 if($("#btnAddParcela")) $("#btnAddParcela").addEventListener("click",addParcelaAvulsa);
-$$(".cli-filtro").forEach(b=>b.addEventListener("click",()=>{ clientesFiltro=b.dataset.clif; renderList(); }));
 
 /* =========================================================================
    RENDER — Clientes (tabela)
@@ -3661,44 +3716,99 @@ function currentStage(c){
     ? (SALES_STAGES.find(s=>s.id===c.etapaVenda)||SALES_STAGES[0])
     : (DELIVERY_STAGES.find(s=>s.id===c.etapa)||DELIVERY_STAGES[0]);
 }
-let clientesFiltro="ativos";
+let clientesFiltro="ativos", clientesHealth="";
 function clienteAtivoFiltro(c){
   if(clientesFiltro==="ativos") return c.status!=="Encerrado";
   if(clientesFiltro==="inativos") return c.status==="Encerrado";
   return true;
 }
-function renderList(){
-  $$(".cli-filtro").forEach(b=>b.classList.toggle("active", b.dataset.clif===clientesFiltro));
-  const data=Store.cache.filter(c=>c.fase==="entrega" && matchFilter(c) && clienteAtivoFiltro(c))
-    .sort((a,b)=>(a.nome||"").localeCompare(b.nome||"","pt-BR"));
-  const body=$("#listBody");
-  if(!data.length){
-    const msg = clientesFiltro==="inativos" ? "Nenhum cliente inativo (encerrado)." :
-      "Nenhum cliente ainda. Os leads em negociação ficam no funil de <b>Vendas</b> — viram clientes quando fecham.";
-    body.innerHTML=`<tr><td colspan="6"><div class="empty" style="margin:8px">${msg}</div></td></tr>`; return;
-  }
-  const rows=data.map(c=>{
-    const valor=plval(c);
-    const permuta=valor<=0 && c.notas && /permuta/i.test(c.notas);
-    const venc=c.dataVenc?fmtDate(c.dataVenc):((c.onboarding&&c.onboarding.vencimento)||"");
-    const contratoVencido = c.fim && c.fim<todayISO() && c.status!=="Encerrado";
-    const alerta = contratoVencido?` <span class="statuschip" style="background:#5a2222;color:#ffb4b4" title="A data de fim do contrato já passou">⚠ contrato vencido</span>`:"";
-    return `<tr data-id="${c.id}">
-      <td><div class="cname">${esc(c.nome)||"(sem nome)"}</div><div class="csub">${esc(c.setor||"—")}</div></td>
-      <td>${esc(c.decisor||"—")}</td>
-      <td>${esc(c.cidade||"—")}</td>
-      <td>${valor>0?`<b>${brl(valor)}</b>`:(permuta?`<span class="csub">Permuta</span>`:"—")}</td>
-      <td>${venc?esc(venc):"<span class=\"csub\">—</span>"}</td>
-      <td><span class="statuschip" style="background:var(--panel2);color:var(--muted)">${esc(c.status||"—")}</span>${alerta}</td>
-    </tr>`;
-  }).join("");
-  const total=data.reduce((s,c)=>s+plval(c),0);
-  const totalRow=`<tr style="border-top:2px solid var(--line2)"><td style="font-weight:700">MRR total <span class="csub">· ${data.length} clientes</span></td><td></td><td></td><td style="font-weight:800;color:var(--brand)">${brl(total)}</td><td></td><td></td></tr>`;
-  body.innerHTML=rows+totalRow;
-  body.querySelectorAll("tr[data-id]").forEach(tr=>tr.addEventListener("click",()=>{
-    const c=Store.cache.find(x=>x.id===tr.dataset.id); if(c) openModal(c);
-  }));
+/* --- saúde do cliente + toque + renovação + próxima entrega --- */
+function ultimoToque(c){
+  const cand=[c.ultimoContato, lastAtaDate(c)];
+  (c.interacoes||[]).forEach(it=>{ if(it&&it.data) cand.push(it.data); });
+  const t=todayISO();
+  (Store.sessoes||[]).forEach(s=>{ if(s.company_id===c.id && s.inicio && s.inicio.slice(0,10)<=t) cand.push(s.inicio.slice(0,10)); });
+  const v=cand.filter(Boolean).sort(); return v.length?v[v.length-1]:null;
 }
+function acoesAtrasadasCliente(c){ const t=todayISO(); return (Store.acoes||[]).filter(a=>a.company_id===c.id && a.status!=="feito" && a.prazo && a.prazo<t).length; }
+function parcelasVencidasCliente(c){ const t=todayISO(); return (Store.pagamentos||[]).filter(p=>p.company_id===c.id && p.status!=="pago" && p.vencimento && p.vencimento<t).length; }
+function onboardingParadoC(c){ const o=c.onboarding||{}; const st=Array.isArray(o.steps)?o.steps:[]; const done=st.filter(Boolean).length; return done>0 && done<ONB_STEPS.length; }
+function renovaEmDias(c){ const d=c.dataVenc||c.fim; return d?daysUntil(d):null; }
+function clientHealth(c){
+  const lt=ultimoToque(c); const dias= lt? -(daysUntil(lt)) : 999;
+  const atr=acoesAtrasadasCliente(c), parc=parcelasVencidasCliente(c), rd=renovaEmDias(c);
+  let pts=0;
+  if(atr>0) pts+=2;
+  if(dias>14) pts+=2; else if(dias>7) pts+=1;
+  if(parc>0) pts+=2;
+  if(onboardingParadoC(c)) pts+=1;
+  if(rd!=null && rd<0) pts+=2; else if(rd!=null && rd<=30) pts+=1;
+  const key = pts>=3 ? "risco" : (pts>=1 ? "atencao" : "saudavel");
+  const lbl = key==="risco" ? "Risco" : (key==="atencao" ? "Atenção" : "Saudável");
+  return {key,lbl,dias:(lt?dias:null),atr,parc,rd};
+}
+function healthCor(k){ return k==="risco"?"var(--status-atrasado)":k==="atencao"?"#a86a12":"var(--status-concluido)"; }
+function healthBg(k){ return k==="risco"?"var(--status-atrasado-bg)":k==="atencao"?"#fdf2df":"var(--status-concluido-bg)"; }
+function proximaEntregaCliente(c){
+  const es=(Store.entregaveis||[]).filter(e=>e.company_id===c.id && e.etapa!=="aprovado" && e.prazo).sort((a,b)=>a.prazo.localeCompare(b.prazo));
+  if(es.length) return esc(es[0].titulo);
+  const px=proximaSessaoDe(c); return px?("Sessão "+fmtDiaMes(px)):"—";
+}
+function renderList(){
+  const box=$("#clientesView"); if(!box) return;
+  const all=Store.cache.filter(c=>c.fase==="entrega" && matchFilter(c) && clienteAtivoFiltro(c));
+  const withH=all.map(c=>({c,h:clientHealth(c)}));
+  const ord={risco:0,atencao:1,saudavel:2};
+  let list=clientesHealth?withH.filter(x=>x.h.key===clientesHealth):withH;
+  list=[...list].sort((a,b)=>(ord[a.h.key]-ord[b.h.key])||(a.c.nome||"").localeCompare(b.c.nome||"","pt-BR"));
+  const mrrTotal=all.reduce((s,x)=>s+plval(x),0);
+  const emRisco=withH.filter(x=>x.h.key==="risco"); const riscoMRR=emRisco.reduce((s,x)=>s+plval(x.c),0);
+  const semToque=withH.filter(x=>x.h.dias!=null && x.h.dias>14).length;
+  const renovando=withH.filter(x=>x.h.rd!=null && x.h.rd>=0 && x.h.rd<=30).length;
+  const chipA=(txt,cor,fk)=>`<button class="prodchip cli-alert${fk&&clientesHealth===fk?' on':''}" ${fk?`data-health="${fk}"`:""} style="${fk&&clientesHealth===fk?`background:${cor};color:#fff;border-color:transparent`:`color:${cor}`}">${txt}</button>`;
+  const alerts=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      ${chipA(`🔴 ${emRisco.length} em risco${riscoMRR?` · ${brlShort(riscoMRR)}/mês`:''}`,"var(--status-atrasado)","risco")}
+      ${chipA(`⏳ ${semToque} sem toque +14d`,semToque?"#a86a12":"var(--muted)","")}
+      ${chipA(`🔄 ${renovando} renova em 30d`,renovando?"#a86a12":"var(--muted)","")}
+    </div>`;
+  const fbtn=(k,l)=>`<button class="btn sm ghost cli-filtro${clientesFiltro===k?' active':''}" data-clif="${k}">${l}</button>`;
+  const hbtn=(k,l)=>`<button class="btn sm ghost cli-health${clientesHealth===k?' active':''}" data-hlth="${k}">${l}</button>`;
+  const filtros=`<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+      <div style="display:flex;gap:6px">${fbtn("ativos","Ativos")}${fbtn("inativos","Inativos")}${fbtn("todos","Todos")}</div>
+      <span class="plfsep"></span>
+      <div style="display:flex;gap:6px">${hbtn("","Health: todos")}${hbtn("risco","🔴 Risco")}${hbtn("atencao","🟡 Atenção")}${hbtn("saudavel","🟢 Saudável")}</div>
+    </div>`;
+  const rows = list.length ? list.map(({c,h})=>{
+    const valor=plval(c); const permuta=valor<=0 && c.notas && /permuta/i.test(c.notas);
+    const toque = h.dias!=null ? `há ${h.dias}d` : "—";
+    const rd=h.rd; const renova = rd==null?"—": rd<0?`venceu há ${-rd}d`: rd===0?"vence hoje":`em ${rd}d`;
+    const st=currentStage(c);
+    return `<tr class="cli-open" data-id="${c.id}">
+        <td><div class="cname">${esc(c.nome)||"(sem nome)"}</div><div class="csub">${esc(c.decisor||"")}${c.setor?" · "+esc(c.setor):""}${c.cidade?" · "+esc(c.cidade):""}</div></td>
+        <td><span class="pill-stage"><span class="dot" style="background:${st.sw}"></span>${st.nome}</span></td>
+        <td><span class="hbadge" style="background:${healthBg(h.key)};color:${healthCor(h.key)}">${h.lbl}</span></td>
+        <td style="color:var(--muted)">${proximaEntregaCliente(c)}</td>
+        <td style="font-weight:600">${valor>0?brl(valor):(permuta?'<span class="csub">Permuta</span>':"—")}</td>
+        <td style="color:${h.dias!=null&&h.dias>14?'var(--status-atrasado)':'var(--muted)'}">${toque}</td>
+        <td style="color:${rd!=null&&rd<0?'var(--status-atrasado)':rd!=null&&rd<=30?'#a86a12':'var(--muted)'}">${renova}</td>
+      </tr>`; }).join("")
+    : `<tr><td colspan="7"><div class="empty" style="margin:14px">Nenhum cliente ${clientesHealth?"nesse health":(clientesFiltro==="inativos"?"inativo":"por aqui")}.</div></td></tr>`;
+  box.innerHTML=`
+    <div class="plhd"><div><h2>Clientes</h2><div class="sub">${all.length} cliente${all.length!==1?"s":""} ativos · MRR total <b style="color:var(--brand)">${brl(mrrTotal)}</b></div></div></div>
+    ${alerts}${filtros}
+    <div class="ltable-wrap"><table class="ltable">
+      <thead><tr><th>Cliente</th><th>Fase</th><th>Health</th><th>Próxima entrega</th><th>MRR</th><th>Último toque</th><th>Renova em</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>`;
+}
+(function initClientesEvents(){
+  const box=$("#clientesView"); if(!box) return;
+  box.addEventListener("click",e=>{
+    const f=e.target.closest(".cli-filtro"); if(f){ clientesFiltro=f.dataset.clif; renderList(); return; }
+    const h=e.target.closest(".cli-health"); if(h){ clientesHealth=h.dataset.hlth; renderList(); return; }
+    const al=e.target.closest(".cli-alert"); if(al){ const fk=al.dataset.health; if(fk){ clientesHealth=fk===clientesHealth?"":fk; renderList(); } return; }
+    const row=e.target.closest(".cli-open"); if(row){ const c=coById(row.dataset.id); if(c) openModal(c); return; }
+  });
+})();
 
 /* =========================================================================
    RENDER — Agenda (próximas sessões)
@@ -4030,14 +4140,31 @@ function renderInboxList(){
 $("#btnOpenInbox").addEventListener("click",openInbox);
 $("#inboxClose").addEventListener("click",closeInbox);
 $("#inboxOverlay").addEventListener("click",e=>{ if(e.target===$("#inboxOverlay")) closeInbox(); });
-$("#btnSync").addEventListener("click",async()=>{
-  if(!Store.isCloud()){ toast("Sincronização disponível no modo nuvem","err"); return; }
+let _syncing=false, _lastSync=0;
+function _syncBusy(){
+  const on=s=>{ const e=$(s); return e && (e.classList.contains("open")||e.classList.contains("show")); };
+  if(on("#overlay")||on("#planoDrawer")||on("#prodDrawer")||on("#inboxOverlay")||on("#reportOverlay")) return true;
+  const a=document.activeElement; return a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName);
+}
+async function syncAll(silent){
+  if(!Store.isCloud()){ if(!silent) toast("Sincronização disponível no modo nuvem","err"); return; }
+  if(_syncing) return; if(silent && _syncBusy()) return;   // não atrapalha edição/drawer aberto
+  _syncing=true; const btn=$("#btnSync"); const lbl=btn?btn.textContent:"";
   try{
+    if(btn && !silent) btn.textContent="↻ Sincronizando…";
     await Store.list(); await Store.loadInbox(); await Store.loadAcoes(); await Store.loadPagamentos(); await Store.loadSessoes(); await Store.loadEntregaveis();
-    renderActive(); renderInboxBanner();
-    toast("Atualizado","ok");
-  }catch(e){ toast("Erro ao sincronizar: "+(e.message||e),"err"); }
-});
+    _lastSync=Date.now();
+    if(!_syncBusy()){ renderActive(); renderInboxBanner(); }
+    if(!silent) toast("Tudo sincronizado ✅","ok");
+    const t=$("#lastSyncTxt"); if(t) t.textContent="sincronizado agora";
+  }catch(e){ if(!silent) toast("Erro ao sincronizar: "+(e.message||e),"err"); }
+  finally{ _syncing=false; if(btn) btn.textContent=lbl||"↻ Sincronizar"; }
+}
+$("#btnSync").addEventListener("click",()=>syncAll(false));
+/* Auto-sync: a cada 3 min + ao voltar o foco na aba (Tactiq/Calendar entram sozinhos) */
+setInterval(()=>{ if(Store.isCloud() && Store.user && document.visibilityState==="visible") syncAll(true); }, 180000);
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible" && Store.isCloud() && Store.user && Date.now()-_lastSync>60000) syncAll(true); });
+window.addEventListener("focus",()=>{ if(Store.isCloud() && Store.user && Date.now()-_lastSync>60000) syncAll(true); });
 
 async function boot(){
   if(Store.isCloud()){
