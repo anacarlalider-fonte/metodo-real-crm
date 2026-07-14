@@ -370,6 +370,13 @@
   /* FAB */
   .fab{position:fixed;right:26px;bottom:26px;z-index:55;background:linear-gradient(135deg,var(--brand),var(--brand-d));color:#1a1205;border:none;border-radius:999px;padding:14px 20px;font-weight:800;font-size:14px;cursor:pointer;box-shadow:0 8px 22px rgba(232,133,43,.4);display:inline-flex;align-items:center;gap:8px}
   .fab:hover{transform:translateY(-1px)}
+  /* Produção — entregáveis */
+  .prodchip{border:1px solid var(--line2);background:var(--panel);font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:999px;cursor:pointer}
+  .prod-card .prod-block{margin-top:8px;font-size:11px;background:var(--status-atrasado-bg);color:var(--status-atrasado);padding:5px 8px;border-radius:7px;line-height:1.35}
+  .prod-card .prod-faturar{margin-top:8px;font-size:11px;font-weight:700;color:var(--status-concluido);background:var(--status-concluido-bg);padding:4px 8px;border-radius:7px;text-align:center}
+  .prod-col.drag-over{outline:2px dashed var(--brand);outline-offset:-6px;border-radius:10px}
+  .prod-cli{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+  .drawer-sec{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--muted2);margin:18px 0 4px}
   /* Hoje — painel estilo dashboard */
   .hkpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-bottom:20px}
   .hkpi{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px;position:relative}
@@ -642,6 +649,10 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="4" height="16" rx="1"/></svg>
         Entrega <span class="badge" id="badgeBoard">0</span>
       </button>
+      <button class="modlink" data-view="producao" data-title="Produção · entregáveis">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><path d="M12 22.08V12"/></svg>
+        Produção <span class="badge" id="badgeProducao">0</span>
+      </button>
       <button class="modlink" data-view="list" data-title="Clientes">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         Clientes
@@ -736,6 +747,13 @@
          </table>
        </div>
      </div>
+   </div>
+
+   <!-- ===== PRODUÇÃO (ENTREGÁVEIS) VIEW ===== -->
+   <div id="view-producao" class="wrap hidden">
+     <div id="producaoView"></div>
+     <div class="drawer-ov" id="prodDrawerOv"></div>
+     <aside class="drawer" id="prodDrawer" aria-hidden="true"></aside>
    </div>
 
    <!-- ===== PLANO DE AÇÃO (5W2H) VIEW ===== -->
@@ -1143,7 +1161,7 @@ function composeTactiqTexto(it){
    STORE — abstrai demo (localStorage) e nuvem (Supabase)
    ========================================================================= */
 const Store = {
-  mode:"demo", sb:null, user:null, cache:[], inbox:[], acoes:[], pagamentos:[], sessoes:[], LS:"mr_crm_companies",
+  mode:"demo", sb:null, user:null, cache:[], inbox:[], acoes:[], pagamentos:[], sessoes:[], entregaveis:[], LS:"mr_crm_companies",
 
   async init(){
     if(SUPABASE_URL && SUPABASE_ANON_KEY){
@@ -1235,6 +1253,33 @@ const Store = {
   async removeAcao(id){
     const { error } = await this.sb.from("mr_acoes").delete().eq("id",id);
     if(error) throw error; await this.loadAcoes();
+  },
+  /* --- entregáveis / produção (só nuvem) --- */
+  async loadEntregaveis(){
+    this.entregaveis=[];
+    if(this.mode!=="cloud" || !this.user) return this.entregaveis;
+    const { data, error } = await this.sb.from("mr_entregaveis").select("*").order("prazo",{ascending:true,nullsFirst:false}).order("created_at",{ascending:false});
+    if(error) throw error;
+    this.entregaveis = data||[];
+    return this.entregaveis;
+  },
+  async addEntregavel(e){
+    if(this.mode!=="cloud"||!this.user) throw new Error("disponível só no modo nuvem");
+    const row={ user_id:this.user.id, company_id:e.company_id||null, titulo:e.titulo, valor:e.valor!=null&&e.valor!==""?Number(e.valor):null,
+      prazo:e.prazo||null, etapa:e.etapa||"escopo", checklist:e.checklist||[], revisao:e.revisao||0,
+      bloqueio:e.bloqueio||null, bloqueio_desde:e.bloqueio_desde||null, responsavel:e.responsavel||null };
+    const { data, error } = await this.sb.from("mr_entregaveis").insert(row).select().single();
+    if(error) throw error;
+    await this.loadEntregaveis(); return data;
+  },
+  async updateEntregavel(id, patch){
+    patch.updated_at=new Date().toISOString();
+    const { error } = await this.sb.from("mr_entregaveis").update(patch).eq("id",id);
+    if(error) throw error; await this.loadEntregaveis();
+  },
+  async removeEntregavel(id){
+    const { error } = await this.sb.from("mr_entregaveis").delete().eq("id",id);
+    if(error) throw error; await this.loadEntregaveis();
   },
   /* --- pagamentos / financeiro (só nuvem) --- */
   async loadPagamentos(){
@@ -2664,7 +2709,8 @@ $("#btnCancel").addEventListener("click",closeModal);
 $("#overlay").addEventListener("click",e=>{ if(e.target===$("#overlay")) closeModal(); });
 document.addEventListener("keydown",e=>{
   if(e.key!=="Escape") return;
-  if($("#planoDrawer") && $("#planoDrawer").classList.contains("show")) closeDrawer();
+  if($("#prodDrawer") && $("#prodDrawer").classList.contains("show")) closeProdDrawer();
+  else if($("#planoDrawer") && $("#planoDrawer").classList.contains("show")) closeDrawer();
   else if($("#reportOverlay").classList.contains("open")) closeReport();
   else if($("#inboxOverlay").classList.contains("open")) closeInbox();
   else if($("#overlay").classList.contains("open")) closeModal();
@@ -2778,7 +2824,7 @@ $("#searchInput").addEventListener("input",e=>{ filter=e.target.value.trim().toL
 
 /* ---------- Sidebar navigation ---------- */
 let activeView="hoje";
-const VIEWS=["hoje","sales","metas","board","list","plano","financ","agenda","dash","metodo"];
+const VIEWS=["hoje","sales","metas","board","producao","list","plano","financ","agenda","dash","metodo"];
 function setView(v){
   activeView=v;
   $$(".modlink").forEach(x=>x.classList.toggle("active",x.dataset.view===v));
@@ -3110,11 +3156,194 @@ async function hojeAddAcao(){
   }
   if(table) table.addEventListener("click",e=>{ if(e.target.closest("a")) return; const r=e.target.closest(".lead-open"); if(r){ const c=coById(r.dataset.id); if(c) openModal(c); } });
 })();
+/* ============ PRODUÇÃO — quadro de entregáveis (mr_entregaveis) ============ */
+const PROD_STAGES=[
+  {id:"escopo",nome:"Escopo",sw:"var(--lead)"},
+  {id:"producao",nome:"Em produção",sw:"var(--blue)"},
+  {id:"revisao",nome:"Revisão interna",sw:"var(--diag)"},
+  {id:"com_cliente",nome:"Com cliente",sw:"var(--orange)"},
+  {id:"aprovado",nome:"Aprovado",sw:"var(--green)"},
+];
+let prodBusca="", prodFiltro="", prodDrawerId=null, prodNewMode=false;
+function entChecklist(e){ const c=Array.isArray(e.checklist)?e.checklist:[]; return {done:c.filter(x=>x&&x.ok).length,total:c.length,items:c}; }
+function entAtrasado(e){ return e.prazo && e.prazo<todayISO() && e.etapa!=="aprovado"; }
+function entPrazoTxt(e){
+  if(e.etapa==="aprovado") return {t:e.prazo?"entregue "+fmtDiaMes(e.prazo):"aprovado",c:"var(--status-concluido)"};
+  if(!e.prazo) return {t:"sem prazo",c:"var(--muted2)"};
+  const du=daysUntil(e.prazo);
+  if(du<0) return {t:`${-du}d atrasado`,c:"var(--status-atrasado)"};
+  if(du===0) return {t:"vence hoje",c:"#a86a12"};
+  return {t:`em ${du}d`,c:"var(--muted)"};
+}
+function prodCard(e){
+  const cl=entChecklist(e); const pz=entPrazoTxt(e); const late=entAtrasado(e);
+  const brdc = late?"var(--status-atrasado)": e.etapa==="aprovado"?"var(--green)":"var(--line2)";
+  return `<div class="tcard prod-card" draggable="true" data-id="${e.id}" style="border-left-color:${brdc}">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div class="nome" style="flex:1;min-width:0">${esc(e.titulo)||"(sem título)"}</div>${e.valor?`<span style="font-size:12px;font-weight:700;white-space:nowrap">${brlShort(Number(e.valor))}</span>`:""}</div>
+      <div class="meta"><span>${esc(coNome(e.company_id))}</span></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:11.5px">
+        <span style="color:${pz.c};font-weight:600">${pz.t}</span>
+        ${cl.total?`<span style="color:var(--muted2)">· ${cl.done}/${cl.total}✓</span>`:""}
+        ${e.revisao?`<span style="color:var(--muted2)">· rev ${e.revisao}</span>`:""}
+        <span style="margin-left:auto" title="${esc(e.responsavel||'Ana')}"><span class="av" style="width:22px;height:22px;font-size:9px">${iniciais(e.responsavel||"Ana")}</span></span>
+      </div>
+      ${e.bloqueio?`<div class="prod-block">⛔ ${esc(e.bloqueio)}${e.bloqueio_desde?` · há ${Math.max(0,-daysUntil(e.bloqueio_desde))}d`:""}</div>`:""}
+      ${e.etapa==="aprovado"?`<div class="prod-faturar">pronto p/ faturar</div>`:""}
+    </div>`;
+}
+function renderProducao(){
+  const box=$("#producaoView"); if(!box) return;
+  if(Store.mode!=="cloud"||!Store.user){ box.innerHTML=`<div class="empty" style="margin:20px 0">Disponível no modo nuvem (faça login).</div>`; return; }
+  const all=Store.entregaveis||[];
+  const atrasadas=all.filter(entAtrasado);
+  const bloqueadas=all.filter(e=>e.bloqueio);
+  const faturar=all.filter(e=>e.etapa==="aprovado");
+  const riscoR=atrasadas.reduce((s,e)=>s+Number(e.valor||0),0);
+  const faturarR=faturar.reduce((s,e)=>s+Number(e.valor||0),0);
+  let list=all.slice();
+  const q=prodBusca.trim().toLowerCase();
+  if(q) list=list.filter(e=>[e.titulo,coNome(e.company_id),e.responsavel].some(x=>String(x||"").toLowerCase().includes(q)));
+  if(prodFiltro==="atrasadas") list=list.filter(entAtrasado);
+  else if(prodFiltro==="bloqueadas") list=list.filter(e=>e.bloqueio);
+  else if(prodFiltro==="faturar") list=list.filter(e=>e.etapa==="aprovado");
+  const chip=(key,txt,cor,active)=>`<button class="prodchip${active?' on':''}" data-pfiltro="${key}" type="button" style="${active?`background:${cor};color:#fff;border-color:transparent`:`color:${cor}`}">${txt}</button>`;
+  const chips=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      ${chip("atrasadas",`⚠ ${atrasadas.length} atrasada${atrasadas.length!==1?'s':''}${riscoR?` · ${brlShort(riscoR)} em risco`:''}`,"var(--status-atrasado)",prodFiltro==="atrasadas")}
+      ${chip("bloqueadas",`⛔ ${bloqueadas.length} bloqueada${bloqueadas.length!==1?'s':''}`,"var(--status-atrasado)",prodFiltro==="bloqueadas")}
+      ${chip("faturar",`💰 ${faturar.length} pronta${faturar.length!==1?'s':''} p/ faturar${faturarR?` · ${brlShort(faturarR)}`:''}`,"var(--status-concluido)",prodFiltro==="faturar")}
+      ${prodFiltro?`<button class="btn sm ghost" id="prodLimpar" type="button">Limpar</button>`:""}
+    </div>`;
+  const colsHtml=PROD_STAGES.map(st=>{
+    const items=list.filter(e=>e.etapa===st.id);
+    const tot=items.reduce((s,e)=>s+Number(e.valor||0),0);
+    return `<div class="col"><div class="col-head"><span class="swatch" style="background:${st.sw}"></span><span class="ttl">${st.nome}</span><span class="cnt">${items.length}</span><span class="sum">${tot?`<b style="color:var(--txt)">${brlShort(tot)}</b>`:(st.id==="aprovado"?"pronto p/ faturar":"")}</span></div>
+      <div class="col-body prod-col" data-etapa="${st.id}">${items.length?items.map(prodCard).join(""):`<div class="empty">—</div>`}</div></div>`;
+  }).join("");
+  box.innerHTML=`
+    <div class="plhd">
+      <div><h2>Produção</h2><div class="sub">Status de produção · ${all.length} entrega${all.length!==1?"s":""} na carteira</div></div>
+      <div style="display:flex;gap:8px"><button class="btn sm primary" id="prodNova" type="button">＋ Nova entrega</button></div>
+    </div>
+    <div class="plsearch" style="margin-bottom:12px"><input id="prodBusca" class="hinput" style="width:100%;max-width:360px" placeholder="Buscar entrega ou cliente…" value="${esc(prodBusca)}" /></div>
+    ${chips}
+    <div class="board">${colsHtml}</div>`;
+  const s=$("#prodBusca"); if(s&&prodBusca){ s.focus(); s.setSelectionRange(s.value.length,s.value.length); }
+  const b=$("#badgeProducao"); if(b) b.textContent=atrasadas.length+bloqueadas.length;
+}
+function prodRerender(){
+  if($("#view-producao") && !$("#view-producao").classList.contains("hidden")) renderProducao();
+  if(prodDrawerId && $("#prodDrawer") && $("#prodDrawer").classList.contains("show")) renderProdDrawer();
+}
+function prodDrawerShow(){ const dr=$("#prodDrawer"),ov=$("#prodDrawerOv"); if(!dr) return; renderProdDrawer(); ov.classList.add("show"); dr.classList.add("show"); dr.setAttribute("aria-hidden","false"); }
+function closeProdDrawer(){ const dr=$("#prodDrawer"),ov=$("#prodDrawerOv"); if(dr){dr.classList.remove("show");dr.setAttribute("aria-hidden","true");} if(ov)ov.classList.remove("show"); prodDrawerId=null; prodNewMode=false; }
+function openProdDrawer(id){ prodNewMode=false; prodDrawerId=id; prodDrawerShow(); }
+function openProdNova(){ prodNewMode=true; prodDrawerId=null; prodDrawerShow(); }
+function renderProdDrawer(){
+  const dr=$("#prodDrawer"); if(!dr) return;
+  const clientes=[...Store.cache].filter(c=>c.fase==="entrega").sort((a,b)=>(a.nome||"").localeCompare(b.nome||""));
+  const cliOpt=(sel)=>clientes.map(c=>`<option value="${c.id}" ${c.id===sel?"selected":""}>${esc(c.nome)}</option>`).join("");
+  if(prodNewMode){
+    dr.innerHTML=`
+      <div class="drawer-hd"><div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:17px;font-weight:700">Nova entrega</div><button class="btn sm ghost" id="prodClose" type="button">✕</button></div></div>
+      <div class="drawer-bd"><div class="plac-grid">
+        <label class="fw">Título<input id="pnw_titulo" class="hinput" placeholder="ex.: Diagnóstico comercial" /></label>
+        <label class="fw">Cliente<select id="pnw_cli" class="hinput"><option value="">— selecione —</option>${cliOpt("")}</select></label>
+        <label>Valor (R$)<input id="pnw_valor" class="hinput" type="number" placeholder="0" /></label>
+        <label>Prazo<input id="pnw_prazo" class="hinput" type="date" /></label>
+        <label>Etapa<select id="pnw_etapa" class="hinput">${PROD_STAGES.map(s=>`<option value="${s.id}">${s.nome}</option>`).join("")}</select></label>
+        <label>Responsável<input id="pnw_resp" class="hinput" placeholder="Ana" /></label>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px"><button class="btn sm ghost" id="prodCancel" type="button">Cancelar</button><button class="btn sm primary" id="prodCriar" type="button">Criar entrega</button></div></div>`;
+    return;
+  }
+  const e=(Store.entregaveis||[]).find(x=>x.id===prodDrawerId); if(!e){ closeProdDrawer(); return; }
+  const inp=(k,lbl,ph,type)=>`<label>${lbl}<input class="prod-f hinput" data-k="${k}" ${type?`type="${type}"`:""} value="${esc(e[k]!=null?String(e[k]):"")}" placeholder="${esc(ph||"")}" /></label>`;
+  const cl=entChecklist(e);
+  const checklistHtml=`<div style="margin-top:4px">${cl.items.map((it,i)=>`<div class="prod-cli"><span class="prod-ck" data-i="${i}" style="cursor:pointer;font-size:16px">${it.ok?"☑":"☐"}</span><span style="flex:1;min-width:0;${it.ok?'text-decoration:line-through;color:var(--muted2)':''}">${esc(it.t)}</span><span class="prod-cldel" data-i="${i}" style="cursor:pointer;color:var(--muted2)">✕</span></div>`).join("")||`<div style="font-size:12px;color:var(--muted2);padding:4px 0">Sem itens ainda.</div>`}
+      <div style="display:flex;gap:6px;margin-top:8px"><input id="prodClNew" class="hinput" placeholder="Novo item do checklist…" style="flex:1" /><button class="btn sm ghost" id="prodClAdd" type="button">+ item</button></div></div>`;
+  dr.innerHTML=`
+    <div class="drawer-hd">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+        <div style="min-width:0"><div style="font-size:11px;color:var(--muted2)">${esc(coNome(e.company_id))} · ${PROD_STAGES.find(s=>s.id===e.etapa)?.nome||e.etapa}</div>
+          <div style="font-size:17px;font-weight:700;margin-top:3px;word-break:break-word">${esc(e.titulo)||"(sem título)"}</div></div>
+        <button class="btn sm ghost" id="prodClose" type="button" style="flex:none">✕</button>
+      </div>
+      ${e.bloqueio?`<div class="prod-block" style="margin-top:10px">⛔ ${esc(e.bloqueio)}</div>`:""}
+    </div>
+    <div class="drawer-bd">
+      <div class="plac-grid">
+        <label class="fw">Título${`<input class="prod-f hinput" data-k="titulo" value="${esc(e.titulo||"")}" />`}</label>
+        <label class="fw">Cliente<select class="prod-f hinput" data-k="company_id"><option value="">—</option>${cliOpt(e.company_id)}</select></label>
+        <label>Valor (R$)${inp("valor","0","number")}</label>
+        <label>Prazo${inp("prazo","","date")}</label>
+        <label>Etapa<select class="prod-f hinput" data-k="etapa">${PROD_STAGES.map(s=>`<option value="${s.id}" ${e.etapa===s.id?"selected":""}>${s.nome}</option>`).join("")}</select></label>
+        <label>Revisão (nº)${inp("revisao","0","number")}</label>
+        <label>Responsável${inp("responsavel","Ana")}</label>
+        <label class="fw">Bloqueio (motivo — vazio = sem bloqueio)${`<input class="prod-f hinput" data-k="bloqueio" value="${esc(e.bloqueio||"")}" placeholder="ex.: aguarda acesso ao CRM do cliente" />`}</label>
+      </div>
+      <div class="drawer-sec">Checklist</div>
+      ${checklistHtml}
+      <div style="display:flex;justify-content:space-between;gap:10px;margin-top:18px">
+        ${e.etapa==="aprovado"?`<button class="btn sm ghost prod-faturado" data-id="${e.id}" type="button" style="color:var(--status-concluido)">💰 Marcar faturado (→ cobrança)</button>`:`<span></span>`}
+        <button class="btn sm ghost prod-del" data-id="${e.id}" type="button" style="color:var(--status-atrasado)">Remover</button>
+      </div>
+    </div>`;
+}
+async function prodCriar(){
+  const cid=$("#pnw_cli")&&$("#pnw_cli").value; const tit=($("#pnw_titulo")&&$("#pnw_titulo").value.trim())||"";
+  if(!tit){ toast("Dê um título à entrega","err"); return; }
+  try{ const novo=await Store.addEntregavel({ titulo:tit, company_id:cid||null, valor:($("#pnw_valor")&&$("#pnw_valor").value)||null, prazo:($("#pnw_prazo")&&$("#pnw_prazo").value)||null, etapa:($("#pnw_etapa")&&$("#pnw_etapa").value)||"escopo", responsavel:($("#pnw_resp")&&$("#pnw_resp").value.trim())||null });
+    prodNewMode=false; prodDrawerId=novo&&novo.id||null; renderProducao(); if(prodDrawerId) renderProdDrawer(); else closeProdDrawer(); }
+  catch(err){ toast("Erro ao criar: "+(err.message||err),"err"); }
+}
+(function initProducaoEvents(){
+  const box=$("#producaoView");
+  if(box){
+    box.addEventListener("click",async e=>{
+      if(e.target.closest("#prodNova")){ openProdNova(); return; }
+      if(e.target.closest("#prodLimpar")){ prodFiltro=""; renderProducao(); return; }
+      const ch=e.target.closest(".prodchip"); if(ch){ const k=ch.dataset.pfiltro; prodFiltro=prodFiltro===k?"":k; renderProducao(); return; }
+      const card=e.target.closest(".prod-card"); if(card){ openProdDrawer(card.dataset.id); return; }
+    });
+    box.addEventListener("input",e=>{ if(e.target.id==="prodBusca"){ prodBusca=e.target.value; renderProducao(); } });
+    box.addEventListener("dragstart",e=>{ const c=e.target.closest(".prod-card"); if(c){ e.dataTransfer.setData("text/plain",c.dataset.id); e.dataTransfer.effectAllowed="move"; c.classList.add("dragging"); } });
+    box.addEventListener("dragend",e=>{ const c=e.target.closest(".prod-card"); if(c) c.classList.remove("dragging"); });
+    box.addEventListener("dragover",e=>{ const col=e.target.closest(".prod-col"); if(col){ e.preventDefault(); col.classList.add("drag-over"); } });
+    box.addEventListener("dragleave",e=>{ const col=e.target.closest(".prod-col"); if(col) col.classList.remove("drag-over"); });
+    box.addEventListener("drop",async e=>{ const col=e.target.closest(".prod-col"); if(!col) return; e.preventDefault(); col.classList.remove("drag-over");
+      const id=e.dataTransfer.getData("text/plain"); const et=col.dataset.etapa; const ent=(Store.entregaveis||[]).find(x=>x.id===id);
+      if(!ent||ent.etapa===et) return; try{ await Store.updateEntregavel(id,{etapa:et}); toast(`→ ${PROD_STAGES.find(s=>s.id===et).nome}`,"ok"); prodRerender(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } });
+  }
+  const ov=$("#prodDrawerOv"); if(ov) ov.addEventListener("click",closeProdDrawer);
+  const dr=$("#prodDrawer");
+  if(dr){
+    dr.addEventListener("click",async e=>{
+      if(e.target.closest("#prodClose")||e.target.closest("#prodCancel")){ closeProdDrawer(); return; }
+      if(e.target.closest("#prodCriar")){ prodCriar(); return; }
+      if(e.target.closest("#prodClAdd")){ const inp=$("#prodClNew"); const t=inp&&inp.value.trim(); if(!t) return; const ent=(Store.entregaveis||[]).find(x=>x.id===prodDrawerId); if(!ent) return; const cl=(Array.isArray(ent.checklist)?ent.checklist:[]).concat([{t,ok:false}]); try{ await Store.updateEntregavel(prodDrawerId,{checklist:cl}); prodRerender(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } return; }
+      const ck=e.target.closest(".prod-ck"); if(ck){ const i=+ck.dataset.i; const ent=(Store.entregaveis||[]).find(x=>x.id===prodDrawerId); if(!ent) return; const cl=(ent.checklist||[]).map((it,idx)=>idx===i?{...it,ok:!it.ok}:it); try{ await Store.updateEntregavel(prodDrawerId,{checklist:cl}); prodRerender(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } return; }
+      const cd=e.target.closest(".prod-cldel"); if(cd){ const i=+cd.dataset.i; const ent=(Store.entregaveis||[]).find(x=>x.id===prodDrawerId); if(!ent) return; const cl=(ent.checklist||[]).filter((_,idx)=>idx!==i); try{ await Store.updateEntregavel(prodDrawerId,{checklist:cl}); prodRerender(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } return; }
+      const dl=e.target.closest(".prod-del"); if(dl){ if(!confirm("Remover esta entrega?")) return; try{ await Store.removeEntregavel(dl.dataset.id); closeProdDrawer(); renderProducao(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } return; }
+      const ft=e.target.closest(".prod-faturado"); if(ft){ const ent=(Store.entregaveis||[]).find(x=>x.id===ft.dataset.id); toast("💡 Marque a cobrança no módulo Financeiro (integração automática vem depois).","ok"); return; }
+    });
+    dr.addEventListener("change",async e=>{
+      const f=e.target.closest(".prod-f"); if(!f) return; const k=f.dataset.k; let v=f.value;
+      const patch={};
+      if(k==="valor"||k==="revisao"){ patch[k]= v===""?null:Number(v); }
+      else if(k==="bloqueio"){ v=v.trim(); patch.bloqueio=v||null; patch.bloqueio_desde=v?(($("#prodDrawer")&&(Store.entregaveis||[]).find(x=>x.id===prodDrawerId)?.bloqueio_desde)||todayISO()):null; }
+      else { patch[k]= (typeof v==="string"?v.trim():v)||null; }
+      try{ await Store.updateEntregavel(prodDrawerId,patch);
+        if(k==="etapa"||k==="bloqueio"||k==="prazo"||k==="titulo"||k==="company_id") prodRerender(); }
+      catch(err){ toast("Erro ao salvar: "+(err.message||err),"err"); }
+    });
+  }
+})();
 function renderActive(){
   if(activeView==="hoje") renderHoje();
   else if(activeView==="sales") renderSales();
   else if(activeView==="metas") renderMetas();
   else if(activeView==="board") renderBoard();
+  else if(activeView==="producao") renderProducao();
   else if(activeView==="list") renderList();
   else if(activeView==="plano") renderPlanoView();
   else if(activeView==="financ") renderFinanceiro();
@@ -3660,7 +3889,7 @@ $("#inboxOverlay").addEventListener("click",e=>{ if(e.target===$("#inboxOverlay"
 $("#btnSync").addEventListener("click",async()=>{
   if(!Store.isCloud()){ toast("Sincronização disponível no modo nuvem","err"); return; }
   try{
-    await Store.list(); await Store.loadInbox(); await Store.loadAcoes(); await Store.loadPagamentos(); await Store.loadSessoes();
+    await Store.list(); await Store.loadInbox(); await Store.loadAcoes(); await Store.loadPagamentos(); await Store.loadSessoes(); await Store.loadEntregaveis();
     renderActive(); renderInboxBanner();
     toast("Atualizado","ok");
   }catch(e){ toast("Erro ao sincronizar: "+(e.message||e),"err"); }
@@ -3680,6 +3909,7 @@ async function boot(){
   try{ await Store.loadAcoes(); }catch(e){ /* ok */ }
   try{ await Store.loadPagamentos(); }catch(e){ /* ok */ }
   try{ await Store.loadSessoes(); }catch(e){ /* ok */ }
+  try{ await Store.loadEntregaveis(); }catch(e){ /* ok */ }
   renderActive();
   renderInboxBanner();
   const l0=$('.modlink[data-view="'+activeView+'"]'); if(l0) $("#viewTitle").textContent=l0.dataset.title;
