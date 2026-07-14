@@ -689,10 +689,6 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
         Health <span class="badge" id="badgeHealth">0</span>
       </button>
-      <button class="modlink" data-view="biblioteca" data-title="Biblioteca de Entregáveis">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-        Biblioteca
-      </button>
       <button class="modlink" data-view="list" data-title="Clientes">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         Clientes
@@ -783,10 +779,6 @@
      <div id="healthView"></div>
    </div>
 
-   <!-- ===== BIBLIOTECA DE ENTREGÁVEIS VIEW ===== -->
-   <div id="view-biblioteca" class="wrap hidden">
-     <div id="bibliotecaView"></div>
-   </div>
 
    <!-- ===== PRODUÇÃO (ENTREGÁVEIS) VIEW ===== -->
    <div id="view-producao" class="wrap hidden">
@@ -856,14 +848,8 @@
 
    <!-- ===== MÉTODO (REFERÊNCIA) VIEW ===== -->
    <div id="view-metodo" class="wrap hidden">
-     <div class="card" style="margin-bottom:14px">
-       <h3>🏛️ Os 4 Pilares do Método</h3>
-       <div class="pillgrid" id="pilares"></div>
-     </div>
-     <div class="card">
-       <h3>🧭 Roadmap REAL de Crescimento — 6 etapas</h3>
-       <div class="roadmap" id="roadmap"></div>
-     </div>
+     <div id="metodoTabs"></div>
+     <div id="metodoBody"></div>
    </div>
 
   </div>
@@ -2896,7 +2882,7 @@ $("#searchInput").addEventListener("input",e=>{ filter=e.target.value.trim().toL
 
 /* ---------- Sidebar navigation ---------- */
 let activeView="hoje";
-const VIEWS=["hoje","sales","metas","producao","trilha","health","biblioteca","list","plano","financ","agenda","reunioes","dash","metodo"];
+const VIEWS=["hoje","sales","metas","producao","trilha","health","list","plano","financ","agenda","reunioes","dash","metodo"];
 function setView(v){
   activeView=v;
   $$(".modlink").forEach(x=>x.classList.toggle("active",x.dataset.view===v));
@@ -3632,8 +3618,7 @@ function renderHealth(){
 }
 /* ============ BIBLIOTECA DE ENTREGÁVEIS — catálogo + adoção ============ */
 let bibPilar="";
-function renderBiblioteca(){
-  const box=$("#bibliotecaView"); if(!box) return;
+function bibliotecaHTML(){
   const ativos=Store.cache.filter(c=>c.fase==="entrega" && c.status!=="Encerrado");
   const N=ativos.length;
   const totalItens=PILLARS.reduce((s,p)=>s+p.items.length,0);
@@ -3649,13 +3634,12 @@ function renderBiblioteca(){
     }).join("");
     return `<div class="bib-pilar"><div class="bib-ph">${p.nome} <span style="color:var(--muted2);font-weight:500;font-size:12px">· ${p.items.length} entregáveis</span></div>${itens}</div>`;
   }).join("");
-  box.innerHTML=`
-    <div class="plhd"><div><h2>Biblioteca de Entregáveis</h2><div class="sub">${totalItens} entregáveis do Método · adoção nos ${N} cliente${N!==1?"s":""} ativos</div></div></div>
-    ${filtros}${body}`;
+  return `<div style="font-size:12.5px;color:var(--muted);margin-bottom:12px">${totalItens} entregáveis do Método · adoção nos ${N} cliente${N!==1?"s":""} ativos</div>${filtros}${body}`;
 }
 (function initBibHealthEvents(){
   const bh=$("#healthView"); if(bh) bh.addEventListener("click",e=>{ const r=e.target.closest(".trilha-open"); if(r){ const c=coById(r.dataset.id); if(c) openModal(c); } });
-  const bb=$("#bibliotecaView"); if(bb) bb.addEventListener("click",e=>{ const f=e.target.closest(".bib-f"); if(f){ bibPilar=f.dataset.bpil; renderBiblioteca(); } });
+  const mt=$("#metodoTabs"); if(mt) mt.addEventListener("click",e=>{ const tb=e.target.closest("[data-mtab2]"); if(tb){ metodoTab=tb.dataset.mtab2; renderMetodo(); } });
+  const mb=$("#metodoBody"); if(mb) mb.addEventListener("click",e=>{ const f=e.target.closest(".bib-f"); if(f){ bibPilar=f.dataset.bpil; renderMetodo(); } });
 })();
 function renderActive(){
   if(activeView==="hoje") renderHoje();
@@ -3664,7 +3648,6 @@ function renderActive(){
   else if(activeView==="producao") renderProducao();
   else if(activeView==="trilha") renderTrilha();
   else if(activeView==="health") renderHealth();
-  else if(activeView==="biblioteca") renderBiblioteca();
   else if(activeView==="list") renderList();
   else if(activeView==="plano") renderPlanoView();
   else if(activeView==="financ") renderFinanceiro();
@@ -3989,17 +3972,18 @@ const ROADMAP_REF=[
   { n:"05", nome:"Estruturação do Comercial", d:"Vendas previsíveis e escaláveis." },
   { n:"06", nome:"Acompanhamento e Escala", d:"Execução, evolução contínua e crescimento sustentável." },
 ];
-let metodoDone=false;
+let metodoTab="geral";
 function renderMetodo(){
-  if(metodoDone) return; metodoDone=true;
-  $("#pilares").innerHTML=PILAR_REF.map(p=>`
-    <div class="pillcard" style="border-top-color:${p.cor}">
-      <h4>${p.nome}</h4><div class="pc">${p.foco}</div>
-      <ol>${p.etapas.map(e=>`<li>${e}</li>`).join("")}</ol>
-    </div>`).join("");
-  $("#roadmap").innerHTML=ROADMAP_REF.map(r=>`
-    <div class="roadstep"><div class="num">ETAPA ${r.n}</div><div class="rn">${r.nome}</div><div class="rd">${r.d}</div></div>
-  `).join("");
+  const tabsEl=$("#metodoTabs"), body=$("#metodoBody"); if(!body) return;
+  if(tabsEl) tabsEl.innerHTML=`<div class="pltabs" style="margin-bottom:16px">
+      <button class="pltab ${metodoTab==='geral'?'active':''}" data-mtab2="geral" type="button">📖 Visão geral</button>
+      <button class="pltab ${metodoTab==='biblioteca'?'active':''}" data-mtab2="biblioteca" type="button">📚 Biblioteca de entregáveis</button></div>`;
+  if(metodoTab==="biblioteca"){ body.innerHTML=bibliotecaHTML(); return; }
+  body.innerHTML=`
+    <div class="card" style="margin-bottom:14px"><h3>🏛️ Os 4 Pilares do Método</h3>
+      <div class="pillgrid">${PILAR_REF.map(p=>`<div class="pillcard" style="border-top-color:${p.cor}"><h4>${p.nome}</h4><div class="pc">${p.foco}</div><ol>${p.etapas.map(e=>`<li>${e}</li>`).join("")}</ol></div>`).join("")}</div></div>
+    <div class="card"><h3>🧭 Roadmap REAL de Crescimento — 6 etapas</h3>
+      <div class="roadmap">${ROADMAP_REF.map(r=>`<div class="roadstep"><div class="num">ETAPA ${r.n}</div><div class="rn">${r.nome}</div><div class="rd">${r.d}</div></div>`).join("")}</div></div>`;
 }
 
 // backup / import
