@@ -4529,8 +4529,8 @@ async function syncAll(silent){
   finally{ _syncing=false; if(btn) btn.textContent=lbl||"↻ Sincronizar"; }
 }
 $("#btnSync").addEventListener("click",()=>syncAll(false));
-/* Auto-sync: a cada 3 min + ao voltar o foco na aba (Tactiq/Calendar entram sozinhos) */
-setInterval(()=>{ if(Store.isCloud() && Store.user && document.visibilityState==="visible") syncAll(true); }, 180000);
+/* Auto-sync: a cada 90s + ao voltar o foco na aba (Tactiq/Calendar entram sozinhos) */
+setInterval(()=>{ if(Store.isCloud() && Store.user && document.visibilityState==="visible") syncAll(true); }, 90000);
 document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible" && Store.isCloud() && Store.user && Date.now()-_lastSync>60000) syncAll(true); });
 window.addEventListener("focus",()=>{ if(Store.isCloud() && Store.user && Date.now()-_lastSync>60000) syncAll(true); });
 
