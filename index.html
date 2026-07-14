@@ -438,6 +438,11 @@
   .agora{background:var(--panel);border:1px solid var(--brand);border-radius:16px;padding:16px 20px;margin-bottom:18px;max-width:1180px;box-shadow:0 4px 18px rgba(232,133,43,.10)}
   .agora-tag{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.6px;color:#fff;background:var(--brand);padding:3px 11px;border-radius:999px}
   .agora .hbadge{display:inline-block;vertical-align:middle}
+  .halert{display:flex;align-items:center;gap:11px;padding:9px 11px;margin:7px 0;border-radius:9px;background:var(--panel2);cursor:pointer}
+  .halert:hover{background:var(--line)}
+  .halert .ha-ic{font-size:15px;flex:none;width:20px;text-align:center}
+  .halert .ha-tx{flex:1;min-width:0;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .halert .ha-act{font-size:12px;color:var(--brand);flex:none;font-weight:600}
   .hsess{display:flex;align-items:center;gap:14px;padding:12px 2px;border-top:1px solid var(--line)}
   .hsess-hora{font-weight:800;color:var(--brand);width:54px;flex:none;font-size:14px}
   .hsess-tx{flex:1;min-width:0}
@@ -3073,13 +3078,30 @@ function renderHoje(){
     : `<div class="empty" style="margin:8px 0">Nenhuma sessão futura. Marque no Google Calendar com o nome do cliente no título.</div>`;
   const sessoesPanel = panel("📅 Próximas sessões", sessoesBody);
 
-  // ALERTAS
+  // ALERTAS — sinais acionáveis por cliente (health, renovação, entregáveis, KPIs, onboarding)
   const alertas=[];
-  onbParado.forEach(c=>{ const o=c.onboarding||{}; const done=(o.steps||[]).filter(Boolean).length; alertas.push({c,ic:"⚠️",txt:`onboarding parado (${done} de ${ONB_STEPS.length})`,act:"retomar"}); });
-  const alertasPanel = alertas.length ? panel("🔔 Precisam de atenção",
-      alertas.slice(0,8).map(a=>`<div class="hrow click alert-go" data-id="${a.c.id}">
-        <span style="flex:1;font-size:13px">${a.ic} <b>${esc(a.c.nome)}</b> · ${a.txt}</span>
-        <span style="font-size:12px;color:var(--brand)">${a.act} →</span></div>`).join("")) : "";
+  onbParado.forEach(c=>{ const o=c.onboarding||{}; const done=(o.steps||[]).filter(Boolean).length; alertas.push({c,ic:"⚠️",txt:`onboarding parado (${done} de ${ONB_STEPS.length})`,act:"retomar",sev:2}); });
+  ativos.forEach(c=>{
+    if(clientHealth(c).key==="risco") alertas.push({c,ic:"🔴",txt:"health em risco",act:"ver ficha",sev:0});
+    const rd=renovaEmDias(c);
+    if(rd!=null && rd<=60) alertas.push({c,ic:"🔄",txt: rd<0?`renovação venceu há ${-rd}d`: rd===0?"renova hoje":`renova em ${rd}d`, act: rd<=15?"agir":"planejar renovação", sev: rd<=0?0:1});
+    const kb=(Array.isArray(c.kpis)?c.kpis:[]).map(kpiBatendo).filter(v=>v===false).length;
+    if(kb>0) alertas.push({c,ic:"📉",txt:`${kb} KPI${kb>1?"s":""} fora da meta`,act:"ver ficha",sev:2});
+  });
+  (Store.entregaveis||[]).forEach(e=>{
+    const c=coById(e.company_id); if(!c || c.status==="Encerrado") return;
+    if(e.bloqueio) alertas.push({c,ic:"⛔",txt:`entregável bloqueado${e.bloqueio_desde?` há ${Math.max(0,-daysUntil(e.bloqueio_desde))}d`:""}${e.titulo?` — ${esc(e.titulo)}`:""}`,act:"produção",sev:1});
+    else if(entAtrasado(e)) alertas.push({c,ic:"⏰",txt:`entregável atrasado${e.titulo?` — ${esc(e.titulo)}`:""}`,act:"produção",sev:1});
+  });
+  alertas.sort((a,b)=>(a.sev==null?3:a.sev)-(b.sev==null?3:b.sev));
+  const sevCor=s=> s===0?"var(--status-atrasado)": s===1?"#a86a12":"var(--muted2)";
+  const alertasCard = alertas.length ? `<div class="hcard" style="max-width:1180px;margin-bottom:16px">
+      <div class="hcard-hd"><h3>🔔 Precisam de atenção</h3><span style="font-size:12.5px;color:var(--muted2)">${alertas.length} sinal${alertas.length>1?"is":""}</span></div>
+      ${alertas.slice(0,10).map(a=>`<div class="halert click alert-go" data-id="${a.c.id}" style="border-left:3px solid ${sevCor(a.sev)}">
+        <span class="ha-ic">${a.ic}</span>
+        <div class="ha-tx"><b>${esc(a.c.nome)}</b> · ${a.txt}</div>
+        <span class="ha-act">${a.act} →</span></div>`).join("")}
+    </div>` : "";
 
   // AÇÕES
   let acoesBody=`<div class="acadd" style="display:flex;gap:6px;flex-wrap:wrap;padding:12px 0 14px;border-bottom:1px solid var(--line)">
@@ -3240,6 +3262,7 @@ function renderHoje(){
         <div style="font-size:13.5px;color:var(--muted);margin-top:3px">Aqui está o que precisa da sua atenção hoje.</div></div>
       <div style="margin-bottom:18px"><input id="capDesc" class="hinput" style="width:100%;padding:12px 14px;font-size:14px" placeholder='⚡ Capture rápido — ex.: "amanhã ligar pro Pablo #PegBank !urgente"' /></div>
       ${kpis}
+      ${alertasCard}
       ${agoraCard}
       <div class="h2col">${tarefasCard}${leadsCard}</div>
       ${agendaCard}
