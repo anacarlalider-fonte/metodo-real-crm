@@ -377,6 +377,29 @@
   .prod-col.drag-over{outline:2px dashed var(--brand);outline-offset:-6px;border-radius:10px}
   .prod-cli{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13.5px}
   .drawer-sec{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--muted2);margin:18px 0 4px}
+  /* Reuniões (Book) */
+  .reu-layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
+  @media(max-width:960px){ .reu-layout{grid-template-columns:1fr} }
+  .reu-week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
+  @media(max-width:760px){ .reu-week{grid-template-columns:repeat(2,1fr)} }
+  .reu-day{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:8px;min-height:120px}
+  .reu-day.today{border-color:var(--brand)}
+  .reu-dh{display:flex;justify-content:space-between;font-size:11px;font-weight:800;color:var(--muted2);text-transform:uppercase;letter-spacing:.3px;padding:2px 2px 8px}
+  .reu-dh .c{color:var(--muted)}
+  .reu-empty{font-size:12px;color:var(--muted2);text-align:center;padding:6px}
+  .reu-card{background:var(--panel);border:1px solid var(--line2);border-radius:8px;padding:8px;margin-bottom:6px;cursor:pointer}
+  .reu-card:hover{border-color:var(--brand)}
+  .reu-card .reu-t{font-size:11px;color:var(--muted2);font-weight:700}
+  .reu-card .reu-n{font-size:12.5px;font-weight:600;margin:2px 0 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .reu-badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px}
+  .reu-badge.ok{background:var(--status-concluido-bg);color:var(--status-concluido)}
+  .reu-badge.warn{background:#fdf2df;color:#a86a12}
+  .reu-badge.bad{background:var(--status-atrasado-bg);color:var(--status-atrasado)}
+  .reu-side{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .reu-side-h{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--muted2);display:flex;justify-content:space-between;margin-bottom:4px}
+  .reu-ra{display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid var(--line)}
+  .reu-ra .an{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .reu-ra .am{font-size:11.5px;color:var(--muted2)}
   /* Hoje — painel estilo dashboard */
   .hkpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-bottom:20px}
   .hkpi{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px;position:relative}
@@ -669,6 +692,10 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
         Agenda <span class="badge" id="badgeAgenda">0</span>
       </button>
+      <button class="modlink" data-view="reunioes" data-title="Book de Reuniões">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        Reuniões <span class="badge" id="badgeReunioes">0</span>
+      </button>
       <button class="modlink" data-view="dash" data-title="Painel de indicadores">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg>
         Painel
@@ -793,6 +820,11 @@
      <div id="agenda"></div>
    </div>
 
+   <!-- ===== REUNIÕES (Book) VIEW ===== -->
+   <div id="view-reunioes" class="wrap hidden">
+     <div id="reunioesView"></div>
+   </div>
+
    <!-- ===== PAINEL (SAÚDE DA ENTREGA) VIEW ===== -->
    <div id="view-dash" class="wrap hidden">
      <div class="dash-sec">Visão geral da carteira</div>
@@ -858,6 +890,7 @@
           <div class="field"><label>Faturamento médio</label><input id="f_faturamento" placeholder="Ex.: R$ 300 mil/mês" /></div>
           <div class="field"><label>Origem do lead</label><select id="f_origem"></select></div>
           <div class="field"><label>Tags <span style="color:var(--muted2);font-weight:400">(vírgula)</span></label><input id="f_tags" placeholder="Ex.: quente, high-ticket, indicação" /></div>
+          <div class="field"><label>Ritmo de reunião</label><select id="f_cadencia"><option value="">— sem cadência —</option><option value="semanal">Semanal</option><option value="quinzenal">Quinzenal</option><option value="mensal">Mensal</option></select></div>
 
           <div class="field"><label>Fase</label><select id="f_fase"><option value="venda">Venda (funil comercial)</option><option value="entrega">Entrega (Método)</option></select></div>
           <div class="field"><label>Etapa</label><select id="f_etapa"></select></div>
@@ -1354,7 +1387,7 @@ const Store = {
 function objToRow(o,userId){
   return {
     id:o.id, user_id:userId, nome:o.nome, setor:o.setor, cidade:o.cidade, decisor:o.decisor,
-    faturamento:o.faturamento, etapa:o.etapa, status:o.status, plano:o.plano, origem:o.origem||null, tags:o.tags||null,
+    faturamento:o.faturamento, etapa:o.etapa, status:o.status, plano:o.plano, origem:o.origem||null, tags:o.tags||null, cadencia:o.cadencia||null,
     fase:o.fase||"entrega", etapa_venda:o.etapaVenda||null, data_proposta:o.dataProposta||null, ultimo_contato:o.ultimoContato||null, proximo_followup:o.proximoFollowup||null,
     valor_mensal:o.valorMensal!==""&&o.valorMensal!=null?Number(o.valorMensal):null,
     sessoes_realizadas:Number(o.sessoes||0), data_inicio:o.inicio||null, data_fim:o.fim||null,
@@ -1367,7 +1400,7 @@ function objToRow(o,userId){
 function rowToObj(r){
   return {
     id:r.id, nome:r.nome, setor:r.setor, cidade:r.cidade, decisor:r.decisor, faturamento:r.faturamento,
-    etapa:r.etapa, status:r.status, plano:r.plano, origem:r.origem||"", tags:r.tags||"", sessoes:r.sessoes_realizadas, inicio:r.data_inicio,
+    etapa:r.etapa, status:r.status, plano:r.plano, origem:r.origem||"", tags:r.tags||"", cadencia:r.cadencia||"", sessoes:r.sessoes_realizadas, inicio:r.data_inicio,
     fase:r.fase||"entrega", etapaVenda:r.etapa_venda||"lead", dataProposta:r.data_proposta||"", ultimoContato:r.ultimo_contato||"", proximoFollowup:r.proximo_followup||"",
     valorMensal:r.valor_mensal!=null?r.valor_mensal:"",
     fim:r.data_fim, proxima:r.proxima_sessao, dataVenc:r.data_vencimento||"", whatsapp:r.whatsapp, drive:r.drive, dor:r.dor,
@@ -1792,6 +1825,7 @@ function openModal(c){
   $("#f_cidade").value=editing.cidade||""; $("#f_decisor").value=editing.decisor||"";
   if($("#f_origem")){ $("#f_origem").innerHTML=`<option value="">— origem —</option>`+ORIGENS.map(o=>`<option${editing.origem===o?" selected":""}>${o}</option>`).join(""); }
   if($("#f_tags")) $("#f_tags").value=editing.tags||"";
+  if($("#f_cadencia")) $("#f_cadencia").value=editing.cadencia||"";
   $("#f_faturamento").value=editing.faturamento||""; $("#f_sessoes").value=editing.sessoes||"";
   $("#f_inicio").value=editing.inicio||""; $("#f_fim").value=editing.fim||"";
   $("#f_datavenc").value=editing.dataVenc||""; $("#f_whatsapp").value=editing.whatsapp||"";
@@ -2678,6 +2712,7 @@ function collectForm(){
   editing.cidade=$("#f_cidade").value.trim(); editing.decisor=$("#f_decisor").value.trim();
   if($("#f_origem")) editing.origem=$("#f_origem").value;
   if($("#f_tags")) editing.tags=$("#f_tags").value.trim();
+  if($("#f_cadencia")) editing.cadencia=$("#f_cadencia").value;
   editing.faturamento=$("#f_faturamento").value.trim(); editing.sessoes=$("#f_sessoes").value;
   editing.valorMensal=$("#f_valor").value;
   if($("#f_proxfup")) editing.proximoFollowup=$("#f_proxfup").value;
@@ -2824,7 +2859,7 @@ $("#searchInput").addEventListener("input",e=>{ filter=e.target.value.trim().toL
 
 /* ---------- Sidebar navigation ---------- */
 let activeView="hoje";
-const VIEWS=["hoje","sales","metas","board","producao","list","plano","financ","agenda","dash","metodo"];
+const VIEWS=["hoje","sales","metas","board","producao","list","plano","financ","agenda","reunioes","dash","metodo"];
 function setView(v){
   activeView=v;
   $$(".modlink").forEach(x=>x.classList.toggle("active",x.dataset.view===v));
@@ -3338,6 +3373,114 @@ async function prodCriar(){
     });
   }
 })();
+/* ============ REUNIÕES — Book (Agenda + Ritmo + Requer atenção) ============ */
+const CADENCIAS={semanal:{nome:"Semanal",dias:7},quinzenal:{nome:"Quinzenal",dias:14},mensal:{nome:"Mensal",dias:30}};
+let reuTab="agenda", reuWeekOff=0;
+function sessDurMin(s){ if(!s.inicio||!s.fim) return 0; const m=Math.round((new Date(s.fim)-new Date(s.inicio))/60000); return m>0?m:0; }
+function durTxt(m){ if(!m) return ""; if(m<60) return m+"m"; const h=Math.floor(m/60),r=m%60; return r?`${h}h${r}`:`${h}h`; }
+function sessObjs(){
+  return (Store.sessoes||[]).filter(s=>s.inicio).map(s=>{ const d=new Date(s.inicio); return {
+    id:s.id, dateISO:s.inicio.slice(0,10), hora:isNaN(d)?"":d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}),
+    dur:durTxt(sessDurMin(s)), companyId:s.company_id||null, nome:s.company_id?coNome(s.company_id):(s.titulo||"Sessão"), sort:s.inicio }; });
+}
+function clienteTemAtaEm(cid,dateISO){ const c=coById(cid); return !!(c && (c.atas||[]).some(a=>a.data===dateISO)); }
+function atasParaExtrair(){ const out=[]; (Store.cache||[]).forEach(c=>{ (c.atas||[]).forEach((a,i)=>{ if(!a.tarefasGeradas){ const n=ataActionItems(a).length; if(n>0) out.push({c,a,i,n}); } }); }); return out; }
+function ultimaReuniao(c){
+  const today=todayISO();
+  const ss=(Store.sessoes||[]).filter(s=>s.company_id===c.id && s.inicio && s.inicio.slice(0,10)<=today).map(s=>s.inicio.slice(0,10)).sort();
+  const cand=[ss.length?ss[ss.length-1]:null, lastAtaDate(c)].filter(Boolean).sort();
+  return cand.length?cand[cand.length-1]:null;
+}
+function foraRitmo(c){ if(!c.cadencia||!CADENCIAS[c.cadencia]) return false; const last=ultimaReuniao(c); if(!last) return true; return (-(daysUntil(last)))>CADENCIAS[c.cadencia].dias; }
+function weekStartISO(off){ const t=new Date(todayISO()+"T00:00"); const dow=(t.getDay()+6)%7; t.setDate(t.getDate()-dow+off*7); return t.toISOString().slice(0,10); }
+function renderReuAgenda(sess,f){
+  const today=todayISO(); const ws=weekStartISO(reuWeekOff);
+  const days=Array.from({length:7},(_,i)=>addDays(ws,i)); const dow=["SEG","TER","QUA","QUI","SEX","SÁB","DOM"];
+  const cols=days.map((d,i)=>{
+    const items=sess.filter(o=>o.dateISO===d).sort((a,b)=>(a.sort||"").localeCompare(b.sort||""));
+    return `<div class="reu-day${d===today?' today':''}">
+      <div class="reu-dh"><span>${dow[i]} ${+d.split("-")[2]}</span><span class="c">${items.length||"—"}</span></div>
+      ${items.map(o=>{ const past=o.dateISO<today; const prep=prepGet(prepKey(o)); const ata=o.companyId&&clienteTemAtaEm(o.companyId,o.dateISO);
+        const badge= past ? (ata?`<span class="reu-badge ok">✅ ata</span>`:`<span class="reu-badge warn">sem ata</span>`) : (prep?`<span class="reu-badge ok">✅ prep</span>`:`<span class="reu-badge bad">sem prep</span>`);
+        return `<div class="reu-card${o.companyId?' reu-open':''}" ${o.companyId?`data-id="${o.companyId}"`:""}><div class="reu-t">${o.hora}${o.dur?` · ${o.dur}`:""}</div><div class="reu-n">${esc(o.nome)}</div>${badge}</div>`; }).join("")||`<div class="reu-empty">—</div>`}
+    </div>`;
+  }).join("");
+  const we=addDays(ws,6); const p=x=>x.split("-");
+  const header=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+    <button class="btn sm ghost reu-wk" data-off="-1" type="button">‹</button>
+    <button class="btn sm ghost reu-wk" data-off="hoje" type="button">Hoje</button>
+    <button class="btn sm ghost reu-wk" data-off="1" type="button">›</button>
+    <span style="font-size:13px;color:var(--muted);font-weight:600">${+p(ws)[2]} ${MESES[+p(ws)[1]-1]} – ${+p(we)[2]} ${MESES[+p(we)[1]-1]} ${p(ws)[0]}</span></div>`;
+  const ra=[];
+  f.semPrep.forEach(o=>ra.push({cid:o.companyId,nome:o.nome,sub:`${fmtDiaMes(o.dateISO)} ${o.hora}`,act:"marcar prep",cls:"bad",pkey:prepKey(o)}));
+  f.semAta.forEach(o=>ra.push({cid:o.companyId,nome:o.nome,sub:`${fmtDiaMes(o.dateISO)} ${o.hora}`,act:"registrar ata",cls:"warn"}));
+  f.extrair.forEach(x=>ra.push({cid:x.c.id,nome:x.c.nome,sub:`ata ${x.a.data?fmtDiaMes(x.a.data):""}`,act:`extrair ${x.n} ação${x.n>1?"es":""}`,cls:"ok",exi:x.i}));
+  const raHtml = ra.length ? ra.slice(0,14).map(r=>`<div class="reu-ra">
+      <div class="reu-open" ${r.cid?`data-id="${r.cid}"`:""} style="flex:1;min-width:0;cursor:${r.cid?'pointer':'default'}"><div class="an">${esc(r.nome)}</div><div class="am">${esc(r.sub)}</div></div>
+      ${r.pkey!=null?`<button class="btn sm ghost reu-prep" data-k="${encodeURIComponent(r.pkey)}" type="button">${r.act}</button>`:r.exi!=null?`<button class="btn sm ghost reu-extrair" data-id="${r.cid}" data-i="${r.exi}" type="button">${r.act}</button>`:`<span class="reu-badge ${r.cls}">${r.act}</span>`}
+    </div>`).join("") : `<div class="empty" style="margin:12px 2px">Tudo em dia. ✅</div>`;
+  return `<div class="reu-layout">
+      <div>${header}<div class="reu-week">${cols}</div></div>
+      <div class="reu-side"><div class="reu-side-h">Requer atenção <span>${ra.length}</span></div>${raHtml}</div>
+    </div>`;
+}
+function renderReuRitmo(ativos){
+  const rows=[...ativos].sort((a,b)=>(a.nome||"").localeCompare(b.nome||"")).map(c=>{
+    const last=ultimaReuniao(c); const diasLast= last? -(daysUntil(last)) : null; const prox=proximaSessaoDe(c); const fr=foraRitmo(c);
+    const cadSel=`<select class="reu-cad hinput" data-id="${c.id}" style="font-size:12.5px;padding:5px 8px"><option value="">— sem cadência —</option>${Object.entries(CADENCIAS).map(([k,v])=>`<option value="${k}" ${c.cadencia===k?"selected":""}>${v.nome}</option>`).join("")}</select>`;
+    return `<tr class="reu-open" data-id="${c.id}">
+        <td style="font-weight:600">${esc(c.nome)}</td>
+        <td>${cadSel}</td>
+        <td style="color:${fr?'var(--status-atrasado)':'var(--muted)'};font-weight:${fr?600:400}">${diasLast!=null?`há ${diasLast}d`:(c.cadencia?"nunca":"—")}${fr?" · fora do ritmo":""}</td>
+        <td style="color:var(--muted)">${last?fmtDiaMes(last):"—"}</td>
+        <td style="color:var(--muted)">${prox?fmtDiaMes(prox):"—"}</td>
+      </tr>`; }).join("");
+  return ativos.length?`<div class="ltable-wrap"><table class="ltable"><thead><tr><th>Cliente</th><th>Cadência</th><th>Última reunião</th><th>Data</th><th>Próxima</th></tr></thead><tbody>${rows}</tbody></table></div>`:`<div class="empty" style="margin:20px 0">Nenhum cliente ativo.</div>`;
+}
+function renderReunioes(){
+  const box=$("#reunioesView"); if(!box) return;
+  if(Store.mode!=="cloud"||!Store.user){ box.innerHTML=`<div class="empty" style="margin:20px 0">Disponível no modo nuvem (faça login).</div>`; return; }
+  const today=todayISO(); const sess=sessObjs();
+  const futuras=sess.filter(o=>o.dateISO>=today); const passadas=sess.filter(o=>o.dateISO<today);
+  const semPrep=futuras.filter(o=>!prepGet(prepKey(o)));
+  const semAta=passadas.filter(o=>o.companyId && !clienteTemAtaEm(o.companyId,o.dateISO)).slice(-20).reverse();
+  const extrair=atasParaExtrair();
+  const ativos=(Store.cache||[]).filter(c=>c.fase==="entrega" && c.status!=="Encerrado");
+  const foraR=ativos.filter(foraRitmo);
+  const nContas=ativos.filter(c=>c.cadencia).length;
+  const bd=$("#badgeReunioes"); if(bd) bd.textContent=semPrep.length+foraR.length;
+  const chip=(txt,cor)=>`<span class="prodchip" style="color:${cor};cursor:default">${txt}</span>`;
+  const chips=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 14px">
+      ${chip(`⛔ ${semPrep.length} sem prep`,semPrep.length?"var(--status-atrasado)":"var(--muted)")}
+      ${chip(`📝 ${semAta.length} sem ata`,semAta.length?"#a86a12":"var(--muted)")}
+      ${chip(`✨ ${extrair.length} c/ ações a extrair`,extrair.length?"var(--status-concluido)":"var(--muted)")}
+      ${chip(`🔁 ${foraR.length} fora do ritmo`,foraR.length?"var(--status-atrasado)":"var(--muted)")}
+    </div>`;
+  const tabs=`<div class="pltabs" style="margin-bottom:14px">
+      <button class="pltab ${reuTab==="agenda"?"active":""}" data-reutab="agenda" type="button">📅 Agenda</button>
+      <button class="pltab ${reuTab==="ritmo"?"active":""}" data-reutab="ritmo" type="button">🔁 Ritmo por conta</button>
+    </div>`;
+  const body = reuTab==="ritmo" ? renderReuRitmo(ativos) : renderReuAgenda(sess,{semPrep,semAta,extrair});
+  box.innerHTML=`
+    <div class="plhd"><div><h2>Book de Reuniões</h2><div class="sub">Ritmo com ${nContas} conta${nContas!==1?"s":""} com cadência · atas sincronizam do Tactiq · prep salvo no navegador</div></div></div>
+    ${chips}${tabs}${body}`;
+}
+(function initReunioesEvents(){
+  const box=$("#reunioesView"); if(!box) return;
+  box.addEventListener("click",async e=>{
+    const tb=e.target.closest(".pltab"); if(tb){ reuTab=tb.dataset.reutab; renderReunioes(); return; }
+    const wk=e.target.closest(".reu-wk"); if(wk){ const o=wk.dataset.off; reuWeekOff = o==="hoje"?0:reuWeekOff+(+o); renderReunioes(); return; }
+    const pp=e.target.closest(".reu-prep"); if(pp){ const k=decodeURIComponent(pp.dataset.k); prepSet(k,true); toast("Prep marcada ✅","ok"); renderReunioes(); return; }
+    const ex=e.target.closest(".reu-extrair"); if(ex){ const c=coById(ex.dataset.id); const a=c&&(c.atas||[])[+ex.dataset.i]; if(!a) return;
+      try{ const items=ataActionItems(a); let n=0; for(const it of items){ await Store.addAcao({company_id:c.id, descricao:it.descricao, responsavel:it.responsavel, origem:"reuniao", origem_ref:a.criado||a.data||null}); n++; }
+        if(n){ a.tarefasGeradas=true; await Store.save(c); toast(`${n} tarefa(s) no seu Hoje ✅`,"ok"); } renderReunioes(); refreshBadges(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } return; }
+    if(e.target.closest("select")) return;
+    const op=e.target.closest(".reu-open"); if(op&&op.dataset.id){ const c=coById(op.dataset.id); if(c) openModal(c); return; }
+  });
+  box.addEventListener("change",async e=>{
+    const cad=e.target.closest(".reu-cad"); if(cad){ const c=coById(cad.dataset.id); if(!c) return; c.cadencia=cad.value||null; try{ await Store.save(c); renderReunioes(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } }
+  });
+})();
 function renderActive(){
   if(activeView==="hoje") renderHoje();
   else if(activeView==="sales") renderSales();
@@ -3348,6 +3491,7 @@ function renderActive(){
   else if(activeView==="plano") renderPlanoView();
   else if(activeView==="financ") renderFinanceiro();
   else if(activeView==="agenda") renderAgenda();
+  else if(activeView==="reunioes") renderReunioes();
   else if(activeView==="dash") renderDash();
   else if(activeView==="metodo") renderMetodo();
   refreshBadges();
