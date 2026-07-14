@@ -334,7 +334,10 @@
   .plgh .cnt{font-size:12px;color:var(--muted2);font-weight:500}
   .plgh .chev{display:inline-block;transition:transform .15s;color:var(--muted2);font-size:12px}
   .plgh.collapsed .chev{transform:rotate(-90deg)}
-  .plr{display:grid;grid-template-columns:46px minmax(120px,1.7fr) minmax(80px,1fr) 118px 70px 116px 78px 116px;align-items:center;gap:10px;padding:11px 12px;border:1px solid var(--line);border-left:3px solid var(--line2);border-radius:10px;margin:7px 0;background:var(--bg2)}
+  .plr{display:grid;grid-template-columns:46px minmax(120px,1.7fr) minmax(80px,1fr) 118px 70px 116px 78px 116px;align-items:center;gap:10px;padding:11px 12px;border:1px solid var(--line);border-left:3px solid var(--line2);border-radius:10px;margin:7px 0;background:var(--bg2);position:relative}
+  .pla-mine-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:none;background:var(--panel);box-shadow:0 1px 5px rgba(0,0,0,.16);color:var(--muted);border-radius:8px;padding:4px 9px;font-size:11.5px;font-weight:700;cursor:pointer;opacity:0;transition:.12s;white-space:nowrap;z-index:2}
+  .plr:hover .pla-mine-btn{opacity:1}
+  .pla-mine-btn:hover{color:var(--brand)}
   .plr:hover{background:var(--bg);border-color:var(--line2)}
   .plr.open{background:var(--bg);border-color:var(--brand)}
   .plr .code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;color:var(--muted2)}
@@ -1354,7 +1357,7 @@ const Store = {
       emails:item.emails||[], fonte:"tactiq", criado:new Date().toISOString()
     };
     let nTasks=0;
-    try{ const items=ataActionItems(ata); for(const it of items){ await this.addAcao({company_id:c.id, descricao:it.descricao, responsavel:it.responsavel, origem:"reuniao", origem_ref:ata.criado}); } nTasks=items.length; if(nTasks) ata.tarefasGeradas=true; }catch(e){}
+    try{ const items=ataActionItems(ata); for(const it of items){ await this.addAcao({company_id:c.id, descricao:it.descricao, responsavel:it.responsavel, dono:"cliente", origem:"reuniao", origem_ref:ata.criado}); } nTasks=items.length; if(nTasks) ata.tarefasGeradas=true; }catch(e){}
     c.atas=c.atas||[]; c.atas.unshift(ata);
     await this.save(c);
     await this.resolveInbox(item.id);
@@ -2125,7 +2128,7 @@ async function gerarTarefasDaAta(ata, companyId){
   const items=ataActionItems(ata);
   if(!items.length){ toast("Essa ata não tem próximos passos pra virar tarefa","err"); return 0; }
   for(const it of items){
-    await Store.addAcao({ company_id:companyId, descricao:it.descricao, responsavel:it.responsavel, origem:"reuniao", origem_ref:ata.criado||ata.data||null });
+    await Store.addAcao({ company_id:companyId, descricao:it.descricao, responsavel:it.responsavel, dono:"cliente", origem:"reuniao", origem_ref:ata.criado||ata.data||null });
   }
   return items.length;
 }
@@ -2180,7 +2183,7 @@ function renderAtas(){
     b.disabled=true;
     try{
       const n=await gerarTarefasDaAta(a, editing.id);
-      if(n>0){ a.tarefasGeradas=true; await Store.save(editing); renderAtas(); refreshBadges(); toast(`${n} tarefa(s) criada(s) no seu Hoje ✅`,"ok"); }
+      if(n>0){ a.tarefasGeradas=true; await Store.save(editing); renderAtas(); refreshBadges(); toast(`${n} ação(ões) no Plano de Ação do cliente ✅`,"ok"); }
       else b.disabled=false;
     }catch(e){ b.disabled=false; toast("Erro: "+(e.message||e),"err"); }
   }));
@@ -2534,6 +2537,7 @@ function planoAcaoRow(a, opts){
 }
 /* ============ Plano de Ação 5W2H — tela do menu (Tabela/Kanban/Timeline + Drawer) ============ */
 let planoTab="tabela", plDrawerId=null, plDrawerTab="detalhes", plNewMode=false;
+let planoAgrupar="cliente"; // como a tabela agrupa: cliente | meta
 let plF={busca:"",status:new Set(),triade:new Set(),meta:"",projeto:"",dono:"",de:"",ate:""};
 const planoGruposFechados=new Set();
 function planoStatus(a){
@@ -2571,18 +2575,22 @@ function planoRowCard(a, code){
       <div class="pl-tri">${triadeBadge(a.triade)}</div>
       <div class="pl-custo" style="color:var(--muted);font-size:13px">${a.quanto?esc(a.quanto):"—"}</div>
       <div>${statusBadge(a)}</div>
+      <button class="pla-tome pla-mine-btn" data-id="${a.id}" title="É minha — mandar pras minhas entregas (Hoje)" type="button">👩 minha</button>
     </div>`;
 }
 function renderPlanoTabela(list){
+  const porCliente = planoAgrupar==="cliente";
   const groups={};
-  list.forEach(a=>{ const m=(a.meta&&a.meta.trim())||"Sem meta"; (groups[m]=groups[m]||[]).push(a); });
-  const metas=Object.keys(groups).sort((a,b)=> a==="Sem meta"?1:b==="Sem meta"?-1:a.localeCompare(b));
+  list.forEach(a=>{ const key = porCliente ? (coNome(a.company_id)||"Sem cliente") : ((a.meta&&a.meta.trim())||"Sem meta"); (groups[key]=groups[key]||[]).push(a); });
+  const semLbl = porCliente?"Sem cliente":"Sem meta";
+  const keys=Object.keys(groups).sort((a,b)=> a===semLbl?1:b===semLbl?-1:a.localeCompare(b,"pt-BR"));
   const rank={urgente:0,importante:1,circunstancial:2};
   const srt=arr=>arr.sort((a,b)=> ((a.status==="feito")-(b.status==="feito")) || (a.prazo||"9999").localeCompare(b.prazo||"9999") || ((rank[a.triade]??3)-(rank[b.triade]??3)));
-  return metas.map(m=>{
-    const closed=planoGruposFechados.has(m); const arr=srt(groups[m]);
+  return keys.map(k=>{
+    const closed=planoGruposFechados.has(k); const arr=srt(groups[k]);
+    const ic = porCliente?"👤":"🎯";
     return `<div class="plgrp">
-      <div class="plgh${closed?" collapsed":""}" data-meta="${esc(m)}"><span class="chev">▾</span> 🎯 ${esc(m)} <span class="cnt">· ${arr.length} ${arr.length===1?"ação":"ações"}</span></div>
+      <div class="plgh${closed?" collapsed":""}" data-meta="${esc(k)}"><span class="chev">▾</span> ${ic} ${esc(k)} <span class="cnt">· ${arr.length} ${arr.length===1?"ação":"ações"}</span></div>
       <div class="plgb" ${closed?'style="display:none"':""}>${arr.map(a=>planoRowCard(a,window._plCode[a.id])).join("")}</div>
     </div>`;
   }).join("");
@@ -2670,7 +2678,10 @@ function renderPlanoView(){
       <button class="pltab ${planoTab==="kanban"?"active":""}" data-pltab="kanban">▦ Kanban</button>
       <button class="pltab ${planoTab==="timeline"?"active":""}" data-pltab="timeline">⧗ Timeline</button>
     </div>
-    <span style="font-size:12px;color:var(--muted2)">${list.length} de ${all.length} ações</span>
+    <div style="display:flex;align-items:center;gap:10px">
+      ${planoTab==="tabela"?`<div class="pltabs"><button class="pltab ${planoAgrupar==="cliente"?"active":""}" data-plgrp="cliente">👤 Por cliente</button><button class="pltab ${planoAgrupar==="meta"?"active":""}" data-plgrp="meta">🎯 Por meta</button></div>`:""}
+      <span style="font-size:12px;color:var(--muted2)">${list.length} de ${all.length} ações</span>
+    </div>
   </div>`;
   let content;
   if(!all.length) content=`<div class="empty" style="margin:30px 0;text-align:center">Nenhuma ação ainda. Clique em <b>＋ Nova ação</b> ou use o “→👤” no Hoje.</div>`;
@@ -2680,7 +2691,7 @@ function renderPlanoView(){
   else content=renderPlanoTabela(list);
   box.innerHTML=`
     <div class="plhd">
-      <div><h2>Plano de Ação 5W2H</h2><div class="sub">Ações dos clientes ligadas às metas — filtre por status, tríade, meta, projeto, dono ou data. Clique numa ação p/ abrir o 5W2H.</div></div>
+      <div><h2>Plano de Ação 5W2H</h2><div class="sub">Ações dos clientes — vindas das reuniões (Tactiq) ou criadas aqui, agrupadas por cliente. Passe o mouse e clique <b>👩 minha</b> pra mandar uma ação pras suas entregas (Hoje).</div></div>
       <div style="display:flex;gap:8px"><button class="btn sm ghost" id="plvExport" type="button">↓ Exportar</button></div>
     </div>
     ${cards}${filterBar}${tabs}${content}`;
@@ -3004,7 +3015,8 @@ $("#btnAddRotina").addEventListener("click",()=>planoRow($("#rotinaBox"),{}));
     // --- tela do menu: header/tabs/filtros ---
     if(e.target.closest("#plvExport")){ planoExportCSV(); return; }
     if(e.target.closest("#plvFLimpar")){ plF={busca:"",status:new Set(),triade:new Set(),meta:"",projeto:"",dono:"",de:"",ate:""}; renderPlanoView(); return; }
-    const tab=e.target.closest(".pltab"); if(tab){ planoTab=tab.dataset.pltab; renderPlanoView(); return; }
+    const grp=e.target.closest("[data-plgrp]"); if(grp){ planoAgrupar=grp.dataset.plgrp; renderPlanoView(); return; }
+    const tab=e.target.closest(".pltab"); if(tab&&tab.dataset.pltab){ planoTab=tab.dataset.pltab; renderPlanoView(); return; }
     const sc=e.target.closest("[data-fstatus]"); if(sc){ const k=sc.dataset.fstatus; plF.status.has(k)?plF.status.delete(k):plF.status.add(k); renderPlanoView(); return; }
     const tc=e.target.closest("[data-ftriade]"); if(tc){ const k=tc.dataset.ftriade; plF.triade.has(k)?plF.triade.delete(k):plF.triade.add(k); renderPlanoView(); return; }
     const gh=e.target.closest(".plgh");
@@ -3780,8 +3792,8 @@ function renderReunioes(){
     const en=e.target.closest(".reu-encerrar"); if(en){ openEncerrar(en.dataset.id, en.dataset.date); return; }
     const pp=e.target.closest(".reu-prep"); if(pp){ const k=decodeURIComponent(pp.dataset.k); prepSet(k,true); toast("Prep marcada ✅","ok"); renderReunioes(); return; }
     const ex=e.target.closest(".reu-extrair"); if(ex){ const c=coById(ex.dataset.id); const a=c&&(c.atas||[])[+ex.dataset.i]; if(!a) return;
-      try{ const items=ataActionItems(a); let n=0; for(const it of items){ await Store.addAcao({company_id:c.id, descricao:it.descricao, responsavel:it.responsavel, origem:"reuniao", origem_ref:a.criado||a.data||null}); n++; }
-        if(n){ a.tarefasGeradas=true; await Store.save(c); toast(`${n} tarefa(s) no seu Hoje ✅`,"ok"); } renderReunioes(); refreshBadges(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } return; }
+      try{ const items=ataActionItems(a); let n=0; for(const it of items){ await Store.addAcao({company_id:c.id, descricao:it.descricao, responsavel:it.responsavel, dono:"cliente", origem:"reuniao", origem_ref:a.criado||a.data||null}); n++; }
+        if(n){ a.tarefasGeradas=true; await Store.save(c); toast(`${n} ação(ões) no Plano de ${coNome(c.id)} ✅`,"ok"); } renderReunioes(); refreshBadges(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } return; }
     if(e.target.closest("select")) return;
     const op=e.target.closest(".reu-open"); if(op&&op.dataset.id){ const c=coById(op.dataset.id); if(c) openModal(c); return; }
   });
