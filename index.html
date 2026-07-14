@@ -3174,6 +3174,9 @@ let hojeView="tudo", hojeAllTasks=false;
 function prepKey(s){ return (s.dateISO||"")+"|"+(s.hora||"")+"|"+(s.companyId||s.nome||""); }
 function prepGet(k){ try{ return JSON.parse(localStorage.getItem("mr_prep")||"{}")[k]===true; }catch(e){ return false; } }
 function prepSet(k,v){ try{ const m=JSON.parse(localStorage.getItem("mr_prep")||"{}"); if(v) m[k]=true; else delete m[k]; localStorage.setItem("mr_prep",JSON.stringify(m)); }catch(e){} }
+/* Reunião marcada como "feita" no dia — sai das Tarefas do Dia (marcador local por sessão) */
+function sessDoneGet(k){ try{ return JSON.parse(localStorage.getItem("mr_sessdone")||"{}")[k]===true; }catch(e){ return false; } }
+function sessDoneSet(k,v){ try{ const m=JSON.parse(localStorage.getItem("mr_sessdone")||"{}"); if(v) m[k]=true; else delete m[k]; localStorage.setItem("mr_sessdone",JSON.stringify(m)); }catch(e){} }
 /* Capture rápido — linguagem natural: "amanhã ligar pro pablo #pegbank !urgente" */
 function parseCapture(text){
   let t=" "+text.trim()+" "; let company_id=null, prazo=null, prio=null;
@@ -3337,7 +3340,7 @@ function renderHoje(){
   atrasadas.forEach(a=>tarefas.push({u:0,badge:"atrasada",ic:iconFor(a.descricao),t1:a.descricao,t2:a.company_id?coNome(a.company_id):"tarefa",cid:a.company_id,acId:a.id,como:a.como}));
   parcVenc.forEach(p=>tarefas.push({u:0,badge:"atrasada",ic:"💸",t1:`Cobrar ${coNome(p.company_id)}`,t2:`${brl(Number(p.valor||0))} · venceu ${fmtDiaMes(p.vencimento)}`,cid:p.company_id}));
   fupsDue.filter(x=>x.t.esfriou||x.t.due<0).forEach(x=>tarefas.push({u:1,badge:"atrasada",ic:"📨",t1:`Follow-up ${x.c.nome}`,t2:x.t.esfriou?"esfriando · última tentativa":"toque atrasado",cid:x.c.id,fuId:x.c.id}));
-  sessHoje.forEach(s=>tarefas.push({u:1,badge:"alta",ic:"📅",t1:`Reunião ${s.nome}`,t2:s.hora?`hoje ${s.hora}`:"hoje",cid:s.companyId}));
+  sessHoje.forEach(s=>{ const sk=prepKey(s); if(sessDoneGet(sk)) return; tarefas.push({u:1,badge:"alta",ic:"📅",t1:`Reunião ${s.nome}`,t2:s.hora?`hoje ${s.hora}`:"hoje",cid:s.companyId,sessKey:sk}); });
   fupsDue.filter(x=>!x.t.esfriou&&x.t.due===0).forEach(x=>tarefas.push({u:1,badge:"alta",ic:"📨",t1:`Follow-up ${x.c.nome}`,t2:"tocar hoje",cid:x.c.id,fuId:x.c.id}));
   deHoje.forEach(a=>tarefas.push({u:2,badge:"alta",ic:iconFor(a.descricao),t1:a.descricao,t2:a.company_id?coNome(a.company_id):"tarefa",cid:a.company_id,acId:a.id,como:a.como}));
   semana.forEach(a=>tarefas.push({u:3,badge:"baixa",ic:iconFor(a.descricao),t1:a.descricao,t2:(a.company_id?coNome(a.company_id)+" · ":"")+fmtDiaMes(a.prazo),cid:a.company_id,acId:a.id}));
@@ -3360,6 +3363,7 @@ function renderHoje(){
         ${t.acId?`<span class="tck ac-check" data-id="${t.acId}" title="Concluir">☐</span>`:`<span class="tic">${t.ic}</span>`}
         <div class="tx${t.entId?' ent-go':(t.cid?' prio-go':'')}"${t.entId?` data-ent="${t.entId}" style="cursor:pointer"`:(t.cid?` data-id="${t.cid}" style="cursor:pointer"`:"")}><div class="t1">${esc(t.t1)}</div><div class="t2">${esc(t.t2)}</div></div>
         ${t.fuId?`<button class="fu-done btn sm" data-id="${t.fuId}" style="white-space:nowrap">✓ contatei</button>`:""}
+        ${t.sessKey?`<button class="sess-done btn sm" data-key="${encodeURIComponent(t.sessKey)}" style="white-space:nowrap">✓ feita</button>`:""}
         <span class="hbadge ${t.badge}">${badgeLbl[t.badge]}</span>
       </div>`).join("") : `<div class="empty" style="margin:16px 2px">Nada pendente pra hoje. Você está em dia! ✅</div>`;
   const verTarefas = tarefas.length>CAP ? `<span class="lnk ver-tarefas">${hojeAllTasks?"Ver menos":`Ver todas (${tarefas.length})`}</span>` : `<span style="font-size:12.5px;color:var(--muted2)">${tarefas.length}${urgentes?` · ${urgentes} urgente${urgentes>1?"s":""}`:""}</span>`;
@@ -3403,6 +3407,7 @@ function renderHoje(){
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
         ${tp.acId?`<button class="btn sm primary ac-check" data-id="${tp.acId}" type="button">✓ Fiz</button>`:""}
         ${tp.fuId?`<button class="btn sm primary fu-done" data-id="${tp.fuId}" type="button">✓ Contatei</button>`:""}
+        ${tp.sessKey?`<button class="btn sm primary sess-done" data-key="${encodeURIComponent(tp.sessKey)}" type="button">✓ Reunião feita</button>`:""}
         ${tp.acId?`<button class="btn sm ghost ac-snooze" data-id="${tp.acId}" type="button">Adiar 1 dia</button>`:""}
         ${tp.acId&&tp.cid?`<button class="btn sm ghost ac-deleg" data-id="${tp.acId}" type="button">Delegar ao cliente</button>`:""}
         ${tp.cid?`<button class="btn sm ghost prio-go" data-id="${tp.cid}" type="button">Abrir →</button>`:""}
@@ -3448,6 +3453,8 @@ async function hojeAddAcao(){
     if(sn){ const a=Store.acoes.find(x=>x.id===sn.dataset.id); if(a){ try{ await Store.updateAcao(a.id,{prazo:addDays(todayISO(),1)}); toast("Adiada pra amanhã ⏰","ok"); renderHoje(); refreshBadges(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } } return; }
     const dg=e.target.closest(".ac-deleg");
     if(dg){ const a=Store.acoes.find(x=>x.id===dg.dataset.id); if(a){ try{ await Store.updateAcao(a.id,{dono:"cliente"}); toast("Delegada ao plano de "+coNome(a.company_id)+" 👤","ok"); renderHoje(); refreshBadges(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } } return; }
+    const sd=e.target.closest(".sess-done");
+    if(sd){ e.stopPropagation(); sessDoneSet(decodeURIComponent(sd.dataset.key),true); toast("Reunião marcada como feita ✅","ok"); renderHoje(); return; }
     const se=e.target.closest(".sess-encerrar");
     if(se){ e.stopPropagation(); openEncerrar(se.dataset.id, se.dataset.date); return; }
     const pp=e.target.closest(".sess-prep");
