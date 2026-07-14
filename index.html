@@ -175,6 +175,39 @@
   .mtab:hover{color:var(--txt)}
   .mtab.active{background:var(--brand);border-color:var(--brand);color:#fff}
   .mpanel{padding-top:6px}
+  /* ===== Ficha do cliente estilo Lovable — painel lateral direito ===== */
+  #overlay{align-items:stretch;justify-content:flex-end;padding:0;overflow:hidden}
+  #overlay .modal{max-width:660px;width:100%;height:100vh;max-height:100vh;border-radius:0;border:none;border-left:1px solid var(--line2);display:flex;flex-direction:column;animation:fichaIn .2s cubic-bezier(.2,.7,.3,1)}
+  @keyframes fichaIn{from{transform:translateX(40px);opacity:.4}to{transform:none;opacity:1}}
+  #overlay .modal-head{position:static;flex:none}
+  #overlay .modal-body{max-height:none;flex:1 1 auto;overflow-y:auto}
+  #overlay .modal-foot{position:static;flex:none}
+  /* abas underline minimalistas */
+  #overlay #mtabs{gap:2px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:0;margin-bottom:14px;scrollbar-width:none}
+  #overlay #mtabs::-webkit-scrollbar{display:none}
+  #overlay #mtabs .mtab{background:none;border:none;border-bottom:2px solid transparent;border-radius:0;color:var(--muted);padding:9px 9px;font-size:13px;font-weight:600}
+  #overlay #mtabs .mtab:hover{color:var(--txt)}
+  #overlay #mtabs .mtab.active{background:none;color:var(--brand);border-bottom-color:var(--brand)}
+  /* cabeçalho da ficha (Resumo) */
+  .rz-head{margin:2px 0 16px}
+  .rz-eyebrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+  .rz-hlabel{font-size:11px;font-weight:800;letter-spacing:.6px;display:inline-flex;align-items:center;gap:6px}
+  .rz-hlabel .cli-dot{width:8px;height:8px}
+  .rz-fasetag{font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:999px}
+  .rz-name{font-size:22px;font-weight:800;line-height:1.15}
+  .rz-meta{font-size:12.5px;color:var(--muted);margin-top:5px;display:flex;gap:12px;flex-wrap:wrap}
+  .rz-stats{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 4px;padding:14px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .rz-stat{flex:1;min-width:104px}
+  .rz-stat .k{font-size:10.5px;font-weight:800;letter-spacing:.4px;color:var(--muted2);text-transform:uppercase}
+  .rz-stat .v{font-size:16px;font-weight:800;margin-top:3px}
+  .rz-sec{font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--muted2);text-transform:uppercase;margin:18px 0 9px}
+  /* timeline com linha conectora */
+  .rz-tl{position:relative;padding-left:20px}
+  .rz-tl:before{content:"";position:absolute;left:5px;top:4px;bottom:4px;width:2px;background:var(--line2)}
+  .rz-tli{position:relative;padding:5px 0}
+  .rz-tli:before{content:"";position:absolute;left:-18px;top:9px;width:9px;height:9px;border-radius:50%;background:var(--panel);border:2px solid var(--line2)}
+  .rz-tli .tt{font-size:13px}
+  .rz-tli .td{font-size:11.5px;color:var(--muted2);margin-top:1px}
   .docrow{display:grid;grid-template-columns:1fr 1.6fr 30px;gap:7px;margin-bottom:7px;align-items:center}
   .docrow input{padding:9px 11px;font-size:13px;background:var(--bg);border:1px solid var(--line2);border-radius:8px;color:var(--txt);outline:none}
   .docrow input:focus{border-color:var(--brand)}
@@ -2394,16 +2427,29 @@ function renderResumo(){
   const dimTag=(lbl,v)=>`<span style="font-size:11.5px;color:var(--muted2)">${lbl} <b style="color:${v==null?'var(--muted2)':v>=70?'var(--status-concluido)':v>=40?'#a86a12':'var(--status-atrasado)'}">${v==null?'—':v+'%'}</b></span>`;
   const card=(t,inner)=>`<div class="rz-card"><div class="rz-h">${t}</div>${inner}</div>`;
   const listOr=(arr,fn,empty)=>arr.length?arr.slice(0,5).map(fn).join("")+(arr.length>5?`<div class="rz-sub" style="padding-top:5px">+${arr.length-5} mais…</div>`:""):`<div class="rz-empty">${empty}</div>`;
+  const st=currentStage(c);
+  const faseTint=`background:color-mix(in srgb, ${st.sw} 15%, transparent);color:${st.sw}`;
+  const mrr=plval(c); const permuta=mrr<=0 && c.notas && /permuta/i.test(c.notas);
+  const mrrTxt = mrr>0?brl(mrr):(permuta?"Permuta":"—");
+  const hcol=healthCor(h.key);
+  const renovaCor = rd!=null&&rd<0?'var(--status-atrasado)':rd!=null&&rd<=30?'#a86a12':'inherit';
   box.innerHTML=`
-    <div class="rz-top">
-      <div style="min-width:0"><div style="font-size:18px;font-weight:800">${esc(c.nome)||"—"}</div>
-        <div style="font-size:12.5px;color:var(--muted);margin-top:2px">${esc(plano)}${c.decisor?" · "+esc(c.decisor):""}${c.cidade?" · "+esc(c.cidade):""}</div></div>
-      <div style="text-align:right;flex:none"><span class="hbadge" style="background:${healthBg(h.key)};color:${healthCor(h.key)};font-size:13px"><b>${hs.score}</b> · ${h.lbl}</span>
-        <div style="font-size:12px;color:${rd!=null&&rd<0?'var(--status-atrasado)':rd!=null&&rd<=30?'#a86a12':'var(--muted2)'};margin-top:6px">🔄 renova ${renova}</div></div>
-    </div>
-    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin:0 0 14px">
-      ${dimTag("Método",hs.met)} ${dimTag("Execução",hs.exe)} ${dimTag("KPIs",hs.kpi)} ${dimTag("Encontros",hs.enc)}
-      <span style="font-size:11.5px;color:var(--muted2);margin-left:auto">Próximo encontro <b style="color:var(--txt)">${px?fmtDiaMes(px):"—"}</b></span>
+    <div class="rz-head">
+      <div class="rz-eyebrow">
+        <span class="rz-hlabel" style="color:${hcol}"><span class="cli-dot" style="background:${hcol}"></span>${(h.lbl||"").toUpperCase()}</span>
+        <span class="rz-fasetag" style="${faseTint}">${st.nome}</span>
+      </div>
+      <div class="rz-name">${esc(c.nome)||"—"}</div>
+      <div class="rz-meta">${c.decisor?`<span>👤 ${esc(c.decisor)}</span>`:""}${c.setor?`<span>🏢 ${esc(c.setor)}</span>`:""}${c.cidade?`<span>📍 ${esc(c.cidade)}</span>`:""}${plano!=="—"?`<span>📦 ${esc(plano)}</span>`:""}</div>
+      <div class="rz-stats">
+        <div class="rz-stat"><div class="k">MRR</div><div class="v" style="color:var(--brand)">${mrrTxt}</div></div>
+        <div class="rz-stat"><div class="k">Health</div><div class="v" style="color:${hcol}">${hs.score} · ${h.lbl}</div></div>
+        <div class="rz-stat"><div class="k">Renova em</div><div class="v" style="color:${renovaCor}">${renova}</div></div>
+        <div class="rz-stat"><div class="k">Próximo encontro</div><div class="v">${px?fmtDiaMes(px):"—"}</div></div>
+      </div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:12px">
+        ${dimTag("Método",hs.met)} ${dimTag("Execução",hs.exe)} ${dimTag("KPIs",hs.kpi)} ${dimTag("Encontros",hs.enc)}
+      </div>
     </div>
     <div class="rz-grid">
       ${card(`Compromissos do cliente <span class="rz-c">${comps.length}</span>`, listOr(comps,a=>`<div class="rz-row"><span>${esc(a.descricao)||"—"}</span><span class="rz-sub">${a.prazo?fmtDiaMes(a.prazo):"sem prazo"}</span></div>`,"Nenhum compromisso aberto."))}
@@ -2411,8 +2457,9 @@ function renderResumo(){
       ${card(`Indicadores (KPIs)`, listOr(kpis,k=>{ const b=kpiBatendo(k); return `<div class="rz-row"><span>${esc(k.nome)}</span><span class="rz-sub" style="color:${b==null?'var(--muted2)':b?'var(--status-concluido)':'var(--status-atrasado)'}">${k.real!=null?esc(String(k.real)):"—"}${k.meta!=null?" / "+esc(String(k.meta)):""}${b==null?"":b?" ✓":" ✗"}</span></div>`; },"Sem KPIs. Adicione na aba Plano de Ação."))}
       ${card(`Progresso do Método`, `<div style="font-weight:800;font-size:18px;color:var(--brand)">${prog.pct}%</div><div class="trilha-bar"><div style="width:${prog.pct}%;background:var(--brand)"></div></div><div style="font-size:11px;color:var(--muted2);margin-top:5px">${prog.done} de ${prog.total} entregáveis</div>`)}
       ${card(`Ciclo anual (12 encontros)`, `<div style="font-size:12px;color:var(--muted);margin-bottom:7px">${real}/12 realizados</div><div class="ciclo-grid">${dots}</div>`)}
-      ${card(`Últimas ações`, listOr(tl,x=>`<div class="rz-row"><span>${x.t}</span><span class="rz-sub">${x.d?fmtDiaMes(x.d):""}</span></div>`,"Nada registrado ainda."))}
-    </div>`;
+    </div>
+    <div class="rz-sec">Atividade recente</div>
+    ${tl.length?`<div class="rz-tl">${tl.slice(0,8).map(x=>`<div class="rz-tli"><div class="tt">${x.t}</div><div class="td">${x.d?fmtDiaMes(x.d):""}</div></div>`).join("")}</div>`:`<div class="rz-empty">Nada registrado ainda.</div>`}`;
 }
 
 /* Plano de ação 5W2H (mr_acoes dono=cliente) — tela própria + dentro da ficha */
