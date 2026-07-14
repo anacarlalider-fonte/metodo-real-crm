@@ -3252,8 +3252,7 @@ function renderHoje(){
   });
   (Store.entregaveis||[]).forEach(e=>{
     const c=coById(e.company_id); if(!c || c.status==="Encerrado") return;
-    if(e.bloqueio) alertas.push({c,ic:"⛔",txt:`entregável bloqueado${e.bloqueio_desde?` há ${Math.max(0,-daysUntil(e.bloqueio_desde))}d`:""}${e.titulo?` — ${esc(e.titulo)}`:""}`,act:"produção",sev:1});
-    else if(entAtrasado(e)) alertas.push({c,ic:"⏰",txt:`entregável atrasado${e.titulo?` — ${esc(e.titulo)}`:""}`,act:"produção",sev:1});
+    if(e.bloqueio) alertas.push({c,ic:"⛔",txt:`entregável bloqueado${e.bloqueio_desde?` há ${Math.max(0,-daysUntil(e.bloqueio_desde))}d`:""}${e.titulo?` — ${esc(e.titulo)}`:""}`,act:"produção",sev:1}); // atrasado (não bloqueado) aparece nas Tarefas do Dia
   });
   alertas.sort((a,b)=>(a.sev==null?3:a.sev)-(b.sev==null?3:b.sev));
   const sevCor=s=> s===0?"var(--status-atrasado)": s===1?"#a86a12":"var(--muted2)";
@@ -3351,6 +3350,14 @@ function renderHoje(){
   deHoje.forEach(a=>tarefas.push({u:2,badge:"alta",ic:iconFor(a.descricao),t1:a.descricao,t2:a.company_id?coNome(a.company_id):"tarefa",cid:a.company_id,acId:a.id,como:a.como}));
   semana.forEach(a=>tarefas.push({u:3,badge:"baixa",ic:iconFor(a.descricao),t1:a.descricao,t2:(a.company_id?coNome(a.company_id)+" · ":"")+fmtDiaMes(a.prazo),cid:a.company_id,acId:a.id}));
   semPrazo.forEach(a=>tarefas.push({u:4,badge:"baixa",ic:iconFor(a.descricao),t1:a.descricao,t2:a.company_id?coNome(a.company_id):"sem prazo",cid:a.company_id,acId:a.id}));
+  // Entregáveis (Produção) com prazo próximo — trabalho de produção entra no dia
+  (Store.entregaveis||[]).filter(e=>e.etapa!=="aprovado" && e.prazo && daysUntil(e.prazo)<=7).forEach(e=>{
+    const d=daysUntil(e.prazo); const late=d<0; const stg=(PROD_STAGES.find(s=>s.id===e.etapa)||{}).nome||"";
+    tarefas.push({ u: late?0:(d===0?2:3), badge: late?"atrasada":(d===0?"alta":"baixa"), ic:"📦",
+      t1:`Produção: ${e.titulo||"entregável"}`,
+      t2:`${coNome(e.company_id)} · ${stg}${e.bloqueio?" · ⛔ bloqueado":""} · ${late?`atrasado ${-d}d`:d===0?"vence hoje":`vence em ${d}d`}`,
+      cid:e.company_id, entId:e.id });
+  });
   tarefas.sort((a,b)=>a.u-b.u);
   const urgentes=tarefas.filter(t=>t.badge==="atrasada").length;
   const badgeLbl={atrasada:"Atrasada",alta:"alta",baixa:"baixa"};
@@ -3359,7 +3366,7 @@ function renderHoje(){
   const taskRows = tarefas.length ? visiveis.map(t=>`
       <div class="htask">
         ${t.acId?`<span class="tck ac-check" data-id="${t.acId}" title="Concluir">☐</span>`:`<span class="tic">${t.ic}</span>`}
-        <div class="tx${t.cid?' prio-go':''}"${t.cid?` data-id="${t.cid}" style="cursor:pointer"`:""}><div class="t1">${esc(t.t1)}</div><div class="t2">${esc(t.t2)}</div></div>
+        <div class="tx${t.entId?' ent-go':(t.cid?' prio-go':'')}"${t.entId?` data-ent="${t.entId}" style="cursor:pointer"`:(t.cid?` data-id="${t.cid}" style="cursor:pointer"`:"")}><div class="t1">${esc(t.t1)}</div><div class="t2">${esc(t.t2)}</div></div>
         ${t.fuId?`<button class="fu-done btn sm" data-id="${t.fuId}" style="white-space:nowrap">✓ contatei</button>`:""}
         <span class="hbadge ${t.badge}">${badgeLbl[t.badge]}</span>
       </div>`).join("") : `<div class="empty" style="margin:16px 2px">Nada pendente pra hoje. Você está em dia! ✅</div>`;
@@ -3463,6 +3470,8 @@ async function hojeAddAcao(){
     if(hv){ hojeView=hv.dataset.hv; renderHoje(); return; }
     if(e.target.closest(".ver-tarefas")){ hojeAllTasks=!hojeAllTasks; renderHoje(); return; }
     if(e.target.closest(".ver-leads")){ setView("sales"); return; }
+    const eg=e.target.closest(".ent-go");
+    if(eg){ setView("producao"); if(typeof openProdDrawer==="function") openProdDrawer(eg.dataset.ent); return; }
     const go=e.target.closest(".sess-go,.alert-go,.fin-go,.prio-go,.fu-open");
     if(go){ const c=coById(go.dataset.id); if(c) openModal(c); return; }
   });
