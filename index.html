@@ -400,6 +400,9 @@
   .reu-ra{display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid var(--line)}
   .reu-ra .an{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .reu-ra .am{font-size:11.5px;color:var(--muted2)}
+  .ciclo-grid{display:flex;gap:4px;flex-wrap:wrap}
+  .ciclo-dot{width:16px;height:16px;border-radius:5px;background:var(--panel2);border:1px solid var(--line2)}
+  .ciclo-dot.on{background:var(--brand);border-color:transparent}
   /* Hoje — painel estilo dashboard */
   .hkpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-bottom:20px}
   .hkpi{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px;position:relative}
@@ -947,6 +950,11 @@
             </select></div>
         </div>
 
+        <div class="sec-title">📊 Indicadores (KPIs) <span class="pcount">meta x real — alimentam o Health Score</span></div>
+        <div class="contatos-hint">Os números que mostram se o cliente está evoluindo. Ex.: Faturamento (mais) · Nº de acidentes (menos).</div>
+        <div id="kpisBox"></div>
+        <button class="btn sm ghost" id="btnAddKpi" type="button" style="margin-top:8px">+ Indicador</button>
+
         <div class="sec-title">🎯 Foco da semana <span class="pcount">as 2-3 ações que mais geram resultado</span></div>
         <div class="contatos-hint">Poucas ações que mexem o ponteiro. Menos é mais — foco brutal.</div>
         <div id="focosBox"></div>
@@ -1396,7 +1404,7 @@ const Store = {
 function objToRow(o,userId){
   return {
     id:o.id, user_id:userId, nome:o.nome, setor:o.setor, cidade:o.cidade, decisor:o.decisor,
-    faturamento:o.faturamento, etapa:o.etapa, status:o.status, plano:o.plano, origem:o.origem||null, tags:o.tags||null, cadencia:o.cadencia||null,
+    faturamento:o.faturamento, etapa:o.etapa, status:o.status, plano:o.plano, origem:o.origem||null, tags:o.tags||null, cadencia:o.cadencia||null, kpis:o.kpis||[],
     fase:o.fase||"entrega", etapa_venda:o.etapaVenda||null, data_proposta:o.dataProposta||null, ultimo_contato:o.ultimoContato||null, proximo_followup:o.proximoFollowup||null,
     valor_mensal:o.valorMensal!==""&&o.valorMensal!=null?Number(o.valorMensal):null,
     sessoes_realizadas:Number(o.sessoes||0), data_inicio:o.inicio||null, data_fim:o.fim||null,
@@ -1409,7 +1417,7 @@ function objToRow(o,userId){
 function rowToObj(r){
   return {
     id:r.id, nome:r.nome, setor:r.setor, cidade:r.cidade, decisor:r.decisor, faturamento:r.faturamento,
-    etapa:r.etapa, status:r.status, plano:r.plano, origem:r.origem||"", tags:r.tags||"", cadencia:r.cadencia||"", sessoes:r.sessoes_realizadas, inicio:r.data_inicio,
+    etapa:r.etapa, status:r.status, plano:r.plano, origem:r.origem||"", tags:r.tags||"", cadencia:r.cadencia||"", kpis:r.kpis||[], sessoes:r.sessoes_realizadas, inicio:r.data_inicio,
     fase:r.fase||"entrega", etapaVenda:r.etapa_venda||"lead", dataProposta:r.data_proposta||"", ultimoContato:r.ultimo_contato||"", proximoFollowup:r.proximo_followup||"",
     valorMensal:r.valor_mensal!=null?r.valor_mensal:"",
     fim:r.data_fim, proxima:r.proxima_sessao, dataVenc:r.data_vencimento||"", whatsapp:r.whatsapp, drive:r.drive, dor:r.dor,
@@ -1853,6 +1861,7 @@ function openModal(c){
   renderQualificacao();
   renderContatos();
   renderPlano();
+  renderKpis();
   renderPlanoAcoes();
   renderInteracoes();
   if($("#intDate")) $("#intDate").value=todayISO();
@@ -2293,6 +2302,23 @@ function collectPlano(){
     focos:collectPlanoBox("#focosBox"), rotina:collectPlanoBox("#rotinaBox")
   };
 }
+/* Indicadores (KPIs) do cliente — meta x real, alimentam o Health Score */
+function kpiRow(box,it){
+  if(!box) return; it=it||{};
+  const row=document.createElement("div"); row.className="kpirow";
+  row.style.cssText="display:grid;grid-template-columns:1fr 84px 84px 128px 26px;gap:6px;align-items:center;margin:6px 0";
+  row.innerHTML=`<input class="k-nome hinput" placeholder="Indicador (ex.: Faturamento)" value="${esc(it.nome||"")}" />
+    <input class="k-meta hinput" placeholder="meta" value="${esc(it.meta!=null?String(it.meta):"")}" />
+    <input class="k-real hinput" placeholder="real" value="${esc(it.real!=null?String(it.real):"")}" />
+    <select class="k-orient hinput"><option value="mais" ${it.orient!=="menos"?"selected":""}>↑ mais é melhor</option><option value="menos" ${it.orient==="menos"?"selected":""}>↓ menos é melhor</option></select>
+    <button class="delc" type="button" title="Remover">✕</button>`;
+  row.querySelector(".delc").addEventListener("click",()=>row.remove());
+  box.appendChild(row);
+}
+function renderKpis(){ const box=$("#kpisBox"); if(!box) return; box.innerHTML=""; (editing&&Array.isArray(editing.kpis)?editing.kpis:[]).forEach(it=>kpiRow(box,it)); }
+function collectKpis(){ if(!$("#kpisBox")) return; const arr=[]; $$("#kpisBox .kpirow").forEach(r=>{ const nome=r.querySelector(".k-nome").value.trim(); if(!nome) return; const gm=s=>{ const v=r.querySelector(s).value.trim(); return v===""?null:(isNaN(+v)?v:+v); }; arr.push({nome, meta:gm(".k-meta"), real:gm(".k-real"), orient:r.querySelector(".k-orient").value}); }); editing.kpis=arr; }
+function kpiBatendo(k){ if(k.meta==null||k.real==null||isNaN(+k.meta)||isNaN(+k.real)) return null; return k.orient==="menos"?(+k.real<=+k.meta):(+k.real>=+k.meta); }
+function kpisScore(c){ const arr=(c.kpis||[]).map(kpiBatendo).filter(v=>v!=null); return arr.length?Math.round(arr.filter(Boolean).length/arr.length*100):null; }
 
 /* Plano de ação 5W2H (mr_acoes dono=cliente) — tela própria + dentro da ficha */
 const TRIADE={
@@ -2740,6 +2766,7 @@ function collectForm(){
   collectOnboarding();
   collectContatos();
   collectPlano();
+  collectKpis();
   collectDocumentos();
 }
 function closeModal(){ $("#overlay").classList.remove("open"); editing=null; }
@@ -2767,6 +2794,7 @@ $("#btnAddContato").addEventListener("click",()=>{
 });
 
 $("#btnAddDoc").addEventListener("click",()=>$("#docsBox").appendChild(docRow({})));
+if($("#btnAddKpi")) $("#btnAddKpi").addEventListener("click",()=>kpiRow($("#kpisBox"),{}));
 $("#btnAddFoco").addEventListener("click",()=>planoRow($("#focosBox"),{}));
 $("#btnAddRotina").addEventListener("click",()=>planoRow($("#rotinaBox"),{}));
 /* Plano de ação 5W2H (mr_acoes dono=cliente) — ficha (#planoAcoesBox) + tela do menu (#planoView) */
@@ -3473,6 +3501,27 @@ function renderReuRitmo(ativos){
       </tr>`; }).join("");
   return ativos.length?`<div class="ltable-wrap"><table class="ltable"><thead><tr><th>Cliente</th><th>Cadência</th><th>Última reunião</th><th>Data</th><th>Próxima</th></tr></thead><tbody>${rows}</tbody></table></div>`:`<div class="empty" style="margin:20px 0">Nenhum cliente ativo.</div>`;
 }
+function renderReuCiclo(ativos){
+  const today=todayISO();
+  const realDe=c=>(Store.sessoes||[]).filter(s=>s.company_id===c.id && s.inicio && s.inicio.slice(0,10)<=today).length;
+  const totReal=ativos.reduce((s,c)=>s+realDe(c),0);
+  const rows=[...ativos].sort((a,b)=>(a.nome||"").localeCompare(b.nome||"")).map(c=>{
+    const real=Math.min(12,realDe(c)); const pct=Math.round(real/12*100); const pl=PLANS[c.plano||""];
+    const cor=pct>=67?"var(--status-concluido)":pct>=34?"#a86a12":"var(--status-atrasado)";
+    const dots=Array.from({length:12},(_,i)=>`<span class="ciclo-dot${i<real?" on":""}"></span>`).join("");
+    return `<tr class="reu-open" data-id="${c.id}">
+        <td style="min-width:160px"><div class="cname">${esc(c.nome)}</div><div class="csub">${pl&&pl.nome?esc(pl.nome.split(" — ")[0]):"—"}${c.inicio?" · início "+fmtDiaMes(c.inicio):""}</div></td>
+        <td style="min-width:96px"><b style="color:${cor}">${real}/12</b> <span class="csub">${pct}%</span></td>
+        <td><div class="ciclo-grid">${dots}</div></td>
+      </tr>`; }).join("");
+  return `<div style="font-size:12px;color:var(--muted2);margin:0 0 10px">12 encontros por ciclo anual do Método — realizados (contam sessões passadas do Google/agenda)</div>
+    <div class="plcards" style="margin-bottom:12px">
+      <div class="plcard"><div class="top">Realizados</div><div class="big">${totReal}</div></div>
+      <div class="plcard"><div class="top">Previstos</div><div class="big">${ativos.length*12}</div></div>
+      <div class="plcard"><div class="top">Média por conta</div><div class="big">${ativos.length?Math.round(totReal/ativos.length):0}</div></div>
+    </div>
+    <div class="ltable-wrap"><table class="ltable"><thead><tr><th>Cliente</th><th>Encontros</th><th>Ciclo (12)</th></tr></thead><tbody>${rows||`<tr><td colspan="3"><div class="empty" style="margin:14px">Nenhum cliente ativo.</div></td></tr>`}</tbody></table></div>`;
+}
 function renderReunioes(){
   const box=$("#reunioesView"); if(!box) return;
   if(Store.mode!=="cloud"||!Store.user){ box.innerHTML=`<div class="empty" style="margin:20px 0">Disponível no modo nuvem (faça login).</div>`; return; }
@@ -3495,8 +3544,9 @@ function renderReunioes(){
   const tabs=`<div class="pltabs" style="margin-bottom:14px">
       <button class="pltab ${reuTab==="agenda"?"active":""}" data-reutab="agenda" type="button">📅 Agenda</button>
       <button class="pltab ${reuTab==="ritmo"?"active":""}" data-reutab="ritmo" type="button">🔁 Ritmo por conta</button>
+      <button class="pltab ${reuTab==="ciclo"?"active":""}" data-reutab="ciclo" type="button">📆 Ciclo anual</button>
     </div>`;
-  const body = reuTab==="ritmo" ? renderReuRitmo(ativos) : renderReuAgenda(sess,{semPrep,semAta,extrair});
+  const body = reuTab==="ritmo" ? renderReuRitmo(ativos) : reuTab==="ciclo" ? renderReuCiclo(ativos) : renderReuAgenda(sess,{semPrep,semAta,extrair});
   box.innerHTML=`
     <div class="plhd"><div><h2>Book de Reuniões</h2><div class="sub">Ritmo com ${nContas} conta${nContas!==1?"s":""} com cadência · atas sincronizam do Tactiq · prep salvo no navegador</div></div></div>
     ${chips}${tabs}${body}`;
@@ -3553,10 +3603,10 @@ function renderTrilha(){
 function execucaoCliente(c){ const acs=(Store.acoes||[]).filter(a=>a.company_id===c.id && (a.dono||"ana")==="cliente"); if(!acs.length) return null; return Math.round(acs.filter(a=>a.status==="feito").length/acs.length*100); }
 function encontrosScore(c){ const last=ultimaReuniao(c); if(!last) return c.cadencia?0:null; const dias=-(daysUntil(last)); const exp=(CADENCIAS[c.cadencia]&&CADENCIAS[c.cadencia].dias)||14; return Math.max(0,Math.min(100,Math.round(100-Math.max(0,dias-exp)/exp*100))); }
 function healthScore(c){
-  const met=progressOf(c).pct, exe=execucaoCliente(c), enc=encontrosScore(c);
-  const dims=[met,exe,enc].filter(v=>v!=null);
+  const met=progressOf(c).pct, exe=execucaoCliente(c), enc=encontrosScore(c), kpi=kpisScore(c);
+  const dims=[met,exe,enc,kpi].filter(v=>v!=null);
   const score=dims.length?Math.round(dims.reduce((a,b)=>a+b,0)/dims.length):0;
-  return {score,met,exe,enc, band: score>=70?"verde":score>=40?"amarelo":"vermelho"};
+  return {score,met,exe,enc,kpi, band: score>=70?"verde":score>=40?"amarelo":"vermelho"};
 }
 function renderHealth(){
   const box=$("#healthView"); if(!box) return;
@@ -3572,11 +3622,10 @@ function renderHealth(){
   const tb=rows.map(({c,h})=>`<tr class="trilha-open" data-id="${c.id}">
       <td style="min-width:150px"><div class="cname">${esc(c.nome)}</div><div class="csub">${PLANS[c.plano||""]?esc(PLANS[c.plano].nome.split(" — ")[0]):"—"}</div></td>
       <td><span class="hbadge" style="background:${bcol(h.band)}22;color:${bcol(h.band)}"><b style="font-size:14px">${h.score}</b></span></td>
-      <td>${dim(h.met)}</td><td>${dim(h.exe)}</td><td>${dim(h.enc)}</td>
-      <td><span style="color:var(--muted2)">—</span></td>
+      <td>${dim(h.met)}</td><td>${dim(h.exe)}</td><td>${dim(h.enc)}</td><td>${dim(h.kpi)}</td>
     </tr>`).join("");
   box.innerHTML=`
-    <div class="plhd"><div><h2>Health Score</h2><div class="sub">Aderência ao método · execução do cliente · regularidade dos encontros (KPIs entram na próxima fase)</div></div></div>
+    <div class="plhd"><div><h2>Health Score</h2><div class="sub">Aderência ao método · execução do cliente · KPIs (meta x real) · regularidade dos encontros</div></div></div>
     ${cards}
     <div class="ltable-wrap"><table class="ltable"><thead><tr><th>Cliente</th><th>Score</th><th>Método</th><th>Execução</th><th>Encontros</th><th>KPIs</th></tr></thead><tbody>${tb}</tbody></table></div>`;
   const bd=$("#badgeHealth"); if(bd) bd.textContent=nb("vermelho");
@@ -3789,7 +3838,7 @@ function currentStage(c){
     ? (SALES_STAGES.find(s=>s.id===c.etapaVenda)||SALES_STAGES[0])
     : (DELIVERY_STAGES.find(s=>s.id===c.etapa)||DELIVERY_STAGES[0]);
 }
-let clientesFiltro="ativos", clientesHealth="";
+let clientesFiltro="ativos", clientesHealth="", clientesRenov=false;
 function clienteAtivoFiltro(c){
   if(clientesFiltro==="ativos") return c.status!=="Encerrado";
   if(clientesFiltro==="inativos") return c.status==="Encerrado";
@@ -3833,7 +3882,10 @@ function renderList(){
   const withH=all.map(c=>({c,h:clientHealth(c)}));
   const ord={risco:0,atencao:1,saudavel:2};
   let list=clientesHealth?withH.filter(x=>x.h.key===clientesHealth):withH;
-  list=[...list].sort((a,b)=>(ord[a.h.key]-ord[b.h.key])||(a.c.nome||"").localeCompare(b.c.nome||"","pt-BR"));
+  if(clientesRenov) list=list.filter(x=>x.h.rd!=null && x.h.rd<=60);
+  list=[...list].sort(clientesRenov
+    ? (a,b)=>((a.h.rd==null?9999:a.h.rd)-(b.h.rd==null?9999:b.h.rd))
+    : (a,b)=>(ord[a.h.key]-ord[b.h.key])||(a.c.nome||"").localeCompare(b.c.nome||"","pt-BR"));
   const mrrTotal=all.reduce((s,x)=>s+plval(x),0);
   const emRisco=withH.filter(x=>x.h.key==="risco"); const riscoMRR=emRisco.reduce((s,x)=>s+plval(x.c),0);
   const semToque=withH.filter(x=>x.h.dias!=null && x.h.dias>14).length;
@@ -3842,7 +3894,7 @@ function renderList(){
   const alerts=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
       ${chipA(`🔴 ${emRisco.length} em risco${riscoMRR?` · ${brlShort(riscoMRR)}/mês`:''}`,"var(--status-atrasado)","risco")}
       ${chipA(`⏳ ${semToque} sem toque +14d`,semToque?"#a86a12":"var(--muted)","")}
-      ${chipA(`🔄 ${renovando} renova em 30d`,renovando?"#a86a12":"var(--muted)","")}
+      <button class="prodchip cli-renov${clientesRenov?' on':''}" style="${clientesRenov?'background:#a86a12;color:#fff;border-color:transparent':(renovando?'color:#a86a12':'color:var(--muted)')}">🔄 ${renovando} renovando ≤30d${clientesRenov?' ·  ✕':''}</button>
     </div>`;
   const fbtn=(k,l)=>`<button class="btn sm ghost cli-filtro${clientesFiltro===k?' active':''}" data-clif="${k}">${l}</button>`;
   const hbtn=(k,l)=>`<button class="btn sm ghost cli-health${clientesHealth===k?' active':''}" data-hlth="${k}">${l}</button>`;
@@ -3860,17 +3912,18 @@ function renderList(){
         <td><div class="cname">${esc(c.nome)||"(sem nome)"}</div><div class="csub">${esc(c.decisor||"")}${c.setor?" · "+esc(c.setor):""}${c.cidade?" · "+esc(c.cidade):""}</div></td>
         <td><span class="pill-stage"><span class="dot" style="background:${st.sw}"></span>${st.nome}</span></td>
         <td><span class="hbadge" style="background:${healthBg(h.key)};color:${healthCor(h.key)}">${h.lbl}</span></td>
+        <td>${(()=>{ const ex=execucaoCliente(c); return ex==null?'<span class="csub">—</span>':`<span style="color:${ex>=67?'var(--status-concluido)':ex>=34?'#a86a12':'var(--status-atrasado)'};font-weight:600">${ex}%</span>`; })()}</td>
         <td style="color:var(--muted)">${proximaEntregaCliente(c)}</td>
         <td style="font-weight:600">${valor>0?brl(valor):(permuta?'<span class="csub">Permuta</span>':"—")}</td>
         <td style="color:${h.dias!=null&&h.dias>14?'var(--status-atrasado)':'var(--muted)'}">${toque}</td>
         <td style="color:${rd!=null&&rd<0?'var(--status-atrasado)':rd!=null&&rd<=30?'#a86a12':'var(--muted)'}">${renova}</td>
       </tr>`; }).join("")
-    : `<tr><td colspan="7"><div class="empty" style="margin:14px">Nenhum cliente ${clientesHealth?"nesse health":(clientesFiltro==="inativos"?"inativo":"por aqui")}.</div></td></tr>`;
+    : `<tr><td colspan="8"><div class="empty" style="margin:14px">Nenhum cliente ${clientesRenov?"renovando nos próximos 60d":(clientesHealth?"nesse health":(clientesFiltro==="inativos"?"inativo":"por aqui"))}.</div></td></tr>`;
   box.innerHTML=`
-    <div class="plhd"><div><h2>Clientes</h2><div class="sub">${all.length} cliente${all.length!==1?"s":""} ativos · MRR total <b style="color:var(--brand)">${brl(mrrTotal)}</b></div></div></div>
+    <div class="plhd"><div><h2>${clientesRenov?"Clientes · Renovações":"Clientes"}</h2><div class="sub">${clientesRenov?`${list.length} renovando nos próximos 60 dias — ordenados pela data`:`${all.length} cliente${all.length!==1?"s":""} ativos · MRR total <b style="color:var(--brand)">${brl(mrrTotal)}</b>`}</div></div></div>
     ${alerts}${filtros}
     <div class="ltable-wrap"><table class="ltable">
-      <thead><tr><th>Cliente</th><th>Fase</th><th>Health</th><th>Próxima entrega</th><th>MRR</th><th>Último toque</th><th>Renova em</th></tr></thead>
+      <thead><tr><th>Cliente</th><th>Fase</th><th>Health</th><th>Execução</th><th>Próxima entrega</th><th>MRR</th><th>Último toque</th><th>Renova em</th></tr></thead>
       <tbody>${rows}</tbody></table></div>`;
 }
 (function initClientesEvents(){
@@ -3879,6 +3932,7 @@ function renderList(){
     const f=e.target.closest(".cli-filtro"); if(f){ clientesFiltro=f.dataset.clif; renderList(); return; }
     const h=e.target.closest(".cli-health"); if(h){ clientesHealth=h.dataset.hlth; renderList(); return; }
     const al=e.target.closest(".cli-alert"); if(al){ const fk=al.dataset.health; if(fk){ clientesHealth=fk===clientesHealth?"":fk; renderList(); } return; }
+    const rv=e.target.closest(".cli-renov"); if(rv){ clientesRenov=!clientesRenov; renderList(); return; }
     const row=e.target.closest(".cli-open"); if(row){ const c=coById(row.dataset.id); if(c) openModal(c); return; }
   });
 })();
