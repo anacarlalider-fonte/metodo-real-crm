@@ -674,10 +674,6 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>
         Metas
       </button>
-      <button class="modlink" data-view="board" data-title="Entrega · Método Real">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="4" height="16" rx="1"/></svg>
-        Entrega <span class="badge" id="badgeBoard">0</span>
-      </button>
       <button class="modlink" data-view="producao" data-title="Produção · entregáveis">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><path d="M12 22.08V12"/></svg>
         Produção <span class="badge" id="badgeProducao">0</span>
@@ -767,11 +763,6 @@
    <!-- ===== METAS VIEW ===== -->
    <div id="view-metas" class="wrap hidden">
      <div id="metas"></div>
-   </div>
-
-   <!-- ===== ENTREGA (ROADMAP) VIEW ===== -->
-   <div id="view-board" class="wrap hidden">
-     <div id="board" class="board"></div>
    </div>
 
    <!-- ===== CLIENTES (LISTA) VIEW ===== -->
@@ -2877,7 +2868,7 @@ $("#searchInput").addEventListener("input",e=>{ filter=e.target.value.trim().toL
 
 /* ---------- Sidebar navigation ---------- */
 let activeView="hoje";
-const VIEWS=["hoje","sales","metas","board","producao","trilha","health","biblioteca","list","plano","financ","agenda","reunioes","dash","metodo"];
+const VIEWS=["hoje","sales","metas","producao","trilha","health","biblioteca","list","plano","financ","agenda","reunioes","dash","metodo"];
 function setView(v){
   activeView=v;
   $$(".modlink").forEach(x=>x.classList.toggle("active",x.dataset.view===v));
@@ -3621,7 +3612,6 @@ function renderActive(){
   if(activeView==="hoje") renderHoje();
   else if(activeView==="sales") renderSales();
   else if(activeView==="metas") renderMetas();
-  else if(activeView==="board") renderBoard();
   else if(activeView==="producao") renderProducao();
   else if(activeView==="trilha") renderTrilha();
   else if(activeView==="health") renderHealth();
@@ -3651,7 +3641,7 @@ function refreshBadges(){
   const pendAc=(Store.acoes||[]).filter(a=>(a.dono||"ana")!=="cliente" && a.status!=="feito" && a.prazo && a.prazo<=t).length;
   if($("#badgeHoje")) $("#badgeHoje").textContent=pendAc;
   if($("#badgeSales")) $("#badgeSales").textContent=sales;
-  if($("#badgeBoard")) $("#badgeBoard").textContent=entrega;
+  if($("#badgeTrilha")) $("#badgeTrilha").textContent=Store.cache.filter(c=>c.fase==="entrega" && c.status!=="Encerrado" && progressOf(c).pct<30).length;
   const pend=Store.cache.filter(c=>c.proxima && c.status!=="Encerrado").length;
   if($("#badgeAgenda")) $("#badgeAgenda").textContent=pend;
   const venc=(Store.pagamentos||[]).filter(p=>p.status!=="pago" && p.vencimento && p.vencimento<t).length;
