@@ -412,7 +412,7 @@
   .hsess-tx .t2{font-size:12px;color:var(--muted2)}
   /* Tabela de Leads (Vendas) */
   .ltable-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
-  table.ltable{border-collapse:collapse;width:100%;font-size:13.5px;min-width:640px}
+  table.ltable{border-collapse:collapse;width:100%;font-size:13.5px;min-width:720px}
   table.ltable th{text-align:left;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;color:var(--muted2);padding:12px 14px;border-bottom:1px solid var(--line);background:var(--bg2);white-space:nowrap}
   table.ltable td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
   table.ltable tbody tr{cursor:pointer}
@@ -1457,6 +1457,21 @@ function fitBadge(lvl){
 function leadVal(c){ const v=Number(c.valorMensal); if(v>0) return v; const pk=c.plano||(c.qualificacao&&c.qualificacao.planoSugerido)||""; return (PLANS[pk]&&PLANS[pk].valor)||0; }
 function scoreColor(s){ return s>=80?"var(--status-concluido)": s>=55?"#a86a12":"var(--muted2)"; }
 const STAGE_PROB={ lead:10, qualificado:25, call:40, proposta:60, followup:75, ganho:100, perdido:0 };
+function leadEmail(c){ const ct=(c.contatos||[]).find(x=>x.email); return ct?ct.email:""; }
+function proxToque(c){
+  const t=nextTouch(c);
+  if(t){ if(t.esfriou) return {t:"esfriando",c:"var(--status-atrasado)"};
+    if(t.due!=null){ if(t.due<0) return {t:"toque atrasado",c:"var(--status-atrasado)"}; if(t.due===0) return {t:"tocar hoje",c:"#a86a12"}; return {t:`toque em ${t.due}d`,c:"var(--muted)"}; } }
+  const lc=c.ultimoContato; if(lc) return {t:`últ. ${fmtDiaMes(lc)}`,c:"var(--muted2)"};
+  return {t:"—",c:"var(--muted2)"};
+}
+function leadTemp(c){
+  const sc=icpFit(c).pct; const lc=c.ultimoContato||c.dataProposta; const dias = lc? -(daysUntil(lc)) : 999;
+  let b=sc; if(dias>14) b-=20; else if(dias<=3) b+=10;
+  if(b>=70) return {key:"quente",ic:"🔥",lbl:"Quente"};
+  if(b>=45) return {key:"morno",ic:"🙂",lbl:"Morno"};
+  return {key:"frio",ic:"❄️",lbl:"Frio"};
+}
 function leadTags(c){ return String(c.tags||"").split(",").map(t=>t.trim()).filter(Boolean); }
 function tagChips(c){ const ts=leadTags(c); return ts.length?`<span class="ltags">${ts.map(t=>`<span class="ltag">${esc(t)}</span>`).join("")}</span>`:""; }
 function brlShort(v){ return v>=1000 ? "R$ "+(v/1000).toLocaleString("pt-BR",{maximumFractionDigits:v>=10000?0:1})+"k" : brl(v); }
@@ -1498,17 +1513,18 @@ function renderSalesTable(list){
   if(salesSort==="valor") arr.sort((a,b)=>b.val-a.val || b.sc-a.sc);
   else if(salesSort==="nome") arr.sort((a,b)=>(a.c.nome||"").localeCompare(b.c.nome||""));
   else arr.sort((a,b)=>b.sc-a.sc || b.val-a.val);
-  const rows=arr.map(({c,sc,val})=>{ const st=SALES_STAGES.find(s=>s.id===c.etapaVenda)||SALES_STAGES[0]; const fit=icpFit(c);
+  const rows=arr.map(({c,sc,val})=>{ const st=SALES_STAGES.find(s=>s.id===c.etapaVenda)||SALES_STAGES[0]; const fit=icpFit(c); const tp=leadTemp(c); const pt=proxToque(c); const em=leadEmail(c);
     return `<tr class="lead-open" data-id="${c.id}">
-        <td><div style="font-weight:600">${esc(c.nome)||"(sem nome)"}</div><div style="font-size:12px;color:var(--muted2)">${esc(c.decisor||c.setor||"")}</div>${tagChips(c)}</td>
+        <td><div style="font-weight:600">${esc(c.nome)||"(sem nome)"}</div><div style="font-size:12px;color:var(--muted2)">${esc(c.decisor||c.setor||"")}</div>${em?`<div style="font-size:11.5px;margin-top:1px"><a href="mailto:${esc(em)}" style="color:var(--muted2);text-decoration:none">✉ ${esc(em)}</a></div>`:""}${tagChips(c)}</td>
         <td><span class="pill-stage"><span class="dot" style="background:${st.sw}"></span>${st.nome}</span></td>
-        <td style="text-align:center;font-weight:800;color:${scoreColor(sc)}">${sc}</td>
+        <td style="text-align:center;font-weight:800;color:${scoreColor(sc)}"><span title="${tp.lbl}" style="font-weight:400">${tp.ic}</span> ${sc}</td>
         <td>${fitBadge(fit.lvl)}</td>
         <td style="font-weight:600">${val?brl(val):"—"}</td>
+        <td style="color:${pt.c};font-size:12.5px;white-space:nowrap">${pt.t}</td>
         <td style="color:var(--muted)">${esc(c.origem||"—")}</td>
       </tr>`; }).join("");
   return list.length ? `<div class="ltable-wrap"><table class="ltable">
-      <thead><tr><th>Lead</th><th>Status</th><th style="text-align:center">Score</th><th>Fit ICP</th><th>Valor</th><th>Origem</th></tr></thead>
+      <thead><tr><th>Lead</th><th>Status</th><th style="text-align:center">Score</th><th>Fit ICP</th><th>Valor</th><th>Próx. toque</th><th>Origem</th></tr></thead>
       <tbody>${rows}</tbody></table></div>`
     : `<div class="empty" style="margin:26px 0;text-align:center">Nenhum lead com esses filtros.</div>`;
 }
@@ -1583,7 +1599,7 @@ function salesCardEl(c){
     fu=`<div class="next">📞 Call / 1x1 de diagnóstico</div>`;
   }
   el.innerHTML=`
-    <div class="nome">${esc(c.nome)||"(sem nome)"}</div>
+    <div class="nome"><span title="${leadTemp(c).lbl}" style="font-size:12px">${leadTemp(c).ic}</span> ${esc(c.nome)||"(sem nome)"}</div>
     <div class="meta">
       ${c.setor?`<span>🏭 ${esc(c.setor)}</span>`:""}
       ${c.decisor?`<span>👤 ${esc(c.decisor)}</span>`:""}
@@ -2992,7 +3008,7 @@ function renderHoje(){
   const scoreCor=s=> s>=80?"var(--status-concluido)": s>=55?"#a86a12":"var(--muted2)";
   const leadRows = scored.length ? scored.map(x=>{ const c=x.c; const v=oppVal(c);
       const sub=(c.decisor?esc(c.decisor):(c.setor?esc(c.setor):"oportunidade"))+(v?" · "+brl(v):"");
-      return `<div class="hlead prio-go" data-id="${c.id}"><span class="av">${iniciais(c.nome||c.decisor)}</span><div class="tx"><div class="t1">${esc(c.nome)||"(lead)"}</div><div class="t2">${sub}</div></div><div class="hscore"><div class="sv" style="color:${scoreCor(x.score)}">${x.score}</div><div class="sl">score</div></div></div>`;
+      return `<div class="hlead prio-go" data-id="${c.id}"><span class="av">${iniciais(c.nome||c.decisor)}</span><div class="tx"><div class="t1"><span title="${leadTemp(c).lbl}">${leadTemp(c).ic}</span> ${esc(c.nome)||"(lead)"}</div><div class="t2">${sub}</div></div><div class="hscore"><div class="sv" style="color:${scoreCor(x.score)}">${x.score}</div><div class="sl">score</div></div></div>`;
     }).join("") : `<div class="empty" style="margin:16px 2px">Nenhuma oportunidade no funil. Cadastre leads em Vendas.</div>`;
   const leadsCard=`<div class="hcard"><div class="hcard-hd"><h3>Leads Quentes</h3><span class="lnk ver-leads">Ver todos →</span></div>${leadRows}</div>`;
   const brlk=v=> v>=1000 ? "R$ "+(v/1000).toLocaleString("pt-BR",{maximumFractionDigits:v>=10000?0:1})+"k" : brl(v);
@@ -3092,7 +3108,7 @@ async function hojeAddAcao(){
     });
     top.addEventListener("input",e=>{ if(e.target.id==="svBusca"){ salesF.busca=e.target.value; renderSales(); } });
   }
-  if(table) table.addEventListener("click",e=>{ const r=e.target.closest(".lead-open"); if(r){ const c=coById(r.dataset.id); if(c) openModal(c); } });
+  if(table) table.addEventListener("click",e=>{ if(e.target.closest("a")) return; const r=e.target.closest(".lead-open"); if(r){ const c=coById(r.dataset.id); if(c) openModal(c); } });
 })();
 function renderActive(){
   if(activeView==="hoje") renderHoje();
