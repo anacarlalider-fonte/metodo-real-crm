@@ -1099,6 +1099,34 @@
   </div>
 </div>
 
+<!-- ============ ENCERRAR REUNIÃO (registro leve) ============ -->
+<div id="encOverlay" class="overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>✅ Encerrar reunião</h2>
+      <button class="iconbtn" id="encClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="encCtx" style="font-size:13px;color:var(--muted);margin-bottom:14px"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+        <label style="flex:1;min-width:150px;font-size:12px;color:var(--muted2)">Data<input id="encData" type="date" class="hinput" style="width:100%;margin-top:4px" /></label>
+        <label style="flex:2;min-width:180px;font-size:12px;color:var(--muted2)">Título<input id="encTitulo" class="hinput" style="width:100%;margin-top:4px" placeholder="Reunião de rotina" /></label>
+      </div>
+      <label style="font-size:12px;color:var(--muted2)">Resumo / o que foi decidido <span style="color:var(--muted2)">(opcional)</span>
+        <textarea id="encResumo" class="hinput" rows="3" style="width:100%;margin-top:4px;resize:vertical" placeholder="Principais pontos e decisões da conversa…"></textarea></label>
+      <label style="font-size:12px;color:var(--muted2);display:block;margin-top:12px">Próximos passos — <b>vira compromisso do cliente</b> (um por linha)
+        <textarea id="encProximos" class="hinput" rows="4" style="width:100%;margin-top:4px;resize:vertical" placeholder="Contratar vendedor até dia 20&#10;Enviar planilha de metas&#10;Definir ICP com o time"></textarea></label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin-top:10px">
+        Prazo dos compromissos <input id="encPrazo" type="date" class="hinput" style="margin-left:4px" /> <span style="color:var(--muted2)">(opcional — aplica a todos)</span></label>
+    </div>
+    <div class="modal-foot">
+      <div style="font-size:11.5px;color:var(--muted2);flex:1">Reuniões gravadas pelo Tactiq já viram ata sozinhas — use isto para conversas rápidas/presenciais.</div>
+      <button class="btn ghost" id="encCancel">Cancelar</button>
+      <button class="btn primary" id="encSalvar">Registrar ata + compromissos</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast" class="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1276,6 +1304,18 @@ const Store = {
     c.atas=c.atas||[]; c.atas.unshift(ata);
     await this.save(c);
     await this.resolveInbox(item.id);
+    return nTasks;
+  },
+  async encerrarReuniao(companyId, {data, titulo, resumo, proximos, prazo}){
+    const c=this.cache.find(x=>x.id===companyId);
+    if(!c) throw new Error("cliente não encontrado");
+    const passos=(proximos||[]).map(s=>String(s).trim()).filter(Boolean);
+    const ata={ data:data||todayISO(), titulo:titulo||"Reunião", resumo:resumo||"", proximos:passos,
+      fonte:"manual", criado:new Date().toISOString() };
+    let nTasks=0;
+    try{ for(const it of ataActionItems(ata)){ await this.addAcao({company_id:c.id, descricao:it.descricao, responsavel:it.responsavel, dono:"cliente", origem:"reuniao", origem_ref:ata.criado, prazo:prazo||null}); nTasks++; } if(nTasks) ata.tarefasGeradas=true; }catch(e){}
+    c.atas=c.atas||[]; c.atas.unshift(ata);
+    await this.save(c);
     return nTasks;
   },
   /* --- ações / tarefas (só nuvem) --- */
@@ -2820,6 +2860,32 @@ function collectForm(){
 }
 function closeModal(){ $("#overlay").classList.remove("open"); editing=null; }
 
+/* ---- Encerrar reunião (registro leve → ata manual + compromissos) ---- */
+let encCtxId=null;
+function openEncerrar(companyId, dateISO){
+  const c=coById(companyId); if(!c){ toast("Cliente não encontrado","err"); return; }
+  encCtxId=companyId;
+  $("#encCtx").innerHTML=`Cliente: <b style="color:var(--txt)">${esc(c.nome)}</b>`;
+  $("#encData").value=dateISO||todayISO();
+  $("#encTitulo").value=""; $("#encResumo").value=""; $("#encProximos").value=""; $("#encPrazo").value="";
+  $("#encOverlay").classList.add("open");
+  setTimeout(()=>$("#encTitulo").focus(),30);
+}
+function closeEncerrar(){ $("#encOverlay").classList.remove("open"); encCtxId=null; }
+async function salvarEncerrar(){
+  if(!encCtxId) return;
+  const proximos=$("#encProximos").value.split(/\r?\n/);
+  const btn=$("#encSalvar"); btn.disabled=true;
+  try{
+    const n=await Store.encerrarReuniao(encCtxId,{ data:$("#encData").value||todayISO(), titulo:$("#encTitulo").value.trim(),
+      resumo:$("#encResumo").value.trim(), proximos, prazo:$("#encPrazo").value||null });
+    closeEncerrar();
+    toast(n?`Ata registrada · ${n} compromisso${n>1?"s":""} criado${n>1?"s":""} 👊`:"Ata registrada","ok");
+    renderActive();
+  }catch(e){ toast("Erro ao registrar: "+(e.message||e),"err"); }
+  finally{ btn.disabled=false; }
+}
+
 /* =========================================================================
    EVENTS
    ========================================================================= */
@@ -2827,10 +2893,15 @@ $("#btnNew").addEventListener("click",()=>openModal(null));
 $("#modalClose").addEventListener("click",closeModal);
 $("#btnCancel").addEventListener("click",closeModal);
 $("#overlay").addEventListener("click",e=>{ if(e.target===$("#overlay")) closeModal(); });
+$("#encClose").addEventListener("click",closeEncerrar);
+$("#encCancel").addEventListener("click",closeEncerrar);
+$("#encSalvar").addEventListener("click",salvarEncerrar);
+$("#encOverlay").addEventListener("click",e=>{ if(e.target===$("#encOverlay")) closeEncerrar(); });
 document.addEventListener("keydown",e=>{
   if(e.key!=="Escape") return;
   if($("#prodDrawer") && $("#prodDrawer").classList.contains("show")) closeProdDrawer();
   else if($("#planoDrawer") && $("#planoDrawer").classList.contains("show")) closeDrawer();
+  else if($("#encOverlay").classList.contains("open")) closeEncerrar();
   else if($("#reportOverlay").classList.contains("open")) closeReport();
   else if($("#inboxOverlay").classList.contains("open")) closeInbox();
   else if($("#overlay").classList.contains("open")) closeModal();
@@ -3250,11 +3321,12 @@ function renderHoje(){
   const sessSemPrep=sessHoje.filter(s=>!prepGet(prepKey(s))).length;
   const agendaCard = sessHoje.length ? `<div class="hcard" style="max-width:1180px;margin-top:16px">
       <div class="hcard-hd"><h3>Agenda de hoje</h3><span style="font-size:12.5px;color:${sessSemPrep?'var(--status-atrasado)':'var(--muted2)'}">${sessHoje.length} sessõe${sessHoje.length>1?"s":""}${sessSemPrep?` · ${sessSemPrep} sem prep`:" · tudo preparado"}</span></div>
-      ${sessHoje.map(s=>{ const k=prepKey(s); const prep=prepGet(k);
+      ${sessHoje.map(s=>{ const k=prepKey(s); const prep=prepGet(k); const temAta=s.companyId&&clienteTemAtaEm(s.companyId,s.dateISO);
         return `<div class="hsess">
           <span class="hsess-hora">${s.hora||"—"}</span>
           <div class="hsess-tx${s.companyId?' prio-go':''}"${s.companyId?` data-id="${s.companyId}" style="cursor:pointer"`:""}><div class="t1">${esc(s.nome)}</div><div class="t2">${s.google?"Google Calendar":"agendada"}</div></div>
           <button class="btn sm ${prep?'primary':'ghost'} sess-prep" data-k="${encodeURIComponent(k)}" type="button">${prep?"✓ prep pronta":"marcar prep"}</button>
+          ${s.companyId?(temAta?`<span class="hbadge" style="background:var(--status-concluido-bg);color:var(--status-concluido)">✓ ata</span>`:`<button class="btn sm ghost sess-encerrar" data-id="${s.companyId}" data-date="${s.dateISO}" type="button">✅ encerrar</button>`):""}
         </div>`; }).join("")}
     </div>` : "";
   box.innerHTML=`<div style="max-width:1180px">
@@ -3287,6 +3359,8 @@ async function hojeAddAcao(){
     if(sn){ const a=Store.acoes.find(x=>x.id===sn.dataset.id); if(a){ try{ await Store.updateAcao(a.id,{prazo:addDays(todayISO(),1)}); toast("Adiada pra amanhã ⏰","ok"); renderHoje(); refreshBadges(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } } return; }
     const dg=e.target.closest(".ac-deleg");
     if(dg){ const a=Store.acoes.find(x=>x.id===dg.dataset.id); if(a){ try{ await Store.updateAcao(a.id,{dono:"cliente"}); toast("Delegada ao plano de "+coNome(a.company_id)+" 👤","ok"); renderHoje(); refreshBadges(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } } return; }
+    const se=e.target.closest(".sess-encerrar");
+    if(se){ e.stopPropagation(); openEncerrar(se.dataset.id, se.dataset.date); return; }
     const pp=e.target.closest(".sess-prep");
     if(pp){ const k=decodeURIComponent(pp.dataset.k); prepSet(k,!prepGet(k)); renderHoje(); return; }
     const tc=e.target.closest(".ac-tocli");
@@ -3545,11 +3619,11 @@ function renderReuAgenda(sess,f){
     <span style="font-size:13px;color:var(--muted);font-weight:600">${+p(ws)[2]} ${MESES[+p(ws)[1]-1]} – ${+p(we)[2]} ${MESES[+p(we)[1]-1]} ${p(ws)[0]}</span></div>`;
   const ra=[];
   f.semPrep.forEach(o=>ra.push({cid:o.companyId,nome:o.nome,sub:`${fmtDiaMes(o.dateISO)} ${o.hora}`,act:"marcar prep",cls:"bad",pkey:prepKey(o)}));
-  f.semAta.forEach(o=>ra.push({cid:o.companyId,nome:o.nome,sub:`${fmtDiaMes(o.dateISO)} ${o.hora}`,act:"registrar ata",cls:"warn"}));
+  f.semAta.forEach(o=>ra.push({cid:o.companyId,nome:o.nome,sub:`${fmtDiaMes(o.dateISO)} ${o.hora}`,act:"encerrar",cls:"warn",enc:true,dateISO:o.dateISO}));
   f.extrair.forEach(x=>ra.push({cid:x.c.id,nome:x.c.nome,sub:`ata ${x.a.data?fmtDiaMes(x.a.data):""}`,act:`extrair ${x.n} ação${x.n>1?"es":""}`,cls:"ok",exi:x.i}));
   const raHtml = ra.length ? ra.slice(0,14).map(r=>`<div class="reu-ra">
       <div class="reu-open" ${r.cid?`data-id="${r.cid}"`:""} style="flex:1;min-width:0;cursor:${r.cid?'pointer':'default'}"><div class="an">${esc(r.nome)}</div><div class="am">${esc(r.sub)}</div></div>
-      ${r.pkey!=null?`<button class="btn sm ghost reu-prep" data-k="${encodeURIComponent(r.pkey)}" type="button">${r.act}</button>`:r.exi!=null?`<button class="btn sm ghost reu-extrair" data-id="${r.cid}" data-i="${r.exi}" type="button">${r.act}</button>`:`<span class="reu-badge ${r.cls}">${r.act}</span>`}
+      ${r.enc?`<button class="btn sm ghost reu-encerrar" data-id="${r.cid}" data-date="${r.dateISO}" type="button">✅ ${r.act}</button>`:r.pkey!=null?`<button class="btn sm ghost reu-prep" data-k="${encodeURIComponent(r.pkey)}" type="button">${r.act}</button>`:r.exi!=null?`<button class="btn sm ghost reu-extrair" data-id="${r.cid}" data-i="${r.exi}" type="button">${r.act}</button>`:`<span class="reu-badge ${r.cls}">${r.act}</span>`}
     </div>`).join("") : `<div class="empty" style="margin:12px 2px">Tudo em dia. ✅</div>`;
   return `<div class="reu-layout">
       <div>${header}<div class="reu-week">${cols}</div></div>
@@ -3624,6 +3698,7 @@ function renderReunioes(){
   box.addEventListener("click",async e=>{
     const tb=e.target.closest(".pltab"); if(tb){ reuTab=tb.dataset.reutab; renderReunioes(); return; }
     const wk=e.target.closest(".reu-wk"); if(wk){ const o=wk.dataset.off; reuWeekOff = o==="hoje"?0:reuWeekOff+(+o); renderReunioes(); return; }
+    const en=e.target.closest(".reu-encerrar"); if(en){ openEncerrar(en.dataset.id, en.dataset.date); return; }
     const pp=e.target.closest(".reu-prep"); if(pp){ const k=decodeURIComponent(pp.dataset.k); prepSet(k,true); toast("Prep marcada ✅","ok"); renderReunioes(); return; }
     const ex=e.target.closest(".reu-extrair"); if(ex){ const c=coById(ex.dataset.id); const a=c&&(c.atas||[])[+ex.dataset.i]; if(!a) return;
       try{ const items=ataActionItems(a); let n=0; for(const it of items){ await Store.addAcao({company_id:c.id, descricao:it.descricao, responsavel:it.responsavel, origem:"reuniao", origem_ref:a.criado||a.data||null}); n++; }
