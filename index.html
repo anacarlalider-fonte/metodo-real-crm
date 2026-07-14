@@ -369,6 +369,48 @@
   /* FAB */
   .fab{position:fixed;right:26px;bottom:26px;z-index:55;background:linear-gradient(135deg,var(--brand),var(--brand-d));color:#1a1205;border:none;border-radius:999px;padding:14px 20px;font-weight:800;font-size:14px;cursor:pointer;box-shadow:0 8px 22px rgba(232,133,43,.4);display:inline-flex;align-items:center;gap:8px}
   .fab:hover{transform:translateY(-1px)}
+  /* Hoje — painel estilo dashboard */
+  .hkpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-bottom:20px}
+  .hkpi{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px;position:relative}
+  .hkpi .lbl{font-size:12.5px;color:var(--muted);font-weight:500}
+  .hkpi .n{font-size:29px;font-weight:800;line-height:1;margin-top:11px}
+  .hkpi .delta{font-size:12px;font-weight:600;margin-top:9px;color:var(--muted2)}
+  .hkpi .ic{position:absolute;top:16px;right:16px;width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:16px;background:var(--panel2)}
+  .h2col{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;max-width:1180px}
+  @media(max-width:900px){.h2col{grid-template-columns:1fr}}
+  .hcard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:8px 20px 12px}
+  .hcard-hd{display:flex;justify-content:space-between;align-items:center;padding:14px 0 6px}
+  .hcard-hd h3{font-size:16px;font-weight:700;margin:0}
+  .hcard-hd .lnk{font-size:12.5px;color:var(--brand);cursor:pointer;font-weight:600}
+  .htask{display:flex;align-items:center;gap:12px;padding:12px 2px;border-top:1px solid var(--line)}
+  .htask .tic{width:36px;height:36px;border-radius:10px;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:15px;flex:none}
+  .htask .tx{flex:1;min-width:0}
+  .htask .tx .t1{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .htask .tx .t2{font-size:12px;color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .htask .tck{cursor:pointer;font-size:18px;color:var(--muted2);flex:none}
+  .hbadge{font-size:11px;font-weight:700;padding:4px 11px;border-radius:999px;white-space:nowrap;flex:none}
+  .hbadge.alta{background:var(--status-andamento-bg);color:var(--status-andamento)}
+  .hbadge.atrasada{background:var(--status-atrasado-bg);color:var(--status-atrasado)}
+  .hbadge.baixa{background:var(--status-backlog-bg);color:var(--status-backlog)}
+  .hlead{display:flex;align-items:center;gap:12px;padding:12px 2px;border-top:1px solid var(--line);cursor:pointer}
+  .hlead .tx{flex:1;min-width:0}
+  .hlead .tx .t1{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hlead .tx .t2{font-size:12px;color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hlead .av{width:38px;height:38px;font-size:12px}
+  .hscore{text-align:right;flex:none;min-width:44px}
+  .hscore .sv{font-size:16px;font-weight:800;line-height:1}
+  .hscore .sl{font-size:10px;color:var(--muted2)}
+  .hcard-add{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:12px 0 4px;border-top:1px solid var(--line);margin-top:2px}
+  /* Tabela de Leads (Vendas) */
+  .ltable-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+  table.ltable{border-collapse:collapse;width:100%;font-size:13.5px;min-width:640px}
+  table.ltable th{text-align:left;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;color:var(--muted2);padding:12px 14px;border-bottom:1px solid var(--line);background:var(--bg2);white-space:nowrap}
+  table.ltable td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+  table.ltable tbody tr{cursor:pointer}
+  table.ltable tbody tr:hover{background:var(--bg2)}
+  table.ltable tbody tr:last-child td{border-bottom:none}
+  .pill-stage{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;white-space:nowrap}
+  .pill-stage .dot{width:8px;height:8px;border-radius:50%;flex:none}
   .hchip{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
   .hchip .n{font-size:26px;font-weight:800;line-height:1}
   .hchip .l{font-size:12px;color:var(--muted);margin-top:5px}
@@ -650,7 +692,9 @@
 
    <!-- ===== VENDAS (FUNIL COMERCIAL) VIEW ===== -->
    <div id="view-sales" class="wrap hidden">
+     <div id="salesTop"></div>
      <div id="salesBoard" class="board"></div>
+     <div id="salesTable"></div>
    </div>
 
    <!-- ===== METAS VIEW ===== -->
@@ -783,6 +827,7 @@
           <div class="field"><label>Cidade / UF</label><input id="f_cidade" placeholder="Ex.: São Paulo / SP" /></div>
           <div class="field"><label>Decisor principal</label><input id="f_decisor" placeholder="Nome do dono / decisor" /></div>
           <div class="field"><label>Faturamento médio</label><input id="f_faturamento" placeholder="Ex.: R$ 300 mil/mês" /></div>
+          <div class="field"><label>Origem do lead</label><select id="f_origem"></select></div>
 
           <div class="field"><label>Fase</label><select id="f_fase"><option value="venda">Venda (funil comercial)</option><option value="entrega">Entrega (Método)</option></select></div>
           <div class="field"><label>Etapa</label><select id="f_etapa"></select></div>
@@ -1252,7 +1297,7 @@ const Store = {
 function objToRow(o,userId){
   return {
     id:o.id, user_id:userId, nome:o.nome, setor:o.setor, cidade:o.cidade, decisor:o.decisor,
-    faturamento:o.faturamento, etapa:o.etapa, status:o.status, plano:o.plano,
+    faturamento:o.faturamento, etapa:o.etapa, status:o.status, plano:o.plano, origem:o.origem||null,
     fase:o.fase||"entrega", etapa_venda:o.etapaVenda||null, data_proposta:o.dataProposta||null, ultimo_contato:o.ultimoContato||null, proximo_followup:o.proximoFollowup||null,
     valor_mensal:o.valorMensal!==""&&o.valorMensal!=null?Number(o.valorMensal):null,
     sessoes_realizadas:Number(o.sessoes||0), data_inicio:o.inicio||null, data_fim:o.fim||null,
@@ -1265,7 +1310,7 @@ function objToRow(o,userId){
 function rowToObj(r){
   return {
     id:r.id, nome:r.nome, setor:r.setor, cidade:r.cidade, decisor:r.decisor, faturamento:r.faturamento,
-    etapa:r.etapa, status:r.status, plano:r.plano, sessoes:r.sessoes_realizadas, inicio:r.data_inicio,
+    etapa:r.etapa, status:r.status, plano:r.plano, origem:r.origem||"", sessoes:r.sessoes_realizadas, inicio:r.data_inicio,
     fase:r.fase||"entrega", etapaVenda:r.etapa_venda||"lead", dataProposta:r.data_proposta||"", ultimoContato:r.ultimo_contato||"", proximoFollowup:r.proximo_followup||"",
     valorMensal:r.valor_mensal!=null?r.valor_mensal:"",
     fim:r.data_fim, proxima:r.proxima_sessao, dataVenc:r.data_vencimento||"", whatsapp:r.whatsapp, drive:r.drive, dor:r.dor,
@@ -1386,13 +1431,83 @@ function icpScore(c){
   const done=crit.filter(Boolean).length;
   return { done, total:ICP_CRITERIA.length, fit: done>=4 };
 }
+const ORIGENS=["Indicação","LinkedIn","Instagram","Google Ads","Site","Evento","WhatsApp","Outbound","Outro"];
+function icpFit(c){
+  const s=icpScore(c); const pct=Math.min(100,Math.round(s.done/(s.total||1)*100));
+  const lvl = s.done>=5?"Alto" : s.done>=3?"Médio" : "Baixo";
+  return { pct, lvl, done:s.done, total:s.total };
+}
+function fitBadge(lvl){
+  const m={Alto:["var(--status-concluido)","var(--status-concluido-bg)"],"Médio":["#a86a12","#fdf2df"],Baixo:["var(--status-backlog)","var(--status-backlog-bg)"]};
+  const [fg,bg]=m[lvl]||m.Baixo;
+  return `<span class="hbadge" style="color:${fg};background:${bg}">${lvl}</span>`;
+}
+function leadVal(c){ const v=Number(c.valorMensal); if(v>0) return v; const pk=c.plano||(c.qualificacao&&c.qualificacao.planoSugerido)||""; return (PLANS[pk]&&PLANS[pk].valor)||0; }
+function scoreColor(s){ return s>=80?"var(--status-concluido)": s>=55?"#a86a12":"var(--muted2)"; }
 function nextFollowupTouch(since){
   for(const d of [1,3,5,7,14]){ if(since<d) return `próx. toque D+${d}`; }
   return "encerrar cadência";
 }
+let salesView="kanban";
+let salesF={busca:"",etapa:"",origem:"",icp:""};
+let salesSort="score";
+function salesToolbar(all,filtered){
+  const origens=[...new Set(all.map(c=>c.origem).filter(Boolean))].sort();
+  const opt=(v,list,ph)=>list.map(o=>`<option ${v===o?"selected":""}>${esc(o)}</option>`).join("");
+  const insight = origens.length ? `<div style="font-size:12px;color:var(--muted2);margin-top:2px">Origem: ${origens.map(o=>`${esc(o)} <b style="color:var(--muted)">${all.filter(c=>c.origem===o).length}</b>`).join(" · ")}${all.some(c=>!c.origem)?` · sem origem <b style="color:var(--muted)">${all.filter(c=>!c.origem).length}</b>`:""}</div>` : "";
+  return `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+      <div class="pltabs">
+        <button class="pltab ${salesView==="kanban"?"active":""}" data-sv="kanban">▦ Kanban</button>
+        <button class="pltab ${salesView==="tabela"?"active":""}" data-sv="tabela">☰ Tabela</button>
+      </div>
+      <span style="font-size:12px;color:var(--muted2)">${filtered.length} de ${all.length} leads</span>
+    </div>
+    <div class="plbar" style="margin-bottom:10px">
+      <div class="plsearch"><input id="svBusca" class="hinput" style="width:100%" placeholder="Buscar lead, decisor, setor…" value="${esc(salesF.busca)}" /></div>
+      ${salesView==="tabela"?`<select id="svEtapa" class="plmini"><option value="">Todas as etapas</option>${SALES_STAGES.filter(s=>s.id!=="ganho"&&s.id!=="perdido").map(s=>`<option value="${s.id}" ${salesF.etapa===s.id?"selected":""}>${s.nome}</option>`).join("")}</select>`:""}
+      <select id="svOrigem" class="plmini"><option value="">Toda origem</option>${opt(salesF.origem,origens,"")}</select>
+      <select id="svIcp" class="plmini"><option value="">Todo ICP</option>${["Alto","Médio","Baixo"].map(l=>`<option ${salesF.icp===l?"selected":""}>${l}</option>`).join("")}</select>
+      ${salesView==="tabela"?`<select id="svSort" class="plmini"><option value="score" ${salesSort==="score"?"selected":""}>Ordenar: Score</option><option value="valor" ${salesSort==="valor"?"selected":""}>Ordenar: Valor</option><option value="nome" ${salesSort==="nome"?"selected":""}>Ordenar: Nome</option></select>`:""}
+      ${(salesF.busca||salesF.etapa||salesF.origem||salesF.icp)?`<button class="btn sm ghost" id="svLimpar" type="button">Limpar</button>`:""}
+    </div>${insight}`;
+}
+function renderSalesTable(list){
+  const arr=list.map(c=>({c,sc:icpFit(c).pct,val:leadVal(c)}));
+  if(salesSort==="valor") arr.sort((a,b)=>b.val-a.val || b.sc-a.sc);
+  else if(salesSort==="nome") arr.sort((a,b)=>(a.c.nome||"").localeCompare(b.c.nome||""));
+  else arr.sort((a,b)=>b.sc-a.sc || b.val-a.val);
+  const rows=arr.map(({c,sc,val})=>{ const st=SALES_STAGES.find(s=>s.id===c.etapaVenda)||SALES_STAGES[0]; const fit=icpFit(c);
+    return `<tr class="lead-open" data-id="${c.id}">
+        <td><div style="font-weight:600">${esc(c.nome)||"(sem nome)"}</div><div style="font-size:12px;color:var(--muted2)">${esc(c.decisor||c.setor||"")}</div></td>
+        <td><span class="pill-stage"><span class="dot" style="background:${st.sw}"></span>${st.nome}</span></td>
+        <td style="text-align:center;font-weight:800;color:${scoreColor(sc)}">${sc}</td>
+        <td>${fitBadge(fit.lvl)}</td>
+        <td style="font-weight:600">${val?brl(val):"—"}</td>
+        <td style="color:var(--muted)">${esc(c.origem||"—")}</td>
+      </tr>`; }).join("");
+  return list.length ? `<div class="ltable-wrap"><table class="ltable">
+      <thead><tr><th>Lead</th><th>Status</th><th style="text-align:center">Score</th><th>Fit ICP</th><th>Valor</th><th>Origem</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>`
+    : `<div class="empty" style="margin:26px 0;text-align:center">Nenhum lead com esses filtros.</div>`;
+}
 function renderSales(){
-  const board=$("#salesBoard"); board.innerHTML="";
-  const data=Store.cache.filter(c=>c.fase==="venda" && matchFilter(c));
+  const top=$("#salesTop"), board=$("#salesBoard"), table=$("#salesTable");
+  const all=Store.cache.filter(c=>c.fase==="venda" && matchFilter(c));
+  let filtered=all.slice();
+  const q=salesF.busca.trim().toLowerCase();
+  if(q) filtered=filtered.filter(c=>[c.nome,c.decisor,c.setor,c.cidade,c.origem].some(x=>String(x||"").toLowerCase().includes(q)));
+  if(salesF.origem) filtered=filtered.filter(c=>(c.origem||"")===salesF.origem);
+  if(salesF.icp) filtered=filtered.filter(c=>icpFit(c).lvl===salesF.icp);
+  if(top){ top.innerHTML=salesToolbar(all,filtered); const s=$("#svBusca"); if(s&&salesF.busca){ s.focus(); s.setSelectionRange(s.value.length,s.value.length); } }
+  if(salesView==="tabela"){
+    board.style.display="none"; board.innerHTML=""; table.style.display="";
+    let trows=filtered; if(salesF.etapa) trows=trows.filter(c=>c.etapaVenda===salesF.etapa);
+    table.innerHTML=renderSalesTable(trows);
+    return;
+  }
+  board.style.display=""; table.style.display="none"; table.innerHTML="";
+  board.innerHTML="";
+  const data=filtered;
   SALES_STAGES.forEach(st=>{
     const items=data.filter(c=>c.etapaVenda===st.id);
     const col=document.createElement("div"); col.className="col";
@@ -1590,6 +1705,7 @@ function openModal(c){
 
   $("#f_nome").value=editing.nome||""; $("#f_setor").value=editing.setor||"";
   $("#f_cidade").value=editing.cidade||""; $("#f_decisor").value=editing.decisor||"";
+  if($("#f_origem")){ $("#f_origem").innerHTML=`<option value="">— origem —</option>`+ORIGENS.map(o=>`<option${editing.origem===o?" selected":""}>${o}</option>`).join(""); }
   $("#f_faturamento").value=editing.faturamento||""; $("#f_sessoes").value=editing.sessoes||"";
   $("#f_inicio").value=editing.inicio||""; $("#f_fim").value=editing.fim||"";
   $("#f_datavenc").value=editing.dataVenc||""; $("#f_whatsapp").value=editing.whatsapp||"";
@@ -2471,6 +2587,7 @@ function applyFaseLayout(fase){
 function collectForm(){
   editing.nome=$("#f_nome").value.trim(); editing.setor=$("#f_setor").value.trim();
   editing.cidade=$("#f_cidade").value.trim(); editing.decisor=$("#f_decisor").value.trim();
+  if($("#f_origem")) editing.origem=$("#f_origem").value;
   editing.faturamento=$("#f_faturamento").value.trim(); editing.sessoes=$("#f_sessoes").value;
   editing.valorMensal=$("#f_valor").value;
   if($("#f_proxfup")) editing.proximoFollowup=$("#f_proxfup").value;
@@ -2686,7 +2803,7 @@ function nextTouch(c){
   if(!next) return { esfriou:true };
   return { date:next, due:daysUntil(next) };
 }
-let hojeView="tudo";
+let hojeView="tudo", hojeAllTasks=false;
 function renderHoje(){
   const box=$("#hoje"); if(!box) return;
   const today=todayISO();
@@ -2790,58 +2907,75 @@ function renderHoje(){
   }).join("");
   const finPanel = parcAlert.length ? panel(`💳 Parcelas a cobrar <span class="pcount">${parcAlert.length}</span>`, finBody) : "";
 
-  // PRIORIDADES DO DIA — junta o urgente de todos os blocos, em ordem
-  const prio=[];
-  atrasadas.forEach(a=>prio.push({u:0,ic:"🔴",txt:`Atrasada: ${a.descricao}`+(a.company_id?` · ${coNome(a.company_id)}`:""),cid:a.company_id||null}));
-  parcAlert.filter(p=>p.vencimento<today).forEach(p=>prio.push({u:1,ic:"💸",txt:`Cobrar ${coNome(p.company_id)} — ${brl(Number(p.valor||0))} (venceu ${fmtDate(p.vencimento)})`,cid:p.company_id||null}));
-  fups.filter(x=>x.t.esfriou||(x.t.due!=null&&x.t.due<=0)).forEach(x=>prio.push({u:2,ic:"📨",txt:`Follow-up: ${x.c.nome||"lead"}`+(x.t.esfriou?" (esfriando!)":""),cid:x.c.id}));
-  sessoes.filter(s=>s.dateISO===today).forEach(s=>prio.push({u:3,ic:"📅",txt:`Sessão hoje${s.hora?" "+s.hora:""}: ${s.nome}`,cid:s.companyId||null}));
-  deHoje.forEach(a=>prio.push({u:4,ic:"🟡",txt:`Hoje: ${a.descricao}`+(a.company_id?` · ${coNome(a.company_id)}`:""),cid:a.company_id||null}));
-  prio.sort((a,b)=>a.u-b.u);
-  const prioBody = prio.length
-    ? prio.slice(0,7).map(p=>`<div class="hrow${p.cid?" click prio-go":""}" ${p.cid?`data-id="${p.cid}"`:""}>
-        <span style="flex:1;font-size:14px">${p.ic} ${esc(p.txt)}</span>${p.cid?`<span style="font-size:12px;color:var(--brand)">abrir →</span>`:""}</div>`).join("")
-      + (prio.length>7?`<div style="font-size:12px;color:var(--muted2);padding:8px 2px 2px">+ ${prio.length-7} outra(s) — veja nos blocos abaixo</div>`:"")
-    : `<div class="empty" style="margin:8px 0">Nada urgente agora. Você está em dia! ✅</div>`;
-  const prioPanel = panel(`🎯 Prioridades de hoje <span class="pcount">${prio.length}</span>`, prioBody);
-
-  // barra de blocos: mostra um bloco por vez (ou tudo)
-  const _hvBtns=[["tudo","Tudo"],["acoes","Ações"],["followups","Follow-ups"],["sessoes","Sessões"],["cobrancas","Cobranças"],["alertas","Alertas"]];
-  const hvBar=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px">${_hvBtns.map(([k,l])=>`<button class="btn sm ghost hoje-view${hojeView===k?" active":""}" data-hv="${k}">${l}</button>`).join("")}</div>`;
-  const emptyPanel=(title,msg)=>panel(title,`<div class="empty" style="margin:8px 0">${msg}</div>`);
-  let corpo;
-  if(hojeView==="tudo"){
-    corpo=`<div class="hoje-cols">
-      <div>${followupPanel}${acoesPanel}</div>
-      <div>${sessoesPanel}${alertasPanel}${finPanel}${porClientePanel}</div>
+  // ===== NOVO LAYOUT: KPIs + Tarefas do Dia + Leads Quentes =====
+  const sessHoje=sessoes.filter(s=>s.dateISO===today);
+  const parcVenc=parcAlert.filter(p=>p.vencimento<today);
+  const fupsDue=fups.filter(x=>x.t.esfriou || (x.t.due!=null && x.t.due<=0));
+  const oportunidades=Store.cache.filter(c=>c.fase==="venda" && !["perdido","ganho"].includes(c.etapaVenda));
+  const oppVal=c=>{ const v=plval(c); if(v>0) return v; const pk=c.plano||(c.qualificacao&&c.qualificacao.planoSugerido)||""; return (PLANS[pk]&&PLANS[pk].valor)||0; };
+  const pipeline=oportunidades.reduce((s,c)=>s+oppVal(c),0);
+  const parados=oportunidades.filter(c=>{ const lc=c.ultimoContato||c.dataProposta; return lc && (-(daysUntil(lc)))>5; });
+  const iconFor=txt=>{ const t=(txt||"").toLowerCase();
+    if(/ligar|liga\b|call|telefon/.test(t)) return "☎️";
+    if(/proposta|orçament|enviar/.test(t)) return "📄";
+    if(/reuni|sess/.test(t)) return "📅";
+    if(/follow|retom|contat/.test(t)) return "📨";
+    if(/qualific/.test(t)) return "🎯";
+    if(/whats|mensag|e-?mail/.test(t)) return "💬";
+    return "✓"; };
+  const tarefas=[];
+  atrasadas.forEach(a=>tarefas.push({u:0,badge:"atrasada",ic:iconFor(a.descricao),t1:a.descricao,t2:a.company_id?coNome(a.company_id):"tarefa",cid:a.company_id,acId:a.id}));
+  parcVenc.forEach(p=>tarefas.push({u:0,badge:"atrasada",ic:"💸",t1:`Cobrar ${coNome(p.company_id)}`,t2:`${brl(Number(p.valor||0))} · venceu ${fmtDiaMes(p.vencimento)}`,cid:p.company_id}));
+  fupsDue.filter(x=>x.t.esfriou||x.t.due<0).forEach(x=>tarefas.push({u:1,badge:"atrasada",ic:"📨",t1:`Follow-up ${x.c.nome}`,t2:x.t.esfriou?"esfriando · última tentativa":"toque atrasado",cid:x.c.id,fuId:x.c.id}));
+  sessHoje.forEach(s=>tarefas.push({u:1,badge:"alta",ic:"📅",t1:`Reunião ${s.nome}`,t2:s.hora?`hoje ${s.hora}`:"hoje",cid:s.companyId}));
+  fupsDue.filter(x=>!x.t.esfriou&&x.t.due===0).forEach(x=>tarefas.push({u:1,badge:"alta",ic:"📨",t1:`Follow-up ${x.c.nome}`,t2:"tocar hoje",cid:x.c.id,fuId:x.c.id}));
+  deHoje.forEach(a=>tarefas.push({u:2,badge:"alta",ic:iconFor(a.descricao),t1:a.descricao,t2:a.company_id?coNome(a.company_id):"tarefa",cid:a.company_id,acId:a.id}));
+  semana.forEach(a=>tarefas.push({u:3,badge:"baixa",ic:iconFor(a.descricao),t1:a.descricao,t2:(a.company_id?coNome(a.company_id)+" · ":"")+fmtDiaMes(a.prazo),cid:a.company_id,acId:a.id}));
+  semPrazo.forEach(a=>tarefas.push({u:4,badge:"baixa",ic:iconFor(a.descricao),t1:a.descricao,t2:a.company_id?coNome(a.company_id):"sem prazo",cid:a.company_id,acId:a.id}));
+  tarefas.sort((a,b)=>a.u-b.u);
+  const urgentes=tarefas.filter(t=>t.badge==="atrasada").length;
+  const badgeLbl={atrasada:"Atrasada",alta:"alta",baixa:"baixa"};
+  const CAP=7;
+  const visiveis = hojeAllTasks ? tarefas : tarefas.slice(0,CAP);
+  const taskRows = tarefas.length ? visiveis.map(t=>`
+      <div class="htask">
+        ${t.acId?`<span class="tck ac-check" data-id="${t.acId}" title="Concluir">☐</span>`:`<span class="tic">${t.ic}</span>`}
+        <div class="tx${t.cid?' prio-go':''}"${t.cid?` data-id="${t.cid}" style="cursor:pointer"`:""}><div class="t1">${esc(t.t1)}</div><div class="t2">${esc(t.t2)}</div></div>
+        ${t.fuId?`<button class="fu-done btn sm" data-id="${t.fuId}" style="white-space:nowrap">✓ contatei</button>`:""}
+        <span class="hbadge ${t.badge}">${badgeLbl[t.badge]}</span>
+      </div>`).join("") : `<div class="empty" style="margin:16px 2px">Nada pendente pra hoje. Você está em dia! ✅</div>`;
+  const verTarefas = tarefas.length>CAP ? `<span class="lnk ver-tarefas">${hojeAllTasks?"Ver menos":`Ver todas (${tarefas.length})`}</span>` : `<span style="font-size:12.5px;color:var(--muted2)">${tarefas.length}${urgentes?` · ${urgentes} urgente${urgentes>1?"s":""}`:""}</span>`;
+  const tarefasCard=`<div class="hcard">
+      <div class="hcard-hd"><h3>Tarefas do Dia</h3>${verTarefas}</div>
+      ${taskRows}
+      <div class="hcard-add">
+        <input id="acDesc" class="hinput" placeholder="Nova tarefa…" style="flex:1;min-width:120px" />
+        <select id="acCli" class="hinput" style="max-width:130px"><option value="">— cliente —</option>${cliOpts}</select>
+        <input id="acPrazo" type="date" class="hinput" />
+        <button class="btn sm primary" id="acAdd">Add</button>
+      </div></div>`;
+  const scored=oportunidades.map(c=>{ const s=icpScore(c); return {c,score:Math.round(s.done/(s.total||1)*100)}; })
+    .sort((a,b)=> b.score-a.score || oppVal(b.c)-oppVal(a.c)).slice(0,6);
+  const scoreCor=s=> s>=80?"var(--status-concluido)": s>=55?"#a86a12":"var(--muted2)";
+  const leadRows = scored.length ? scored.map(x=>{ const c=x.c; const v=oppVal(c);
+      const sub=(c.decisor?esc(c.decisor):(c.setor?esc(c.setor):"oportunidade"))+(v?" · "+brl(v):"");
+      return `<div class="hlead prio-go" data-id="${c.id}"><span class="av">${iniciais(c.nome||c.decisor)}</span><div class="tx"><div class="t1">${esc(c.nome)||"(lead)"}</div><div class="t2">${sub}</div></div><div class="hscore"><div class="sv" style="color:${scoreCor(x.score)}">${x.score}</div><div class="sl">score</div></div></div>`;
+    }).join("") : `<div class="empty" style="margin:16px 2px">Nenhuma oportunidade no funil. Cadastre leads em Vendas.</div>`;
+  const leadsCard=`<div class="hcard"><div class="hcard-hd"><h3>Leads Quentes</h3><span class="lnk ver-leads">Ver todos →</span></div>${leadRows}</div>`;
+  const brlk=v=> v>=1000 ? "R$ "+(v/1000).toLocaleString("pt-BR",{maximumFractionDigits:v>=10000?0:1})+"k" : brl(v);
+  const kpi=(lbl,n,delta,ic,cor)=>`<div class="hkpi"><div class="ic">${ic}</div><div class="lbl">${lbl}</div><div class="n"${cor?` style="color:${cor}"`:""}>${n}</div><div class="delta">${delta}</div></div>`;
+  const kpis=`<div class="hkpis">
+      ${kpi("Oportunidades ativas",oportunidades.length,"no funil de vendas","👥")}
+      ${kpi("Tarefas de hoje",tarefas.length,urgentes?`${urgentes} urgente${urgentes>1?"s":""}`:"em dia","📋",urgentes?"var(--status-atrasado)":"")}
+      ${kpi("Receita prevista",brlk(pipeline),`${oportunidades.length} oportunidade${oportunidades.length!==1?"s":""}`,"📈")}
+      ${kpi("Leads parados",parados.length,"> 5 dias sem contato","⏸️",parados.length?"var(--status-atrasado)":"")}
     </div>`;
-  } else {
-    let sel="";
-    if(hojeView==="acoes") sel=acoesPanel+porClientePanel;
-    else if(hojeView==="followups") sel=followupPanel;
-    else if(hojeView==="sessoes") sel=sessoesPanel;
-    else if(hojeView==="cobrancas") sel=finPanel||emptyPanel(`💳 Parcelas a cobrar`,"Nenhuma parcela vencida ou vencendo esta semana. 👍");
-    else if(hojeView==="alertas") sel=alertasPanel||emptyPanel(`🔔 Precisam de atenção`,"Nada precisando de atenção agora. 👍");
-    corpo=`<div style="max-width:760px">${sel}</div>`;
-  }
-  const html=`<div style="max-width:1280px">
-    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:8px">
-      <div style="font-size:22px;font-weight:800">${saudacao()}, Ana 👋</div>
-      <div style="font-size:13px;color:var(--muted)">${new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"})}</div>
-    </div>
-    <div style="max-width:760px;margin-bottom:20px">${prioPanel}</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:22px;max-width:760px">
-      ${chip(sessoes.filter(s=>s.dateISO===today).length,"sessões hoje","var(--brand)")}
-      ${chip(fupPend,"follow-ups a fazer",fupPend?"#c0392f":"var(--txt)")}
-      ${chip(atrasadas.length,"ações atrasadas",atrasadas.length?"#c0392f":"var(--txt)")}
-      ${chip(abertas.length,"ações abertas","var(--txt)")}
-      ${chip(parcVencidas,"parcelas vencidas",parcVencidas?"#c0392f":"var(--txt)")}
-    </div>
-    ${hvBar}
-    ${corpo}
-  </div>`;
-  box.innerHTML=html;
-  renderAcPorCli();
+  box.innerHTML=`<div style="max-width:1180px">
+      <div style="margin-bottom:20px"><div style="font-size:23px;font-weight:800">${saudacao()}, Ana 👋</div>
+        <div style="font-size:13.5px;color:var(--muted);margin-top:3px">Aqui está o que precisa da sua atenção hoje.</div></div>
+      ${kpis}
+      <div class="h2col">${tarefasCard}${leadsCard}</div>
+    </div>`;
 }
 
 /* Hoje — eventos por DELEGAÇÃO (anexados uma vez; sobrevivem aos re-renders) */
@@ -2865,6 +2999,8 @@ async function hojeAddAcao(){
     if(e.target.closest("#acAdd")){ hojeAddAcao(); return; }
     const hv=e.target.closest(".hoje-view");
     if(hv){ hojeView=hv.dataset.hv; renderHoje(); return; }
+    if(e.target.closest(".ver-tarefas")){ hojeAllTasks=!hojeAllTasks; renderHoje(); return; }
+    if(e.target.closest(".ver-leads")){ setView("sales"); return; }
     const go=e.target.closest(".sess-go,.alert-go,.fin-go,.prio-go,.fu-open");
     if(go){ const c=coById(go.dataset.id); if(c) openModal(c); return; }
   });
@@ -2872,6 +3008,24 @@ async function hojeAddAcao(){
   box.addEventListener("change",(e)=>{ if(e.target.id==="acPeriodo") renderAcPorCli(); });
 })();
 
+/* Vendas — eventos do toolbar/tabela (delegação) */
+(function initSalesEvents(){
+  const top=$("#salesTop"), table=$("#salesTable");
+  if(top){
+    top.addEventListener("click",e=>{
+      const tb=e.target.closest(".pltab"); if(tb){ salesView=tb.dataset.sv; renderSales(); return; }
+      if(e.target.closest("#svLimpar")){ salesF={busca:"",etapa:"",origem:"",icp:""}; renderSales(); return; }
+    });
+    top.addEventListener("change",e=>{
+      if(e.target.id==="svEtapa"){ salesF.etapa=e.target.value; renderSales(); }
+      else if(e.target.id==="svOrigem"){ salesF.origem=e.target.value; renderSales(); }
+      else if(e.target.id==="svIcp"){ salesF.icp=e.target.value; renderSales(); }
+      else if(e.target.id==="svSort"){ salesSort=e.target.value; renderSales(); }
+    });
+    top.addEventListener("input",e=>{ if(e.target.id==="svBusca"){ salesF.busca=e.target.value; renderSales(); } });
+  }
+  if(table) table.addEventListener("click",e=>{ const r=e.target.closest(".lead-open"); if(r){ const c=coById(r.dataset.id); if(c) openModal(c); } });
+})();
 function renderActive(){
   if(activeView==="hoje") renderHoje();
   else if(activeView==="sales") renderSales();
