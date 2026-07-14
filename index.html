@@ -2460,7 +2460,7 @@ function renderResumo(){
   const mrrTxt = mrr>0?brl(mrr):(permuta?"Permuta":"—");
   const hcol=healthCor(h.key);
   const renovaCor = rd!=null&&rd<0?'var(--status-atrasado)':rd!=null&&rd<=30?'#a86a12':'inherit';
-  const renovaStat = rd==null?"—": rd<0?`venceu há ${-rd}d`: rd===0?"vence hoje": rd<=45?`em ${rd}d`: fmtDiaMes(c.dataVenc||c.fim);
+  const renovaStat = rd==null?"—": rd<0?`venceu há ${-rd}d`: rd===0?"vence hoje": rd<=45?`em ${rd}d`: fmtDiaMes(c.fim||c.dataVenc);
   box.innerHTML=`
     <div class="rz-head">
       <div class="rz-eyebrow">
@@ -4095,7 +4095,7 @@ function ultimoToque(c){
 function acoesAtrasadasCliente(c){ const t=todayISO(); return (Store.acoes||[]).filter(a=>a.company_id===c.id && a.status!=="feito" && a.prazo && a.prazo<t).length; }
 function parcelasVencidasCliente(c){ const t=todayISO(); return (Store.pagamentos||[]).filter(p=>p.company_id===c.id && p.status!=="pago" && p.vencimento && p.vencimento<t).length; }
 function onboardingParadoC(c){ const o=c.onboarding||{}; const st=Array.isArray(o.steps)?o.steps:[]; const done=st.filter(Boolean).length; return done>0 && done<ONB_STEPS.length; }
-function renovaEmDias(c){ const d=c.dataVenc||c.fim; return d?daysUntil(d):null; }
+function renovaEmDias(c){ const d=c.fim||c.dataVenc; return d?daysUntil(d):null; }
 function clientHealth(c){
   const lt=ultimoToque(c); const dias= lt? -(daysUntil(lt)) : 999;
   const atr=acoesAtrasadasCliente(c), parc=parcelasVencidasCliente(c), rd=renovaEmDias(c);
@@ -4146,7 +4146,7 @@ function renderList(){
   const rows = list.length ? list.map(({c,h})=>{
     const valor=plval(c); const permuta=valor<=0 && c.notas && /permuta/i.test(c.notas);
     const toque = h.dias!=null ? `${h.dias}d` : "—";
-    const rd=h.rd; const renova = rd==null?"—": rd<0?`venceu há ${-rd}d`: rd===0?"vence hoje":(rd<=45?`${rd}d`:fmtDiaMes(c.dataVenc||c.fim));
+    const rd=h.rd; const renova = rd==null?"—": rd<0?`venceu há ${-rd}d`: rd===0?"vence hoje":(rd<=45?`${rd}d`:fmtDiaMes(c.fim||c.dataVenc));
     const st=currentStage(c);
     const faseTint=`background:color-mix(in srgb, ${st.sw} 15%, transparent);color:${st.sw}`;
     const accent = h.key==="risco"?"box-shadow:inset 3px 0 0 var(--status-atrasado)":h.key==="atencao"?"box-shadow:inset 3px 0 0 #d99a2b":"";
