@@ -3416,10 +3416,11 @@ function renderHoje(){
   const sessSemPrep=sessHoje.filter(s=>!prepGet(prepKey(s))).length;
   const agendaCard = sessHoje.length ? `<div class="hcard" style="max-width:1180px;margin-top:16px">
       <div class="hcard-hd"><h3>Agenda de hoje</h3><span style="font-size:12.5px;color:${sessSemPrep?'var(--status-atrasado)':'var(--muted2)'}">${sessHoje.length} sessõe${sessHoje.length>1?"s":""}${sessSemPrep?` · ${sessSemPrep} sem prep`:" · tudo preparado"}</span></div>
-      ${sessHoje.map(s=>{ const k=prepKey(s); const prep=prepGet(k); const temAta=s.companyId&&clienteTemAtaEm(s.companyId,s.dateISO);
-        return `<div class="hsess">
+      ${sessHoje.map(s=>{ const k=prepKey(s); const prep=prepGet(k); const feita=sessDoneGet(k); const temAta=s.companyId&&clienteTemAtaEm(s.companyId,s.dateISO);
+        return `<div class="hsess"${feita?' style="opacity:.55"':''}>
           <span class="hsess-hora">${s.hora||"—"}</span>
           <div class="hsess-tx${s.companyId?' prio-go':''}"${s.companyId?` data-id="${s.companyId}" style="cursor:pointer"`:""}><div class="t1">${esc(s.nome)}</div><div class="t2">${s.google?"Google Calendar":"agendada"}</div></div>
+          <button class="btn sm ${feita?'primary':'ghost'} sess-done" data-key="${encodeURIComponent(k)}" type="button">${feita?"✓ feita":"marcar feita"}</button>
           <button class="btn sm ${prep?'primary':'ghost'} sess-prep" data-k="${encodeURIComponent(k)}" type="button">${prep?"✓ prep pronta":"marcar prep"}</button>
           ${s.companyId?(temAta?`<span class="hbadge" style="background:var(--status-concluido-bg);color:var(--status-concluido)">✓ ata</span>`:`<button class="btn sm ghost sess-encerrar" data-id="${s.companyId}" data-date="${s.dateISO}" type="button">✅ encerrar</button>`):""}
         </div>`; }).join("")}
@@ -3454,7 +3455,7 @@ async function hojeAddAcao(){
     const dg=e.target.closest(".ac-deleg");
     if(dg){ const a=Store.acoes.find(x=>x.id===dg.dataset.id); if(a){ try{ await Store.updateAcao(a.id,{dono:"cliente"}); toast("Delegada ao plano de "+coNome(a.company_id)+" 👤","ok"); renderHoje(); refreshBadges(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } } return; }
     const sd=e.target.closest(".sess-done");
-    if(sd){ e.stopPropagation(); sessDoneSet(decodeURIComponent(sd.dataset.key),true); toast("Reunião marcada como feita ✅","ok"); renderHoje(); return; }
+    if(sd){ e.stopPropagation(); const kk=decodeURIComponent(sd.dataset.key); const nv=!sessDoneGet(kk); sessDoneSet(kk,nv); toast(nv?"Reunião marcada como feita ✅":"Reunião reaberta","ok"); renderHoje(); return; }
     const se=e.target.closest(".sess-encerrar");
     if(se){ e.stopPropagation(); openEncerrar(se.dataset.id, se.dataset.date); return; }
     const pp=e.target.closest(".sess-prep");
