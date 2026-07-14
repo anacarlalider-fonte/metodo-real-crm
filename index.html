@@ -461,6 +461,10 @@
   .htask{display:flex;align-items:center;gap:12px;padding:12px 2px;border-top:1px solid var(--line)}
   .htask .tic{width:36px;height:36px;border-radius:10px;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:15px;flex:none}
   .htask .tx{flex:1;min-width:0}
+  .task-tri{flex:none;font-size:11.5px;font-weight:600;padding:4px 6px;border-radius:8px;border:1px solid var(--line2);background:var(--panel2);color:var(--muted);cursor:pointer;max-width:130px}
+  .task-tri.tri-importante{border-color:var(--triade-importante);color:var(--triade-importante);background:var(--triade-importante-bg)}
+  .task-tri.tri-urgente{border-color:var(--triade-urgente);color:var(--triade-urgente);background:var(--triade-urgente-bg)}
+  .task-tri.tri-circunstancial{color:var(--muted)}
   .htask .tx .t1{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .htask .tx .t2{font-size:12px;color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .htask .tck{cursor:pointer;font-size:18px;color:var(--muted2);flex:none}
@@ -3337,14 +3341,14 @@ function renderHoje(){
     if(/whats|mensag|e-?mail/.test(t)) return "💬";
     return "✓"; };
   const tarefas=[];
-  atrasadas.forEach(a=>tarefas.push({u:0,badge:"atrasada",ic:iconFor(a.descricao),t1:a.descricao,t2:a.company_id?coNome(a.company_id):"tarefa",cid:a.company_id,acId:a.id,como:a.como}));
+  atrasadas.forEach(a=>tarefas.push({u:0,badge:"atrasada",ic:iconFor(a.descricao),t1:a.descricao,t2:a.company_id?coNome(a.company_id):"tarefa",cid:a.company_id,acId:a.id,como:a.como,triade:a.triade}));
   parcVenc.forEach(p=>tarefas.push({u:0,badge:"atrasada",ic:"💸",t1:`Cobrar ${coNome(p.company_id)}`,t2:`${brl(Number(p.valor||0))} · venceu ${fmtDiaMes(p.vencimento)}`,cid:p.company_id}));
   fupsDue.filter(x=>x.t.esfriou||x.t.due<0).forEach(x=>tarefas.push({u:1,badge:"atrasada",ic:"📨",t1:`Follow-up ${x.c.nome}`,t2:x.t.esfriou?"esfriando · última tentativa":"toque atrasado",cid:x.c.id,fuId:x.c.id}));
   sessHoje.forEach(s=>{ const sk=prepKey(s); if(sessDoneGet(sk)) return; tarefas.push({u:1,badge:"alta",ic:"📅",t1:`Reunião ${s.nome}`,t2:s.hora?`hoje ${s.hora}`:"hoje",cid:s.companyId,sessKey:sk}); });
   fupsDue.filter(x=>!x.t.esfriou&&x.t.due===0).forEach(x=>tarefas.push({u:1,badge:"alta",ic:"📨",t1:`Follow-up ${x.c.nome}`,t2:"tocar hoje",cid:x.c.id,fuId:x.c.id}));
-  deHoje.forEach(a=>tarefas.push({u:2,badge:"alta",ic:iconFor(a.descricao),t1:a.descricao,t2:a.company_id?coNome(a.company_id):"tarefa",cid:a.company_id,acId:a.id,como:a.como}));
-  semana.forEach(a=>tarefas.push({u:3,badge:"baixa",ic:iconFor(a.descricao),t1:a.descricao,t2:(a.company_id?coNome(a.company_id)+" · ":"")+fmtDiaMes(a.prazo),cid:a.company_id,acId:a.id}));
-  semPrazo.forEach(a=>tarefas.push({u:4,badge:"baixa",ic:iconFor(a.descricao),t1:a.descricao,t2:a.company_id?coNome(a.company_id):"sem prazo",cid:a.company_id,acId:a.id}));
+  deHoje.forEach(a=>tarefas.push({u:2,badge:"alta",ic:iconFor(a.descricao),t1:a.descricao,t2:a.company_id?coNome(a.company_id):"tarefa",cid:a.company_id,acId:a.id,como:a.como,triade:a.triade}));
+  semana.forEach(a=>tarefas.push({u:3,badge:"baixa",ic:iconFor(a.descricao),t1:a.descricao,t2:(a.company_id?coNome(a.company_id)+" · ":"")+fmtDiaMes(a.prazo),cid:a.company_id,acId:a.id,triade:a.triade}));
+  semPrazo.forEach(a=>tarefas.push({u:4,badge:"baixa",ic:iconFor(a.descricao),t1:a.descricao,t2:a.company_id?coNome(a.company_id):"sem prazo",cid:a.company_id,acId:a.id,triade:a.triade}));
   // Entregáveis (Produção) com prazo próximo — trabalho de produção entra no dia
   (Store.entregaveis||[]).filter(e=>e.etapa!=="aprovado" && e.prazo && daysUntil(e.prazo)<=7).forEach(e=>{
     const d=daysUntil(e.prazo); const late=d<0; const stg=(PROD_STAGES.find(s=>s.id===e.etapa)||{}).nome||"";
@@ -3353,7 +3357,8 @@ function renderHoje(){
       t2:`${coNome(e.company_id)} · ${stg}${e.bloqueio?" · ⛔ bloqueado":""} · ${late?`atrasado ${-d}d`:d===0?"vence hoje":`vence em ${d}d`}`,
       cid:e.company_id, entId:e.id });
   });
-  tarefas.sort((a,b)=>a.u-b.u);
+  const triRank=t=>t==="importante"?0:t==="urgente"?1:t==="circunstancial"?2:3;
+  tarefas.sort((a,b)=> (a.u-b.u) || (triRank(a.triade)-triRank(b.triade)) );
   const urgentes=tarefas.filter(t=>t.badge==="atrasada").length;
   const badgeLbl={atrasada:"Atrasada",alta:"alta",baixa:"baixa"};
   const CAP=7;
@@ -3364,6 +3369,12 @@ function renderHoje(){
         <div class="tx${t.entId?' ent-go':(t.cid?' prio-go':'')}"${t.entId?` data-ent="${t.entId}" style="cursor:pointer"`:(t.cid?` data-id="${t.cid}" style="cursor:pointer"`:"")}><div class="t1">${esc(t.t1)}</div><div class="t2">${esc(t.t2)}</div></div>
         ${t.fuId?`<button class="fu-done btn sm" data-id="${t.fuId}" style="white-space:nowrap">✓ contatei</button>`:""}
         ${t.sessKey?`<button class="sess-done btn sm" data-key="${encodeURIComponent(t.sessKey)}" style="white-space:nowrap">✓ feita</button>`:""}
+        ${t.acId?`<select class="task-tri tri-${t.triade||'none'}" data-id="${t.acId}" title="Prioridade (tríade do tempo)">
+          <option value="">— prioridade —</option>
+          <option value="importante"${t.triade==="importante"?" selected":""}>🟢 Importante</option>
+          <option value="urgente"${t.triade==="urgente"?" selected":""}>🔴 Urgente</option>
+          <option value="circunstancial"${t.triade==="circunstancial"?" selected":""}>⚪ Circunstancial</option>
+        </select>`:""}
         <span class="hbadge ${t.badge}">${badgeLbl[t.badge]}</span>
       </div>`).join("") : `<div class="empty" style="margin:16px 2px">Nada pendente pra hoje. Você está em dia! ✅</div>`;
   const verTarefas = tarefas.length>CAP ? `<span class="lnk ver-tarefas">${hojeAllTasks?"Ver menos":`Ver todas (${tarefas.length})`}</span>` : `<span style="font-size:12.5px;color:var(--muted2)">${tarefas.length}${urgentes?` · ${urgentes} urgente${urgentes>1?"s":""}`:""}</span>`;
@@ -3475,7 +3486,11 @@ async function hojeAddAcao(){
     if(go){ const c=coById(go.dataset.id); if(c) openModal(c); return; }
   });
   box.addEventListener("keydown",(e)=>{ if(e.key!=="Enter") return; if(e.target.id==="acDesc") hojeAddAcao(); else if(e.target.id==="capDesc") hojeCapture(); });
-  box.addEventListener("change",(e)=>{ if(e.target.id==="acPeriodo") renderAcPorCli(); });
+  box.addEventListener("change",async (e)=>{
+    if(e.target.id==="acPeriodo"){ renderAcPorCli(); return; }
+    const tri=e.target.closest(".task-tri");
+    if(tri){ try{ await Store.updateAcao(tri.dataset.id,{triade:e.target.value||null}); renderHoje(); }catch(err){ toast("Erro: "+(err.message||err),"err"); } return; }
+  });
 })();
 
 /* Vendas — eventos do toolbar/tabela (delegação) */
