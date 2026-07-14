@@ -201,6 +201,12 @@
   .rz-stat .k{font-size:10.5px;font-weight:800;letter-spacing:.4px;color:var(--muted2);text-transform:uppercase}
   .rz-stat .v{font-size:16px;font-weight:800;margin-top:3px}
   .rz-sec{font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--muted2);text-transform:uppercase;margin:18px 0 9px}
+  .rz-sess{display:flex;gap:14px;align-items:center;padding:11px 14px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px}
+  .rz-sess-date{flex:none;width:42px;text-align:center;line-height:1}
+  .rz-sess-date .m{display:block;font-size:10px;font-weight:800;letter-spacing:.5px;color:var(--muted2)}
+  .rz-sess-date .d{display:block;font-size:19px;font-weight:800;margin-top:3px}
+  .rz-sess .tt{font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rz-sess .td{font-size:12px;color:var(--muted2);margin-top:1px}
   /* timeline com linha conectora */
   .rz-tl{position:relative;padding-left:20px}
   .rz-tl:before{content:"";position:absolute;left:5px;top:4px;bottom:4px;width:2px;background:var(--line2)}
@@ -2420,10 +2426,19 @@ function renderResumo(){
   const real=Math.min(12,(Store.sessoes||[]).filter(s=>s.company_id===c.id && s.inicio && s.inicio.slice(0,10)<=todayISO()).length);
   const dots=Array.from({length:12},(_,i)=>`<span class="ciclo-dot${i<real?" on":""}"></span>`).join("");
   const tl=[];
-  (c.interacoes||[]).forEach(it=>{ if(it&&it.data) tl.push({d:String(it.data).slice(0,10),t:(it.tipo?"💬 "+esc(it.tipo)+": ":"💬 ")+esc(it.texto||"")}); });
-  (c.atas||[]).forEach(a=>{ if(a&&a.data) tl.push({d:String(a.data).slice(0,10),t:"📝 Ata"+(a.titulo?": "+esc(a.titulo):"")}); });
-  (Store.acoes||[]).filter(a=>a.company_id===c.id && a.status==="feito").forEach(a=>tl.push({d:(a.done_at||a.prazo||"").slice(0,10),t:"✅ "+esc(a.descricao||"")}));
+  (c.interacoes||[]).forEach(it=>{ if(it&&it.data) tl.push({d:String(it.data).slice(0,10),ic:(INT_ICON[it.tipo]||"💬"),tt:esc(it.texto||it.tipo||"Interação"),td:it.texto&&it.tipo?esc(it.tipo):""}); });
+  (c.atas||[]).forEach(a=>{ if(a&&a.data) tl.push({d:String(a.data).slice(0,10),ic:(a.fonte==="tactiq"?"🎙":"📝"),tt:"Ata"+(a.titulo?": "+esc(a.titulo):" de reunião"),td:a.fonte==="tactiq"?"Reunião · Tactiq":"Reunião"}); });
+  (Store.acoes||[]).filter(a=>a.company_id===c.id && a.status==="feito").forEach(a=>tl.push({d:(a.done_at||a.prazo||"").slice(0,10),ic:"✅",tt:esc(a.descricao||"Ação"),td:"Ação concluída"}));
   tl.sort((a,b)=>(b.d||"").localeCompare(a.d||""));
+  // próximas sessões (Google/agenda) — cards com bloco de data
+  const t0=todayISO();
+  const futSess=(Store.sessoes||[]).filter(s=>s.company_id===c.id && s.inicio && s.inicio.slice(0,10)>=t0)
+    .map(s=>({dateISO:s.inicio.slice(0,10),titulo:s.titulo||"Sessão",tipo:s.titulo?"Google Calendar":"Sessão"}))
+    .sort((a,b)=>a.dateISO.localeCompare(b.dateISO));
+  if(c.proxima && c.proxima>=t0 && !futSess.some(x=>x.dateISO===c.proxima)) futSess.push({dateISO:c.proxima,titulo:"Próxima sessão",tipo:"Agenda"});
+  futSess.sort((a,b)=>a.dateISO.localeCompare(b.dateISO));
+  const MZ=["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
+  const sessCard=x=>{ const p=x.dateISO.split("-"); return `<div class="rz-sess"><div class="rz-sess-date"><span class="m">${MZ[+p[1]-1]}</span><span class="d">${+p[2]}</span></div><div style="min-width:0"><div class="tt">${esc(x.titulo)}</div><div class="td">${esc(x.tipo)}</div></div></div>`; };
   const dimTag=(lbl,v)=>`<span style="font-size:11.5px;color:var(--muted2)">${lbl} <b style="color:${v==null?'var(--muted2)':v>=70?'var(--status-concluido)':v>=40?'#a86a12':'var(--status-atrasado)'}">${v==null?'—':v+'%'}</b></span>`;
   const card=(t,inner)=>`<div class="rz-card"><div class="rz-h">${t}</div>${inner}</div>`;
   const listOr=(arr,fn,empty)=>arr.length?arr.slice(0,5).map(fn).join("")+(arr.length>5?`<div class="rz-sub" style="padding-top:5px">+${arr.length-5} mais…</div>`:""):`<div class="rz-empty">${empty}</div>`;
@@ -2433,6 +2448,7 @@ function renderResumo(){
   const mrrTxt = mrr>0?brl(mrr):(permuta?"Permuta":"—");
   const hcol=healthCor(h.key);
   const renovaCor = rd!=null&&rd<0?'var(--status-atrasado)':rd!=null&&rd<=30?'#a86a12':'inherit';
+  const renovaStat = rd==null?"—": rd<0?`venceu há ${-rd}d`: rd===0?"vence hoje": rd<=45?`em ${rd}d`: fmtDiaMes(c.dataVenc||c.fim);
   box.innerHTML=`
     <div class="rz-head">
       <div class="rz-eyebrow">
@@ -2444,13 +2460,14 @@ function renderResumo(){
       <div class="rz-stats">
         <div class="rz-stat"><div class="k">MRR</div><div class="v" style="color:var(--brand)">${mrrTxt}</div></div>
         <div class="rz-stat"><div class="k">Health</div><div class="v" style="color:${hcol}">${hs.score} · ${h.lbl}</div></div>
-        <div class="rz-stat"><div class="k">Renova em</div><div class="v" style="color:${renovaCor}">${renova}</div></div>
+        <div class="rz-stat"><div class="k">Renova em</div><div class="v" style="color:${renovaCor}">${renovaStat}</div></div>
         <div class="rz-stat"><div class="k">Próximo encontro</div><div class="v">${px?fmtDiaMes(px):"—"}</div></div>
       </div>
       <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:12px">
         ${dimTag("Método",hs.met)} ${dimTag("Execução",hs.exe)} ${dimTag("KPIs",hs.kpi)} ${dimTag("Encontros",hs.enc)}
       </div>
     </div>
+    ${futSess.length?`<div class="rz-sec">Próximas sessões</div>${futSess.slice(0,4).map(sessCard).join("")}`:""}
     <div class="rz-grid">
       ${card(`Compromissos do cliente <span class="rz-c">${comps.length}</span>`, listOr(comps,a=>`<div class="rz-row"><span>${esc(a.descricao)||"—"}</span><span class="rz-sub">${a.prazo?fmtDiaMes(a.prazo):"sem prazo"}</span></div>`,"Nenhum compromisso aberto."))}
       ${card(`Entregáveis em produção <span class="rz-c">${ents.length}</span>`, listOr(ents,e=>`<div class="rz-row"><span>${esc(e.titulo)||"—"}</span><span class="rz-sub">${(PROD_STAGES.find(s=>s.id===e.etapa)||{}).nome||esc(e.etapa||"")}</span></div>`,"Nenhum entregável em produção."))}
@@ -2459,7 +2476,7 @@ function renderResumo(){
       ${card(`Ciclo anual (12 encontros)`, `<div style="font-size:12px;color:var(--muted);margin-bottom:7px">${real}/12 realizados</div><div class="ciclo-grid">${dots}</div>`)}
     </div>
     <div class="rz-sec">Atividade recente</div>
-    ${tl.length?`<div class="rz-tl">${tl.slice(0,8).map(x=>`<div class="rz-tli"><div class="tt">${x.t}</div><div class="td">${x.d?fmtDiaMes(x.d):""}</div></div>`).join("")}</div>`:`<div class="rz-empty">Nada registrado ainda.</div>`}`;
+    ${tl.length?`<div class="rz-tl">${tl.slice(0,8).map(x=>`<div class="rz-tli"><div class="td">${x.ic} ${x.d?fmtDiaMes(x.d):""}</div><div class="tt">${x.tt}</div>${x.td?`<div class="td">${x.td}</div>`:""}</div>`).join("")}</div>`:`<div class="rz-empty">Nada registrado ainda.</div>`}`;
 }
 
 /* Plano de ação 5W2H (mr_acoes dono=cliente) — tela própria + dentro da ficha */
