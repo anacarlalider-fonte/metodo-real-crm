@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Trabalhe com a gente · Grupo Real</title>
+<style>
+  :root{
+    --bg:#0e0f14; --panel:#ffffff; --panel2:#f5f6f9;
+    --line:#e3e6ec; --txt:#1b2430; --muted:#5f6b7a;
+    --gold:#c9a227; --gold-d:#96701c; --gold-l:#e7cf7a;
+    --danger:#e0574f; --green:#1f9d54; --radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:#eceef3;color:var(--txt);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .shell{max-width:720px;margin:0 auto;padding:0 0 60px}
+  /* Header */
+  .hero{background:linear-gradient(160deg,#0e0f14,#191b24);color:#fff;padding:34px 22px 30px;text-align:center;
+    border-bottom:2px solid var(--gold)}
+  .hero .kicker{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-l);font-weight:700}
+  .hero h1{margin:8px 0 6px;font-size:26px;font-weight:800;letter-spacing:-.01em}
+  .hero p{margin:0;color:#c7ccd6;font-size:15px}
+  .vaga-tag{display:inline-block;margin-top:14px;background:rgba(201,162,39,.16);border:1px solid var(--gold);
+    color:var(--gold-l);padding:7px 16px;border-radius:999px;font-weight:700;font-size:14px}
+  /* Card / form */
+  .card{background:var(--panel);margin:18px 14px 0;border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:0 8px 24px rgba(23,33,51,.07);padding:22px 20px}
+  .sec-title{font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--gold-d);
+    margin:22px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .sec-title:first-child{margin-top:4px}
+  .field{margin-bottom:15px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:520px){.grid2{grid-template-columns:1fr}}
+  label{display:block;font-weight:600;font-size:14px;margin-bottom:6px}
+  label .req{color:var(--danger)}
+  input[type=text],input[type=email],input[type=tel],input[type=date],select,textarea{
+    width:100%;padding:11px 13px;border:1px solid #d3d8e0;border-radius:10px;font-size:15px;
+    font-family:inherit;color:var(--txt);background:#fff;transition:border-color .15s,box-shadow .15s}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,162,39,.16)}
+  textarea{resize:vertical;min-height:80px}
+  .hint{font-size:12.5px;color:var(--muted);margin-top:5px}
+  /* radios */
+  .radios{display:flex;gap:10px;flex-wrap:wrap}
+  .radios label{display:inline-flex;align-items:center;gap:7px;font-weight:500;margin:0;
+    border:1px solid #d3d8e0;padding:9px 15px;border-radius:10px;cursor:pointer;font-size:14px;background:#fff}
+  .radios input{accent-color:var(--gold-d);width:16px;height:16px;margin:0}
+  .radios label:has(input:checked){border-color:var(--gold);background:rgba(201,162,39,.08);font-weight:600}
+  /* file */
+  .filebox{border:2px dashed #cbd2dc;border-radius:12px;padding:18px;text-align:center;cursor:pointer;
+    background:var(--panel2);transition:.15s}
+  .filebox:hover{border-color:var(--gold);background:rgba(201,162,39,.05)}
+  .filebox.has{border-style:solid;border-color:var(--green);background:rgba(31,157,84,.06)}
+  .filebox .ico{font-size:26px}
+  .filebox .txt{font-weight:600;font-size:14px;margin-top:4px}
+  .filebox .sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .filebox input{display:none}
+  /* consent */
+  .consent{display:flex;gap:11px;align-items:flex-start;background:var(--panel2);border:1px solid var(--line);
+    border-radius:10px;padding:13px 14px;margin-bottom:12px}
+  .consent input{width:19px;height:19px;margin-top:1px;accent-color:var(--gold-d);flex:0 0 auto}
+  .consent label{font-weight:500;font-size:13.5px;margin:0;line-height:1.45}
+  /* submit */
+  .btn{width:100%;margin-top:8px;padding:15px;border:none;border-radius:12px;background:var(--gold);
+    color:#20180a;font-weight:800;font-size:16px;cursor:pointer;letter-spacing:.01em;transition:.15s}
+  .btn:hover{background:var(--gold-d);color:#fff}
+  .btn:disabled{opacity:.6;cursor:not-allowed}
+  .msg{margin-top:12px;padding:11px 14px;border-radius:10px;font-size:14px;font-weight:600;display:none}
+  .msg.err{display:block;background:#fdeaea;color:#a5322b;border:1px solid #f3c6c2}
+  /* honeypot */
+  .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+  /* success + closed */
+  .state{text-align:center;padding:46px 26px}
+  .state .big{font-size:52px;margin-bottom:8px}
+  .state h2{margin:0 0 8px;font-size:23px;font-weight:800}
+  .state p{color:var(--muted);font-size:15px;max-width:420px;margin:0 auto}
+  .foot{text-align:center;color:#8a93a0;font-size:12px;margin-top:22px;padding:0 20px}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="hero">
+    <div class="kicker">Grupo Real</div>
+    <h1>Trabalhe com a gente</h1>
+    <p>Preencha o formulário abaixo. É rápido e leva poucos minutos.</p>
+    <div id="vagaTag" class="vaga-tag" style="display:none"></div>
+  </div>
+
+  <!-- Vaga encerrada -->
+  <div id="closed" class="card" style="display:none">
+    <div class="state">
+      <div class="big">🔒</div>
+      <h2>Vaga encerrada</h2>
+      <p>Esta vaga não está mais recebendo candidaturas. Fique de olho nas nossas redes para as próximas oportunidades!</p>
+    </div>
+  </div>
+
+  <!-- Sucesso -->
+  <div id="success" class="card" style="display:none">
+    <div class="state">
+      <div class="big">✅</div>
+      <h2>Candidatura enviada!</h2>
+      <p id="successMsg">Recebemos seu currículo. Nossa equipe de recrutamento vai analisar seu perfil e entrará em contato caso avance no processo. Obrigado pelo interesse! 💛</p>
+    </div>
+  </div>
+
+  <!-- Formulário -->
+  <form id="form" class="card" autocomplete="on" novalidate>
+    <!-- honeypot anti-spam -->
+    <div class="hp"><label>Não preencha<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+    <input type="hidden" name="vaga_id" id="vaga_id">
+    <input type="hidden" name="_ts" id="_ts">
+
+    <div class="sec-title">Seus dados</div>
+    <div class="field">
+      <label>Nome completo <span class="req">*</span></label>
+      <input type="text" name="nome" required autocomplete="name">
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>Data de nascimento</label>
+        <input type="date" name="data_nascimento" max="2010-12-31" min="1940-01-01">
+      </div>
+      <div class="field">
+        <label>Telefone (WhatsApp) <span class="req">*</span></label>
+        <input type="tel" name="telefone" required inputmode="tel" placeholder="(00) 00000-0000" autocomplete="tel">
+      </div>
+    </div>
+    <div class="field">
+      <label>E-mail <span class="req">*</span></label>
+      <input type="email" name="email" required inputmode="email" autocomplete="email">
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>Cidade</label>
+        <input type="text" name="cidade" autocomplete="address-level2">
+      </div>
+      <div class="field">
+        <label>Bairro</label>
+        <input type="text" name="bairro">
+      </div>
+    </div>
+    <div class="field">
+      <label>Escolaridade</label>
+      <select name="escolaridade">
+        <option value="">Selecione…</option>
+        <option>Fundamental incompleto</option>
+        <option>Fundamental completo</option>
+        <option>Médio incompleto</option>
+        <option>Médio completo</option>
+        <option>Técnico</option>
+        <option>Superior incompleto</option>
+        <option>Superior completo</option>
+        <option>Pós-graduação / MBA</option>
+      </select>
+    </div>
+    <div class="field" id="cargoField">
+      <label>Cargo ou área de interesse</label>
+      <input type="text" name="vaga_titulo" placeholder="Ex.: Vendas, Atendimento, Administrativo…">
+    </div>
+
+    <div class="sec-title">Experiência profissional</div>
+    <div class="field">
+      <label>Está trabalhando atualmente?</label>
+      <div class="radios">
+        <label><input type="radio" name="trabalhando_atualmente" value="Sim">Sim</label>
+        <label><input type="radio" name="trabalhando_atualmente" value="Não">Não</label>
+      </div>
+    </div>
+    <div class="field">
+      <label>Última experiência profissional</label>
+      <input type="text" name="ultima_experiencia" placeholder="Empresa e cargo">
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>Quanto tempo permaneceu no último emprego?</label>
+        <input type="text" name="tempo_ultimo_emprego" placeholder="Ex.: 1 ano e 6 meses">
+      </div>
+      <div class="field">
+        <label>Pretensão salarial</label>
+        <input type="text" name="pretensao_salarial" placeholder="Ex.: R$ 2.000">
+      </div>
+    </div>
+    <div class="field">
+      <label>Por que saiu do último emprego?</label>
+      <textarea name="motivo_saida" rows="2"></textarea>
+    </div>
+
+    <div class="sec-title">Disponibilidade</div>
+    <div class="field">
+      <label>Disponibilidade de horário</label>
+      <input type="text" name="disponibilidade_horario" placeholder="Ex.: Manhã e tarde, período integral…">
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>Disponibilidade para trabalhar após as 18h?</label>
+        <div class="radios">
+          <label><input type="radio" name="disponibilidade_apos_18h" value="Sim">Sim</label>
+          <label><input type="radio" name="disponibilidade_apos_18h" value="Não">Não</label>
+        </div>
+      </div>
+      <div class="field">
+        <label>É fumante?</label>
+        <div class="radios">
+          <label><input type="radio" name="fumante" value="Sim">Sim</label>
+          <label><input type="radio" name="fumante" value="Não">Não</label>
+        </div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Como ficou sabendo da vaga?</label>
+      <select name="origem">
+        <option value="">Selecione…</option>
+        <option>Indicação</option>
+        <option>Instagram</option>
+        <option>Facebook</option>
+        <option>WhatsApp</option>
+        <option>Site / Google</option>
+        <option>Placa / Loja física</option>
+        <option>Outro</option>
+      </select>
+    </div>
+
+    <div class="sec-title">Sobre você</div>
+    <div class="field">
+      <label>Conte um pouco sobre você</label>
+      <textarea name="sobre_voce" rows="3" placeholder="Fale sobre sua trajetória, seus pontos fortes…"></textarea>
+    </div>
+    <div class="field">
+      <label>Por que gostaria de trabalhar conosco?</label>
+      <textarea name="por_que_trabalhar" rows="3"></textarea>
+    </div>
+
+    <div class="sec-title">Currículo <span class="req">*</span></div>
+    <div class="field">
+      <label class="filebox" id="filebox" for="curriculo">
+        <div class="ico">📎</div>
+        <div class="txt" id="fileTxt">Toque para anexar seu currículo</div>
+        <div class="sub">PDF, DOC ou DOCX · até 8 MB</div>
+        <input type="file" name="curriculo" id="curriculo" accept=".pdf,.doc,.docx" required>
+      </label>
+    </div>
+
+    <div class="sec-title">Autorização</div>
+    <div class="consent">
+      <input type="checkbox" name="consentimento" id="consentimento" required>
+      <label for="consentimento">Autorizo o Grupo Real a armazenar e usar os dados aqui informados exclusivamente para fins de recrutamento e seleção, conforme a LGPD (Lei nº 13.709/2018). Posso solicitar a exclusão dos meus dados a qualquer momento.</label>
+    </div>
+    <div class="consent">
+      <input type="checkbox" name="veracidade" id="veracidade" required>
+      <label for="veracidade">Declaro que as informações fornecidas são verdadeiras.</label>
+    </div>
+
+    <button type="submit" class="btn" id="submitBtn">Enviar candidatura</button>
+    <div class="msg" id="msg"></div>
+  </form>
+
+  <div class="foot">Grupo Real · Método Real — Recrutamento &amp; Seleção</div>
+</div>
+
+<script>
+  const FN = "https://vkuixvooivsqwmjymunk.functions.supabase.co/candidatura-submit";
+  const $ = s => document.querySelector(s);
+  const params = new URLSearchParams(location.search);
+  const vagaId = params.get("vaga");
+
+  // anti-spam: marca o momento em que a página abriu
+  $("#_ts").value = Date.now();
+
+  // Se veio por link de vaga, carrega título/status
+  if(vagaId){
+    $("#vaga_id").value = vagaId;
+    fetch(FN + "?vaga=" + encodeURIComponent(vagaId))
+      .then(r=>r.json()).then(d=>{
+        if(d && d.vaga){
+          const v = d.vaga;
+          const tag = $("#vagaTag");
+          tag.textContent = "Vaga: " + v.titulo + (v.local ? " · " + v.local : "");
+          tag.style.display = "inline-block";
+          // vaga fixa: esconde o campo livre de cargo
+          $("#cargoField").style.display = "none";
+          if(v.status === "encerrada"){
+            $("#form").style.display = "none";
+            $("#closed").style.display = "block";
+          }
+        }
+      }).catch(()=>{});
+  }
+
+  // File picker feedback
+  const fileInput = $("#curriculo");
+  fileInput.addEventListener("change", ()=>{
+    const f = fileInput.files[0];
+    const box = $("#filebox");
+    if(f){
+      $("#fileTxt").textContent = f.name;
+      box.classList.add("has");
+      box.querySelector(".ico").textContent = "✅";
+    } else {
+      $("#fileTxt").textContent = "Toque para anexar seu currículo";
+      box.classList.remove("has");
+      box.querySelector(".ico").textContent = "📎";
+    }
+  });
+
+  function showErr(txt){
+    const m = $("#msg"); m.textContent = txt; m.className = "msg err";
+    m.scrollIntoView({behavior:"smooth",block:"center"});
+  }
+
+  $("#form").addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    $("#msg").className = "msg";
+    const form = e.target;
+
+    // Validação essencial no cliente
+    if(!form.nome.value.trim()) return showErr("Informe seu nome completo.");
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email.value)) return showErr("Informe um e-mail válido.");
+    if(form.telefone.value.replace(/\D/g,"").length < 10) return showErr("Informe um telefone válido com DDD.");
+    if(!fileInput.files[0]) return showErr("Anexe seu currículo (PDF, DOC ou DOCX).");
+    if(!form.consentimento.checked) return showErr("É preciso autorizar o uso dos dados.");
+    if(!form.veracidade.checked) return showErr("Confirme que as informações são verdadeiras.");
+
+    const btn = $("#submitBtn");
+    btn.disabled = true; btn.textContent = "Enviando…";
+    try{
+      const res = await fetch(FN, { method:"POST", body: new FormData(form) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok || data.error){ throw new Error(data.error || "Falha no envio. Tente novamente."); }
+      if(data.duplicate && data.message) $("#successMsg").textContent = data.message;
+      $("#form").style.display = "none";
+      $("#success").style.display = "block";
+      window.scrollTo({top:0,behavior:"smooth"});
+    }catch(err){
+      showErr(err.message || "Não foi possível enviar. Verifique sua conexão e tente novamente.");
+      btn.disabled = false; btn.textContent = "Enviar candidatura";
+    }
+  });
+</script>
+</body>
+</html>

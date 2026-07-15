@@ -142,5 +142,74 @@ create policy "mr_inbox_delete_own" on public.mr_tactiq_inbox
 -- (sem policy de INSERT: só a Edge Function grava, usando a service role key)
 
 -- ============================================================================
+--  MÓDULO RECRUTAMENTO & SELEÇÃO
+--  Board de EQUIPE (qualquer usuário logado vê/edita). Candidaturas entram
+--  pelo formulário público (candidatura.html) via Edge Function
+--  candidatura-submit (service role, ignora RLS). Currículos no bucket privado
+--  'curriculos'. LGPD: acesso restrito a logados; consentimento gravado;
+--  exclusão total pela ficha do candidato.
+-- ============================================================================
+create table if not exists public.mr_vagas (
+  id text primary key, titulo text not null, descricao text, local text,
+  status text default 'aberta',                     -- aberta | pausada | encerrada
+  created_at timestamptz default now(), updated_at timestamptz default now()
+);
+create table if not exists public.mr_recruta_etapas (
+  id text primary key, nome text not null, cor text default '#c9a227',
+  ordem int not null default 0, created_at timestamptz default now()
+);
+create table if not exists public.mr_candidatos (
+  id text primary key,
+  vaga_id text references public.mr_vagas(id) on delete set null,
+  vaga_titulo text, etapa text not null default 'novos', responsavel text,
+  nome text not null, data_nascimento date, cidade text, bairro text,
+  telefone text, email text, escolaridade text, origem text,
+  curriculo_path text, curriculo_nome text,
+  respostas jsonb default '{}'::jsonb,
+  historico jsonb default '[]'::jsonb, anotacoes jsonb default '[]'::jsonb,
+  avaliacao jsonb default '{}'::jsonb, entrevistas jsonb default '[]'::jsonb,
+  testes jsonb default '{}'::jsonb, motivo_decisao text,
+  proxima_acao text, proxima_acao_data date,
+  consentimento boolean default false, consentimento_at timestamptz, veracidade boolean default false,
+  arquivado boolean default false,
+  created_at timestamptz default now(), updated_at timestamptz default now()
+);
+create index if not exists mr_candidatos_etapa_idx on public.mr_candidatos (etapa, created_at desc);
+create index if not exists mr_candidatos_vaga_idx  on public.mr_candidatos (vaga_id);
+create index if not exists mr_candidatos_busca_idx on public.mr_candidatos (email, telefone);
+
+drop trigger if exists mr_vagas_touch on public.mr_vagas;
+create trigger mr_vagas_touch before update on public.mr_vagas
+  for each row execute function public.mr_touch_updated_at();
+drop trigger if exists mr_candidatos_touch on public.mr_candidatos;
+create trigger mr_candidatos_touch before update on public.mr_candidatos
+  for each row execute function public.mr_touch_updated_at();
+
+alter table public.mr_vagas          enable row level security;
+alter table public.mr_recruta_etapas enable row level security;
+alter table public.mr_candidatos     enable row level security;
+drop policy if exists "mr_vagas_all"  on public.mr_vagas;
+create policy "mr_vagas_all"  on public.mr_vagas          for all to authenticated using (true) with check (true);
+drop policy if exists "mr_etapas_all" on public.mr_recruta_etapas;
+create policy "mr_etapas_all" on public.mr_recruta_etapas for all to authenticated using (true) with check (true);
+drop policy if exists "mr_cand_all"   on public.mr_candidatos;
+create policy "mr_cand_all"   on public.mr_candidatos     for all to authenticated using (true) with check (true);
+
+insert into public.mr_recruta_etapas (id, nome, cor, ordem) values
+  ('novos','Novos currículos','#c9a227',1),('triagem','Triagem','#6b7cff',2),
+  ('contato','Contato realizado','#3fa9f5',3),('entrevista_agendada','Entrevista agendada','#8a63d2',4),
+  ('entrevista_realizada','Entrevista realizada','#b06fd0',5),('teste_comportamental','Teste comportamental','#e08a2b',6),
+  ('teste_pratico','Teste prático','#e0662b',7),('aprovado','Aprovado','#2fb36b',8),
+  ('banco_talentos','Banco de talentos','#8a8f98',9),('reprovado','Reprovado','#e0524d',10),
+  ('contratado','Contratado','#1f9d55',11)
+on conflict (id) do nothing;
+
+insert into storage.buckets (id, name, public) values ('curriculos','curriculos',false) on conflict (id) do nothing;
+drop policy if exists "mr_curriculos_read" on storage.objects;
+create policy "mr_curriculos_read" on storage.objects for select to authenticated using (bucket_id='curriculos');
+drop policy if exists "mr_curriculos_del" on storage.objects;
+create policy "mr_curriculos_del" on storage.objects for delete to authenticated using (bucket_id='curriculos');
+
+-- ============================================================================
 --  Pronto. Volte ao app, preencha SUPABASE_URL e SUPABASE_ANON_KEY no index.html.
 -- ============================================================================

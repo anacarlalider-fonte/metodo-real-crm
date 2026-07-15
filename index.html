@@ -799,6 +799,12 @@
         Health <span class="badge" id="badgeHealth">0</span>
       </button>
 
+      <div class="navcat">Pessoas</div>
+      <button class="modlink" data-view="recruta" data-title="Recrutamento &amp; Seleção">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+        Recrutamento <span class="badge" id="badgeRecruta">0</span>
+      </button>
+
       <div class="navcat">Gestão</div>
       <button class="modlink" data-view="financ" data-title="Financeiro · contratos e parcelas">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>
@@ -946,6 +952,51 @@
      <div id="metodoTabs"></div>
      <div id="metodoBody"></div>
    </div>
+
+   <!-- ===== RECRUTAMENTO & SELEÇÃO VIEW ===== -->
+   <div id="view-recruta" class="wrap hidden">
+     <div id="recrutaTop"></div>
+     <div id="recrutaBody"></div>
+     <div class="drawer-ov" id="candDrawerOv"></div>
+     <aside class="drawer" id="candDrawer" aria-hidden="true"></aside>
+   </div>
+   <style>
+     /* ---- Recrutamento (escopo próprio) ---- */
+     #view-recruta .rk-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+     #view-recruta .rk-toolbar .grow{flex:1}
+     #view-recruta .rmini{padding:8px 11px;border:1px solid var(--line2);border-radius:9px;font-size:12.5px;background:var(--panel);color:var(--txt)}
+     #view-recruta .rk-search{display:flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--line2);border-radius:9px;padding:6px 11px;min-width:210px}
+     #view-recruta .rk-search input{border:none;outline:none;background:transparent;font-size:13px;width:100%;color:var(--txt)}
+     .rcard .rc-nome{font-weight:700;font-size:14px;line-height:1.25;display:flex;gap:6px;align-items:center}
+     .rcard .rc-meta{font-size:11.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:3px 10px;margin-top:5px}
+     .rcard .rc-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+     .rchip{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--panel2);color:var(--muted)}
+     .rchip.gold{background:rgba(201,162,39,.14);color:var(--brand-d)}
+     .rchip.new{background:rgba(31,157,84,.15);color:var(--green)}
+     .rchip.warn{background:rgba(224,87,79,.13);color:var(--danger)}
+     .rcard .rc-next{font-size:11px;color:var(--muted);margin-top:8px;display:flex;gap:6px;align-items:center}
+     .rcard .rc-next.due{color:var(--danger);font-weight:600}
+     /* ficha (drawer) */
+     #candDrawer .fx-hd{padding:16px 18px 12px;border-bottom:1px solid var(--line)}
+     #candDrawer .fx-hd h2{margin:0 0 3px;font-size:18px}
+     #candDrawer .fx-hd .sub{font-size:12.5px;color:var(--muted)}
+     #candDrawer .fx-move{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+     #candDrawer .fx-body{padding:14px 18px;overflow-y:auto;flex:1}
+     #candDrawer .fx-sec{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--muted2);margin:16px 0 7px}
+     #candDrawer .fx-sec:first-child{margin-top:0}
+     #candDrawer .fx-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px 14px}
+     #candDrawer .fx-f{font-size:13px}
+     #candDrawer .fx-f.fw{grid-column:1/-1}
+     #candDrawer .fx-f .k{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--muted2);display:block;margin-bottom:2px}
+     #candDrawer .fx-f .v{color:var(--txt);white-space:pre-wrap;word-break:break-word}
+     #candDrawer textarea,#candDrawer input,#candDrawer select{width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:9px;font-size:13px;font-family:inherit;color:var(--txt);background:var(--panel)}
+     #candDrawer textarea{resize:vertical;min-height:60px}
+     #candDrawer .fx-note{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:12.5px;margin-bottom:7px}
+     #candDrawer .fx-note .nm{font-size:10.5px;color:var(--muted2);margin-bottom:2px}
+     #candDrawer .fx-hist{font-size:12px;color:var(--muted);padding:5px 0 5px 14px;border-left:2px solid var(--line2);margin-left:3px}
+     #view-recruta .vaga-row{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--panel);margin-bottom:8px;flex-wrap:wrap}
+     #view-recruta .vaga-row .vst{font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:999px}
+   </style>
 
    <!-- ===== CONFIGURAÇÕES VIEW ===== -->
    <div id="view-config" class="wrap hidden">
@@ -3146,7 +3197,7 @@ $("#searchInput").addEventListener("input",e=>{ filter=e.target.value.trim().toL
 
 /* ---------- Sidebar navigation ---------- */
 let activeView="hoje";
-const VIEWS=["hoje","sales","metas","producao","trilha","health","list","plano","financ","reunioes","dash","metodo","config"];
+const VIEWS=["hoje","sales","metas","producao","trilha","health","list","plano","financ","reunioes","dash","metodo","recruta","config"];
 const VIEWS_RESTRITAS=["financ","config"];
 function applyPapel(){
   const restrito = Store.papel==="colaborador";
@@ -3960,6 +4011,419 @@ function bibliotecaHTML(){
   const mt=$("#metodoTabs"); if(mt) mt.addEventListener("click",e=>{ const tb=e.target.closest("[data-mtab2]"); if(tb){ metodoTab=tb.dataset.mtab2; renderMetodo(); } });
   const mb=$("#metodoBody"); if(mb) mb.addEventListener("click",e=>{ const f=e.target.closest(".bib-f"); if(f){ bibPilar=f.dataset.bpil; renderMetodo(); } });
 })();
+/* =========================================================================
+   RECRUTAMENTO & SELEÇÃO — Kanban de candidatos + ficha + vagas
+   Módulo isolado. Dados na nuvem (Supabase): mr_candidatos, mr_vagas,
+   mr_recruta_etapas + bucket 'curriculos'. Entrada automática pelo
+   formulário público (Edge Function candidatura-submit).
+   ========================================================================= */
+const Recruta = {
+  etapas:[], vagas:[], cands:[], loaded:false,
+  filter:{ q:"", vaga:"", cidade:"", etapa:"", origem:"", periodo:"" },
+  SEEN_LS:"mr_recruta_seen",
+
+  async loadAll(){
+    if(!Store.sb){ this.loaded=false; return; }
+    const [e,v,c] = await Promise.all([
+      Store.sb.from("mr_recruta_etapas").select("*").order("ordem",{ascending:true}),
+      Store.sb.from("mr_vagas").select("*").order("created_at",{ascending:false}),
+      Store.sb.from("mr_candidatos").select("*").order("created_at",{ascending:false}),
+    ]);
+    if(e.error||v.error||c.error) throw (e.error||v.error||c.error);
+    this.etapas=e.data||[]; this.vagas=v.data||[]; this.cands=c.data||[]; this.loaded=true;
+  },
+  etapa(id){ return this.etapas.find(x=>x.id===id) || {id,nome:id||"—",cor:"#8a94a2"}; },
+  primeiraEtapa(){ return this.etapas[0]?this.etapas[0].id:"novos"; },
+  vaga(id){ return this.vagas.find(x=>x.id===id); },
+  cand(id){ return this.cands.find(x=>x.id===id); },
+  seenTs(){ return +(localStorage.getItem(this.SEEN_LS)||0); },
+  novosCount(){ const t=this.seenTs(); return this.cands.filter(c=>new Date(c.created_at).getTime()>t).length; },
+  markSeen(){ localStorage.setItem(this.SEEN_LS, Date.now().toString()); },
+
+  async moveCand(id, etapaId, por){
+    const c=this.cand(id); if(!c || c.etapa===etapaId) return;
+    const de=c.etapa;
+    const hist=(c.historico||[]).concat([{data:new Date().toISOString(), tipo:"mov", por:por||"",
+      texto:`Movido: ${this.etapa(de).nome} → ${this.etapa(etapaId).nome}`}]);
+    const { error }=await Store.sb.from("mr_candidatos").update({etapa:etapaId, historico:hist}).eq("id",id);
+    if(error) throw error;
+    c.etapa=etapaId; c.historico=hist;
+  },
+  async patchCand(id, patch, histTxt, por){
+    const c=this.cand(id); if(!c) return;
+    if(histTxt){ patch.historico=(c.historico||[]).concat([{data:new Date().toISOString(),tipo:"edit",por:por||"",texto:histTxt}]); }
+    const { error }=await Store.sb.from("mr_candidatos").update(patch).eq("id",id);
+    if(error) throw error;
+    Object.assign(c, patch);
+  },
+  async addNota(id, texto, autor){
+    const c=this.cand(id); if(!c||!texto.trim()) return;
+    const notas=(c.anotacoes||[]).concat([{data:new Date().toISOString(), autor:autor||"", texto:texto.trim()}]);
+    const { error }=await Store.sb.from("mr_candidatos").update({anotacoes:notas}).eq("id",id);
+    if(error) throw error; c.anotacoes=notas;
+  },
+  async removeCand(c){
+    if(c.curriculo_path){ try{ await Store.sb.storage.from("curriculos").remove([c.curriculo_path]); }catch(_){ } }
+    const { error }=await Store.sb.from("mr_candidatos").delete().eq("id",c.id);
+    if(error) throw error;
+    this.cands=this.cands.filter(x=>x.id!==c.id);
+  },
+  async curriculoUrl(c){
+    if(!c.curriculo_path) return null;
+    const { data, error }=await Store.sb.storage.from("curriculos").createSignedUrl(c.curriculo_path, 3600);
+    if(error) throw error; return data.signedUrl;
+  },
+  async saveVaga(v){
+    const row={ id:v.id, titulo:v.titulo, descricao:v.descricao||null, local:v.local||null, status:v.status||"aberta" };
+    const { error }=await Store.sb.from("mr_vagas").upsert(row); if(error) throw error;
+  },
+  async removeVaga(id){ const { error }=await Store.sb.from("mr_vagas").delete().eq("id",id); if(error) throw error; },
+  async saveEtapa(e){ const { error }=await Store.sb.from("mr_recruta_etapas").upsert(e); if(error) throw error; },
+  async removeEtapa(id){ const { error }=await Store.sb.from("mr_recruta_etapas").delete().eq("id",id); if(error) throw error; },
+};
+
+const FORM_URL = SUPABASE_URL.replace(".supabase.co",".functions.supabase.co")+"/candidatura-submit";
+const rid = p => (p||"x")+"_"+Math.random().toString(36).slice(2,9)+Date.now().toString(36);
+function idadeDe(dn){ if(!dn) return null; const d=new Date(dn+"T00:00"), h=new Date(); let a=h.getFullYear()-d.getFullYear(); const m=h.getMonth()-d.getMonth(); if(m<0||(m===0&&h.getDate()<d.getDate())) a--; return a; }
+function candVagaLabel(c){ return c.vaga_titulo || (c.vaga_id&&Recruta.vaga(c.vaga_id)?Recruta.vaga(c.vaga_id).titulo:"") || "Espontânea"; }
+function whatsappLink(tel){ const d=(tel||"").replace(/\D/g,""); return d?("https://wa.me/55"+d):null; }
+
+let recrutaTab="kanban", candDrawerId=null, candDrawerTab="ficha";
+
+function renderRecruta(){
+  if(!Store.isCloud()){ $("#recrutaTop").innerHTML=""; $("#recrutaBody").innerHTML=`<div class="empty" style="margin:30px auto">O módulo de Recrutamento funciona no modo Nuvem (Supabase).</div>`; return; }
+  Recruta._prevSeen=Recruta.seenTs(); Recruta.markSeen();
+  const f=Recruta.filter;
+  const cidades=[...new Set(Recruta.cands.map(c=>c.cidade).filter(Boolean))].sort();
+  const origens=[...new Set(Recruta.cands.map(c=>c.origem).filter(Boolean))].sort();
+  const opt=(arr,sel)=>arr.map(x=>`<option value="${esc(x)}" ${sel===x?"selected":""}>${esc(x)}</option>`).join("");
+  $("#recrutaTop").innerHTML=`
+    <div class="pltabs" style="margin-bottom:12px">
+      <button class="pltab ${recrutaTab==="kanban"?"active":""}" data-rtab="kanban">▦ Kanban</button>
+      <button class="pltab ${recrutaTab==="vagas"?"active":""}" data-rtab="vagas">💼 Vagas ${Recruta.vagas.length?`· ${Recruta.vagas.length}`:""}</button>
+    </div>
+    ${recrutaTab==="kanban"?`
+    <div class="rk-toolbar">
+      <div class="rk-search">🔎<input id="rkSearch" placeholder="Nome, telefone ou e-mail…" value="${esc(f.q)}"></div>
+      <select class="rmini" id="rkVaga"><option value="">Todas as vagas</option>${Recruta.vagas.map(v=>`<option value="${v.id}" ${f.vaga===v.id?"selected":""}>${esc(v.titulo)}</option>`).join("")}<option value="__esp" ${f.vaga==="__esp"?"selected":""}>Espontâneas</option></select>
+      <select class="rmini" id="rkCidade"><option value="">Todas as cidades</option>${opt(cidades,f.cidade)}</select>
+      <select class="rmini" id="rkEtapa"><option value="">Todas as etapas</option>${Recruta.etapas.map(e=>`<option value="${e.id}" ${f.etapa===e.id?"selected":""}>${esc(e.nome)}</option>`).join("")}</select>
+      <select class="rmini" id="rkOrigem"><option value="">Todas as origens</option>${opt(origens,f.origem)}</select>
+      <select class="rmini" id="rkPeriodo"><option value="">Qualquer data</option><option value="7" ${f.periodo==="7"?"selected":""}>Últimos 7 dias</option><option value="30" ${f.periodo==="30"?"selected":""}>Últimos 30 dias</option><option value="90" ${f.periodo==="90"?"selected":""}>Últimos 90 dias</option></select>
+      <div class="grow"></div>
+      <button class="btn ghost sm" id="rkEtapasBtn" title="Editar etapas do funil">⚙ Etapas</button>
+    </div>`:""}
+  `;
+  if(recrutaTab==="kanban") renderRecrutaKanban();
+  else renderRecrutaVagas();
+  wireRecrutaTop();
+}
+
+function recrutaFiltered(){
+  const f=Recruta.filter, q=f.q.trim().toLowerCase();
+  let arr=Recruta.cands.slice();
+  if(q) arr=arr.filter(c=>[c.nome,c.telefone,c.email].some(x=>(x||"").toLowerCase().includes(q)));
+  if(f.vaga==="__esp") arr=arr.filter(c=>!c.vaga_id);
+  else if(f.vaga) arr=arr.filter(c=>c.vaga_id===f.vaga);
+  if(f.cidade) arr=arr.filter(c=>c.cidade===f.cidade);
+  if(f.etapa) arr=arr.filter(c=>c.etapa===f.etapa);
+  if(f.origem) arr=arr.filter(c=>c.origem===f.origem);
+  if(f.periodo){ const cut=Date.now()-(+f.periodo)*86400000; arr=arr.filter(c=>new Date(c.created_at).getTime()>=cut); }
+  return arr;
+}
+
+function renderRecrutaKanban(){
+  const body=$("#recrutaBody");
+  if(!Recruta.etapas.length){ body.innerHTML=`<div class="empty" style="margin:30px auto">Nenhuma etapa configurada.</div>`; return; }
+  const data=recrutaFiltered();
+  const board=document.createElement("div"); board.className="board";
+  Recruta.etapas.forEach(st=>{
+    const items=data.filter(c=>c.etapa===st.id);
+    const col=document.createElement("div"); col.className="col";
+    col.innerHTML=`
+      <div class="col-head">
+        <span class="swatch" style="background:${st.cor}"></span>
+        <span class="ttl">${esc(st.nome)}</span>
+        <span class="cnt">${items.length}</span>
+      </div>
+      <div class="col-body" data-etapa="${st.id}"></div>`;
+    const cb=col.querySelector(".col-body");
+    items.forEach(c=>cb.appendChild(candCardEl(c)));
+    if(!items.length) cb.innerHTML=`<div class="empty">—</div>`;
+    cb.addEventListener("dragover",e=>{e.preventDefault();cb.classList.add("drag-over");});
+    cb.addEventListener("dragleave",()=>cb.classList.remove("drag-over"));
+    cb.addEventListener("drop",async e=>{
+      e.preventDefault(); cb.classList.remove("drag-over");
+      const id=e.dataTransfer.getData("text/plain"); const c=Recruta.cand(id);
+      if(!c||c.etapa===st.id) return;
+      try{ await Recruta.moveCand(id, st.id, Store.user&&Store.user.email); renderRecruta(); toast(`${c.nome} → ${st.nome}`,"ok"); }
+      catch(err){ toast("Erro ao mover: "+(err.message||err),"err"); }
+    });
+    board.appendChild(col);
+  });
+  body.innerHTML=""; body.appendChild(board);
+}
+
+function candCardEl(c){
+  const el=document.createElement("div"); el.className="tcard rcard"; el.draggable=true; el.dataset.id=c.id;
+  el.style.borderLeftColor=Recruta.etapa(c.etapa).cor;
+  const isNew=new Date(c.created_at).getTime()>(Recruta._prevSeen||0);
+  const dup=Recruta.cands.some(o=>o.id!==c.id && ((c.email&&o.email===c.email)||(c.telefone&&o.telefone===c.telefone)));
+  const id=idadeDe(c.data_nascimento);
+  let next="";
+  if(c.proxima_acao){ const du=c.proxima_acao_data?daysUntil(c.proxima_acao_data):null; const due=du!==null&&du<0;
+    next=`<div class="rc-next ${due?"due":""}">⏭ ${esc(c.proxima_acao)}${c.proxima_acao_data?` · ${fmtDate(c.proxima_acao_data)}`:""}</div>`; }
+  el.innerHTML=`
+    <div class="rc-nome">${esc(c.nome)||"(sem nome)"} ${isNew?'<span class="rchip new">novo</span>':""}</div>
+    <div class="rc-meta">
+      ${c.cidade?`<span>📍 ${esc(c.cidade)}${c.bairro?" · "+esc(c.bairro):""}</span>`:""}
+      ${id!=null?`<span>🎂 ${id} anos</span>`:""}
+      ${c.telefone?`<span>📱 ${esc(c.telefone)}</span>`:""}
+    </div>
+    <div class="rc-tags">
+      <span class="rchip gold">${esc(candVagaLabel(c))}</span>
+      ${c.origem?`<span class="rchip">${esc(c.origem)}</span>`:""}
+      ${!c.curriculo_path?'<span class="rchip warn">sem CV</span>':""}
+      ${dup?'<span class="rchip warn">⚠ duplicado</span>':""}
+      ${c.responsavel?`<span class="rchip">👤 ${esc((c.responsavel||"").split("@")[0])}</span>`:""}
+    </div>${next}`;
+  el.addEventListener("dragstart",e=>{e.dataTransfer.setData("text/plain",c.id);el.classList.add("dragging");});
+  el.addEventListener("dragend",()=>el.classList.remove("dragging"));
+  el.addEventListener("click",e=>{ if(el.classList.contains("dragging"))return; openCand(c.id); });
+  return el;
+}
+
+function wireRecrutaTop(){
+  const f=Recruta.filter;
+  const s=$("#rkSearch"); if(s) s.addEventListener("input",e=>{ f.q=e.target.value; renderRecrutaKanban(); });
+  const bind=(id,key)=>{ const el=$(id); if(el) el.addEventListener("change",e=>{ f[key]=e.target.value; renderRecrutaKanban(); }); };
+  bind("#rkVaga","vaga"); bind("#rkCidade","cidade"); bind("#rkEtapa","etapa"); bind("#rkOrigem","origem"); bind("#rkPeriodo","periodo");
+  $$("[data-rtab]").forEach(b=>b.addEventListener("click",()=>{ recrutaTab=b.dataset.rtab; renderRecruta(); }));
+  const eb=$("#rkEtapasBtn"); if(eb) eb.addEventListener("click",openEtapasEditor);
+}
+
+/* ---------- Ficha do candidato (drawer) ---------- */
+function openCand(id){ candDrawerId=id; candDrawerTab="ficha"; renderCandDrawer(); $("#candDrawer").classList.add("show"); $("#candDrawerOv").classList.add("show"); }
+function closeCandDrawer(){ candDrawerId=null; $("#candDrawer").classList.remove("show"); $("#candDrawerOv").classList.remove("show"); }
+
+function renderCandDrawer(){
+  const c=Recruta.cand(candDrawerId); const d=$("#candDrawer"); if(!c){ d.innerHTML=""; return; }
+  const r=c.respostas||{}; const id=idadeDe(c.data_nascimento);
+  const field=(k,v)=>v?`<div class="fx-f fw"><span class="k">${k}</span><span class="v">${esc(v)}</span></div>`:"";
+  const tabBtn=(k,l)=>`<button class="drawer-tab ${candDrawerTab===k?"active":""}" data-ctab="${k}">${l}</button>`;
+  const wa=whatsappLink(c.telefone);
+  d.innerHTML=`
+    <div class="fx-hd">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+        <div>
+          <h2>${esc(c.nome)}</h2>
+          <div class="sub">${esc(candVagaLabel(c))} · candidatura em ${fmtDate((c.created_at||"").slice(0,10))}</div>
+        </div>
+        <button class="iconbtn" id="candClose">✕</button>
+      </div>
+      <div class="fx-move">
+        ${Recruta.etapas.map(e=>`<button class="btn sm ${c.etapa===e.id?"primary":"ghost"}" data-moveet="${e.id}">${esc(e.nome)}</button>`).join("")}
+      </div>
+    </div>
+    <div class="drawer-tabs">
+      ${tabBtn("ficha","Ficha")}${tabBtn("respostas","Respostas")}${tabBtn("recrut","Recrutamento")}${tabBtn("anotacoes","Anotações")}${tabBtn("historico","Histórico")}
+    </div>
+    <div class="fx-body" id="candBody"></div>`;
+  d.querySelector("#candClose").addEventListener("click",closeCandDrawer);
+  d.querySelectorAll("[data-moveet]").forEach(b=>b.addEventListener("click",async()=>{
+    try{ await Recruta.moveCand(c.id,b.dataset.moveet,Store.user&&Store.user.email); renderCandDrawer(); if(recrutaTab==="kanban") renderRecrutaKanban(); refreshBadges(); toast("Etapa atualizada","ok"); }
+    catch(err){ toast("Erro: "+(err.message||err),"err"); }
+  }));
+  d.querySelectorAll("[data-ctab]").forEach(b=>b.addEventListener("click",()=>{ candDrawerTab=b.dataset.ctab; renderCandBody(); }));
+  renderCandBody();
+
+  function renderCandBody(){
+    const box=d.querySelector("#candBody");
+    d.querySelectorAll("[data-ctab]").forEach(b=>b.classList.toggle("active",b.dataset.ctab===candDrawerTab));
+    if(candDrawerTab==="ficha"){
+      box.innerHTML=`
+        <div class="fx-sec">Dados pessoais</div>
+        <div class="fx-grid">
+          <div class="fx-f"><span class="k">Idade</span><span class="v">${id!=null?id+" anos":"—"}</span></div>
+          <div class="fx-f"><span class="k">Nascimento</span><span class="v">${c.data_nascimento?fmtDate(c.data_nascimento):"—"}</span></div>
+          <div class="fx-f"><span class="k">Telefone</span><span class="v">${esc(c.telefone)||"—"} ${wa?`· <a href="${wa}" target="_blank" style="color:var(--brand-d)">WhatsApp</a>`:""}</span></div>
+          <div class="fx-f"><span class="k">E-mail</span><span class="v">${esc(c.email)||"—"}</span></div>
+          <div class="fx-f"><span class="k">Cidade</span><span class="v">${esc(c.cidade)||"—"}</span></div>
+          <div class="fx-f"><span class="k">Bairro</span><span class="v">${esc(c.bairro)||"—"}</span></div>
+          <div class="fx-f fw"><span class="k">Escolaridade</span><span class="v">${esc(c.escolaridade)||"—"}</span></div>
+          <div class="fx-f fw"><span class="k">Vaga de interesse</span><span class="v">${esc(candVagaLabel(c))}</span></div>
+          <div class="fx-f fw"><span class="k">Origem</span><span class="v">${esc(c.origem)||"—"}</span></div>
+        </div>
+        <div class="fx-sec">Currículo</div>
+        <div id="fxCv">${c.curriculo_path?`<button class="btn sm" id="cvBtn">📄 Abrir currículo (${esc(c.curriculo_nome||"arquivo")})</button>`:`<span style="color:var(--muted);font-size:13px">Sem currículo anexado.</span>`}</div>
+        <div class="fx-sec">LGPD</div>
+        <div class="fx-f fw" style="font-size:12.5px;color:var(--muted)">✔ Consentimento ${c.consentimento?`dado em ${c.consentimento_at?fmtDate(c.consentimento_at.slice(0,10)):"—"}`:"não registrado"} · ✔ Declarou veracidade
+          <div style="margin-top:10px"><button class="btn sm ghost" id="cvDel" style="color:var(--danger)">🗑 Excluir candidato e dados</button></div>
+        </div>`;
+      const cv=box.querySelector("#cvBtn");
+      if(cv) cv.addEventListener("click",async()=>{ cv.textContent="Abrindo…"; try{ const u=await Recruta.curriculoUrl(c); window.open(u,"_blank"); cv.textContent=`📄 Abrir currículo (${c.curriculo_nome||"arquivo"})`; }catch(err){ toast("Erro ao abrir CV: "+(err.message||err),"err"); cv.textContent="📄 Abrir currículo"; } });
+      box.querySelector("#cvDel").addEventListener("click",async()=>{
+        if(!confirm(`Excluir "${c.nome}" e todos os dados (LGPD)? Esta ação não pode ser desfeita.`)) return;
+        try{ await Recruta.removeCand(c); closeCandDrawer(); renderRecruta(); refreshBadges(); toast("Candidato excluído","ok"); }
+        catch(err){ toast("Erro ao excluir: "+(err.message||err),"err"); }
+      });
+    }
+    else if(candDrawerTab==="respostas"){
+      box.innerHTML=`
+        <div class="fx-sec">Experiência</div>
+        ${field("Está trabalhando atualmente?",r.trabalhando_atualmente)}
+        ${field("Última experiência profissional",r.ultima_experiencia)}
+        ${field("Tempo no último emprego",r.tempo_ultimo_emprego)}
+        ${field("Por que saiu do último emprego",r.motivo_saida)}
+        ${field("Pretensão salarial",r.pretensao_salarial)}
+        <div class="fx-sec">Disponibilidade</div>
+        ${field("Disponibilidade de horário",r.disponibilidade_horario)}
+        ${field("Trabalhar após as 18h?",r.disponibilidade_apos_18h)}
+        ${field("É fumante?",r.fumante)}
+        <div class="fx-sec">Sobre</div>
+        ${field("Conte um pouco sobre você",r.sobre_voce)}
+        ${field("Por que gostaria de trabalhar conosco",r.por_que_trabalhar)}
+        ${Object.values(r).every(x=>!x)?'<div style="color:var(--muted);font-size:13px">Sem respostas adicionais.</div>':""}`;
+    }
+    else if(candDrawerTab==="recrut"){
+      box.innerHTML=`
+        <div class="fx-sec">Responsável pelo processo</div>
+        <input id="fxResp" placeholder="Nome ou e-mail do recrutador" value="${esc(c.responsavel||"")}">
+        <div class="fx-sec">Avaliação do recrutador</div>
+        <textarea id="fxAval" rows="3" placeholder="Impressões, pontos fortes, ressalvas…">${esc((c.avaliacao&&c.avaliacao.texto)||"")}</textarea>
+        <div class="fx-sec">Datas das entrevistas</div>
+        <input id="fxEntrev" placeholder="Ex.: 1ª 20/07 14h · 2ª 25/07" value="${esc((c.entrevistas&&c.entrevistas.resumo)||"")}">
+        <div class="fx-sec">Resultado dos testes</div>
+        <input id="fxTeste" placeholder="Comportamental / prático" value="${esc((c.testes&&c.testes.resumo)||"")}">
+        <div class="fx-sec">Motivo da aprovação / reprovação</div>
+        <textarea id="fxMotivo" rows="2">${esc(c.motivo_decisao||"")}</textarea>
+        <div class="fx-sec">Próxima ação</div>
+        <div class="fx-grid">
+          <input class="fw" id="fxProx" placeholder="Ex.: Agendar entrevista" value="${esc(c.proxima_acao||"")}">
+          <input type="date" id="fxProxData" value="${c.proxima_acao_data||""}">
+        </div>
+        <div style="margin-top:14px"><button class="btn primary" id="fxSave">Salvar</button></div>`;
+      box.querySelector("#fxSave").addEventListener("click",async()=>{
+        const patch={
+          responsavel: box.querySelector("#fxResp").value.trim()||null,
+          avaliacao:{ texto: box.querySelector("#fxAval").value.trim() },
+          entrevistas:{ resumo: box.querySelector("#fxEntrev").value.trim() },
+          testes:{ resumo: box.querySelector("#fxTeste").value.trim() },
+          motivo_decisao: box.querySelector("#fxMotivo").value.trim()||null,
+          proxima_acao: box.querySelector("#fxProx").value.trim()||null,
+          proxima_acao_data: box.querySelector("#fxProxData").value||null,
+        };
+        try{ await Recruta.patchCand(c.id, patch, "Ficha de recrutamento atualizada", Store.user&&Store.user.email); if(recrutaTab==="kanban") renderRecrutaKanban(); toast("Salvo","ok"); }
+        catch(err){ toast("Erro ao salvar: "+(err.message||err),"err"); }
+      });
+    }
+    else if(candDrawerTab==="anotacoes"){
+      const notas=(c.anotacoes||[]).slice().reverse();
+      box.innerHTML=`
+        <div style="display:flex;gap:6px;margin-bottom:12px">
+          <textarea id="fxNota" rows="2" placeholder="Anotação interna…"></textarea>
+        </div>
+        <button class="btn sm primary" id="fxNotaAdd" style="margin-bottom:14px">+ Adicionar</button>
+        ${notas.length?notas.map(n=>`<div class="fx-note"><div class="nm">${esc((n.autor||"").split("@")[0])} · ${fmtDate((n.data||"").slice(0,10))}</div>${esc(n.texto)}</div>`).join(""):'<div style="color:var(--muted);font-size:13px">Nenhuma anotação ainda.</div>'}`;
+      box.querySelector("#fxNotaAdd").addEventListener("click",async()=>{
+        const t=box.querySelector("#fxNota").value; if(!t.trim()) return;
+        try{ await Recruta.addNota(c.id,t,Store.user&&Store.user.email); renderCandBody(); toast("Anotação salva","ok"); }
+        catch(err){ toast("Erro: "+(err.message||err),"err"); }
+      });
+    }
+    else if(candDrawerTab==="historico"){
+      const h=(c.historico||[]).slice().reverse();
+      box.innerHTML=h.length?h.map(x=>`<div class="fx-hist"><b>${fmtDate((x.data||"").slice(0,10))}</b> — ${esc(x.texto)}${x.por?` <span style="color:var(--muted2)">(${esc((x.por||"").split("@")[0])})</span>`:""}</div>`).join(""):'<div style="color:var(--muted);font-size:13px">Sem movimentações.</div>';
+    }
+  }
+}
+
+/* ---------- Vagas ---------- */
+let vagaEditId=null;
+function renderRecrutaVagas(){
+  const body=$("#recrutaBody");
+  const stCor={aberta:"var(--green)",pausada:"var(--orange)",encerrada:"var(--muted)"};
+  const stLbl={aberta:"Aberta",pausada:"Pausada",encerrada:"Encerrada"};
+  const countByVaga=id=>Recruta.cands.filter(c=>c.vaga_id===id).length;
+  body.innerHTML=`
+    <div class="card" style="margin-bottom:14px">
+      <h3 style="margin:0 0 10px">${vagaEditId?"Editar vaga":"Nova vaga"}</h3>
+      <div class="fx-grid" style="display:grid;grid-template-columns:2fr 1fr;gap:10px">
+        <input id="vgTitulo" class="rmini" placeholder="Cargo / título da vaga *" style="padding:10px 12px">
+        <input id="vgLocal" class="rmini" placeholder="Cidade / local" style="padding:10px 12px">
+      </div>
+      <textarea id="vgDesc" class="rmini" placeholder="Descrição (opcional)" style="width:100%;margin-top:10px;min-height:54px;padding:10px 12px"></textarea>
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <button class="btn primary sm" id="vgSave">${vagaEditId?"Salvar alterações":"+ Criar vaga"}</button>
+        ${vagaEditId?'<button class="btn ghost sm" id="vgCancel">Cancelar</button>':""}
+      </div>
+    </div>
+    <div>${Recruta.vagas.length?Recruta.vagas.map(v=>`
+      <div class="vaga-row">
+        <div style="min-width:180px;flex:1">
+          <b>${esc(v.titulo)}</b> <span class="vst" style="background:${stCor[v.status]}22;color:${stCor[v.status]}">${stLbl[v.status]}</span>
+          <div style="font-size:12px;color:var(--muted)">${v.local?esc(v.local)+" · ":""}${countByVaga(v.id)} candidato(s)</div>
+        </div>
+        <button class="btn ghost sm" data-vlink="${v.id}">🔗 Copiar link</button>
+        <button class="btn ghost sm" data-vedit="${v.id}">✎</button>
+        ${v.status!=="encerrada"?`<button class="btn ghost sm" data-vstatus="${v.id}|${v.status==="pausada"?"aberta":"pausada"}">${v.status==="pausada"?"▶ Reabrir":"⏸ Pausar"}</button>`:""}
+        ${v.status!=="encerrada"?`<button class="btn ghost sm" data-vstatus="${v.id}|encerrada">⛔ Encerrar</button>`:`<button class="btn ghost sm" data-vstatus="${v.id}|aberta">↩ Reabrir</button>`}
+        <button class="btn ghost sm" data-vdel="${v.id}" style="color:var(--danger)">🗑</button>
+      </div>`).join(""):'<div class="empty" style="margin:20px auto">Nenhuma vaga criada. Crie uma para gerar um link de formulário específico.</div>'}</div>`;
+
+  if(vagaEditId){ const v=Recruta.vaga(vagaEditId); if(v){ $("#vgTitulo").value=v.titulo||""; $("#vgLocal").value=v.local||""; $("#vgDesc").value=v.descricao||""; } }
+
+  $("#vgSave").addEventListener("click",async()=>{
+    const titulo=$("#vgTitulo").value.trim(); if(!titulo){ toast("Informe o título da vaga","err"); return; }
+    const v={ id:vagaEditId||rid("v"), titulo, local:$("#vgLocal").value.trim(), descricao:$("#vgDesc").value.trim(), status:vagaEditId?Recruta.vaga(vagaEditId).status:"aberta" };
+    try{ await Recruta.saveVaga(v); await Recruta.loadAll(); vagaEditId=null; renderRecrutaVagas(); refreshBadges(); toast("Vaga salva","ok"); }
+    catch(err){ toast("Erro ao salvar vaga: "+(err.message||err),"err"); }
+  });
+  const vc=$("#vgCancel"); if(vc) vc.addEventListener("click",()=>{ vagaEditId=null; renderRecrutaVagas(); });
+  body.querySelectorAll("[data-vedit]").forEach(b=>b.addEventListener("click",()=>{ vagaEditId=b.dataset.vedit; renderRecrutaVagas(); }));
+  body.querySelectorAll("[data-vlink]").forEach(b=>b.addEventListener("click",()=>{
+    const url=location.origin+"/candidatura.html?vaga="+b.dataset.vlink;
+    navigator.clipboard.writeText(url).then(()=>toast("Link copiado: "+url,"ok"),()=>prompt("Copie o link:",url));
+  }));
+  body.querySelectorAll("[data-vstatus]").forEach(b=>b.addEventListener("click",async()=>{
+    const [id,st]=b.dataset.vstatus.split("|"); const v=Recruta.vaga(id); if(!v) return;
+    if(st==="encerrada"&&!confirm("Encerrar a vaga? O formulário dela deixará de aceitar candidaturas.")) return;
+    try{ await Recruta.saveVaga({...v,status:st}); await Recruta.loadAll(); renderRecrutaVagas(); toast("Status da vaga atualizado","ok"); }
+    catch(err){ toast("Erro: "+(err.message||err),"err"); }
+  }));
+  body.querySelectorAll("[data-vdel]").forEach(b=>b.addEventListener("click",async()=>{
+    const v=Recruta.vaga(b.dataset.vdel); if(!v) return;
+    if(!confirm(`Excluir a vaga "${v.titulo}"? Os candidatos ligados a ela viram espontâneos.`)) return;
+    try{ await Recruta.removeVaga(v.id); await Recruta.loadAll(); renderRecrutaVagas(); refreshBadges(); toast("Vaga excluída","ok"); }
+    catch(err){ toast("Erro: "+(err.message||err),"err"); }
+  }));
+}
+
+/* ---------- Editor de etapas ---------- */
+function openEtapasEditor(){
+  const linhas=Recruta.etapas.map(e=>`${e.id} | ${e.nome}`).join("\n");
+  const nv=prompt("Etapas do funil (uma por linha, formato: id | Nome). Edite, remova ou reordene as linhas. A ordem aqui define a ordem no Kanban.", linhas);
+  if(nv===null) return;
+  const novas=nv.split("\n").map(l=>l.trim()).filter(Boolean).map((l,i)=>{
+    const [id,...rest]=l.split("|"); const nome=rest.join("|").trim()||id.trim();
+    return { id:id.trim().toLowerCase().replace(/[^a-z0-9_]/g,"_"), nome, ordem:i+1 };
+  });
+  if(!novas.length){ toast("Deixe ao menos uma etapa","err"); return; }
+  (async()=>{
+    try{
+      const idsNovos=new Set(novas.map(e=>e.id));
+      const remover=Recruta.etapas.filter(e=>!idsNovos.has(e.id));
+      for(const e of remover){
+        const usados=Recruta.cands.filter(c=>c.etapa===e.id).length;
+        if(usados){ toast(`Etapa "${e.nome}" tem ${usados} candidato(s). Mova-os antes de remover.`,"err"); return; }
+      }
+      for(const e of remover) await Recruta.removeEtapa(e.id);
+      for(const e of novas){ const cor=(Recruta.etapa(e.id).cor)||"#c9a227"; await Recruta.saveEtapa({...e,cor}); }
+      await Recruta.loadAll(); renderRecruta(); toast("Etapas atualizadas","ok");
+    }catch(err){ toast("Erro nas etapas: "+(err.message||err),"err"); }
+  })();
+}
+
 function renderActive(){
   if(activeView==="hoje") renderHoje();
   else if(activeView==="sales") renderSales();
@@ -3973,10 +4437,13 @@ function renderActive(){
   else if(activeView==="reunioes") renderReunioes();
   else if(activeView==="dash") renderDash();
   else if(activeView==="metodo") renderMetodo();
+  else if(activeView==="recruta") renderRecruta();
   else if(activeView==="config") renderConfig();
   refreshBadges();
 }
 $$(".modlink").forEach(t=>t.addEventListener("click",()=>setView(t.dataset.view)));
+$("#candDrawerOv").addEventListener("click",closeCandDrawer);
+document.addEventListener("keydown",e=>{ if(e.key==="Escape" && candDrawerId) closeCandDrawer(); });
 $("#f_fase").addEventListener("change",()=>{ if(editing){ fillEtapaOptions(); applyFaseLayout($("#f_fase").value); } });
 
 /* ---------- Mobile sidebar toggle ---------- */
@@ -3995,6 +4462,7 @@ function refreshBadges(){
   if($("#badgeTrilha")) $("#badgeTrilha").textContent=Store.cache.filter(c=>c.fase==="entrega" && c.status!=="Encerrado" && progressOf(c).pct<30).length;
   const venc=(Store.pagamentos||[]).filter(p=>p.status!=="pago" && p.vencimento && p.vencimento<t).length;
   if($("#badgeFinanc")) $("#badgeFinanc").textContent=venc;
+  if($("#badgeRecruta")) $("#badgeRecruta").textContent=Recruta.novosCount();
 }
 
 /* =========================================================================
@@ -4647,6 +5115,7 @@ async function boot(){
   try{ await Store.loadPagamentos(); }catch(e){ /* ok */ }
   try{ await Store.loadSessoes(); }catch(e){ /* ok */ }
   try{ await Store.loadEntregaveis(); }catch(e){ /* ok */ }
+  try{ await Recruta.loadAll(); }catch(e){ /* tabelas de recrutamento podem não existir ainda */ }
   renderActive();
   renderInboxBanner();
   const l0=$('.modlink[data-view="'+activeView+'"]'); if(l0) $("#viewTitle").textContent=l0.dataset.title;
